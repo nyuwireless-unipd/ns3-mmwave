@@ -15,6 +15,8 @@ Python bindings allow the C++ code in |ns3| to be called from Python.
 
 This chapter shows you how to create a Python script that can run |ns3| and also the process of creating Python bindings for a C++ |ns3| module.
 
+Python bindings are also needed to run the Pyviz visualizer.
+
 Introduction
 ************
 
@@ -25,18 +27,25 @@ Python, to allow integration of |ns3| with other Python tools and workflows.
 The intent is not to provide a different language choice to author new
 |ns3| models implemented in Python.
 
+As of ns-3.37 release or later,
 Python bindings for |ns3| use a tool called Cppyy (https://cppyy.readthedocs.io/en/latest/)
 to create a Python module from the C++ libraries built by CMake. The Python bindings that Cppyy
-uses are built at runtime, by importing the C++ libraries and headers for each ns-3 module.
+uses are built at runtime, by importing the C++ libraries and headers for each |ns3| module.
 This means that even if the C++ API changes, the Python bindings will adapt to them
 without requiring any preprocessing or scanning.
 
 If a user is not interested in Python, no action is needed; the Python bindings
-are only built on-demand by Cppyy.
+are only built on-demand by Cppyy, and only if the user enables them in the
+configuration of |ns3|.
 
-As of ns-3.37, the previous Python bindings framework based on Pybindgen has been
-removed due to a lack of active maintainers. The Cppyy frameword that replaced
-it may also be removed from future ns-3 releases if new maintainers are not found.
+It is also important to note that the current capability is provided on a
+lightly maintained basis and not officially supported by the project
+(in other words, we are currently looking for a Python bindings maintainer).
+The Cppyy framework could be replaced if it becomes too burdensome to
+maintain as we are presently doing.
+
+Prior to ns-3.37, the previous Python bindings framework was based on
+`Pybindgen <https://github.com/gjcarneiro/pybindgen>`_.
 
 An Example Python Script that Runs |ns3|
 ****************************************
@@ -74,7 +83,7 @@ Here is some example code that is written in Python and that runs |ns3|, which i
   serverApps.Start(ns.core.Seconds(1.0))
   serverApps.Stop(ns.core.Seconds(10.0))
 
-  address = ns.addressFromIpv4Address(interfaces.GetAddress(1))
+  address = interfaces.GetAddress(1).ConvertTo()
   echoClient = ns.applications.UdpEchoClientHelper(address, 9)
   echoClient.SetAttribute("MaxPackets", ns.core.UintegerValue(1))
   echoClient.SetAttribute("Interval", ns.core.TimeValue(ns.core.Seconds(1.0)))
@@ -92,11 +101,32 @@ Here is some example code that is written in Python and that runs |ns3|, which i
 Running Python Scripts
 **********************
 
+The main prerequisite is to install `cppyy`.  Depending on how you may manage
+Python extensions, the installation instructions may vary, but you can first
+check if it installed by seeing if the `cppyy` module can be
+successfully imported:
+
+.. sourcecode:: bash
+
+  $ python3
+  Python 3.8.10 (default, Jun 22 2022, 20:18:18)
+  [GCC 9.4.0] on linux
+  Type "help", "copyright", "credits" or "license" for more information.
+  >>> import cppyy
+  >>>
+
+If not, you may try to install via `pip` or whatever other manager you are
+using; e.g.:
+
+.. sourcecode:: bash
+
+  $ python3 -m pip install --user cppyy
+
 First, we need to enable the build of Python bindings:
 
 .. sourcecode:: bash
 
-  $ ./ns3 configure
+  $ ./ns3 configure --enable-python-bindings
 
 Other options such as ``--enable-examples`` may be passed to the above command.
 ns3 contains some options that automatically update the python path to find the ns3 module.
@@ -138,7 +168,7 @@ To run your own Python script that calls |ns3| and that has this path, ``/path/t
 Caveats
 *******
 
-Some of the limitations of the Cppyy-based byindings are listed here.
+Some of the limitations of the Cppyy-based bindings are listed here.
 
 Incomplete Coverage
 ===================
@@ -159,28 +189,104 @@ For example, when handling command-line arguments, we could set additional param
     # Import the ns-3 C++ modules with Cppyy
     from ns import ns
 
-    # ns.cppyy.cppdef compiles the code defined in the block
-    # The defined types, values and functions are available in ns.cppyy.gbl
-    ns.cppyy.cppdef("""
-    using namespace ns3;
-
-    CommandLine& GetCommandLine(std::string filename, int& nCsma, bool& verbose)
-    {
-        static CommandLine cmd = CommandLine(filename);
-        cmd.AddValue("nCsma", "Number of extra CSMA nodes/devices", nCsma);
-        cmd.AddValue("verbose", "Tell echo applications to log if true", verbose);
-        return cmd;
-    }
-    """)
-
     # To pass the addresses of the Python variables to c++, we need to use ctypes
-    from ctypes import c_int, c_bool
-    nCsma = c_int(3)
+    from ctypes import c_bool, c_int, c_double, c_char_p, create_string_buffer
     verbose = c_bool(True)
+    nCsma = c_int(3)
+    throughputKbps = c_double(3.1415)
+    BUFFLEN = 4096
+    outputFileBuffer = create_string_buffer(b"default_output_file.xml", BUFFLEN)
+    outputFile = c_char_p(outputFileBuffer.raw)
 
-    # Pass the addresses of Python variables to C++
-    cmd = ns.cppyy.gbl.GetCommandLine(__file__, nCsma, verbose)
+    # Cppyy will transform the ctype types into the appropriate reference or raw pointers
+    cmd = ns.CommandLine(__file__)
+    cmd.AddValue("verbose", "Tell echo applications to log if true", verbose)
+    cmd.AddValue("nCsma", "Number of extra CSMA nodes/devices", nCsma)
+    cmd.AddValue("throughputKbps", "Throughput of nodes", throughputKbps)
+    cmd.AddValue("outputFile", "Output file name", outputFile, BUFFLEN)
     cmd.Parse(sys.argv)
+
+    # Printing values of the different ctypes passed as arguments post parsing
+    print("Verbose:", verbose.value)
+    print("nCsma:", nCsma.value)
+    print("throughputKbps:", throughputKbps.value)
+    print("outputFile:", outputFile.value)
+
+Note that the variables are passed as references or raw pointers. Reassigning them on the Python side
+(e.g. ``verbose = verbose.value``) can result in the Python garbage collector destroying the object
+since its only reference has been overwritten, allowing the garbage collector to reclaim that memory space.
+The C++ side will then have a dangling reference to the variable, which can be overwritten with
+unexpected values, which can be read later, causing ns-3 to behave erratically due to the memory corruption.
+
+String values are problematic since Python and C++ string lifetimes are handled differently.
+To workaround that, we need to use null-terminated C strings (``char*``) to exchange strings between
+the bindings and ns-3 module libraries. However, C strings are particularly dangerous, since
+overwriting the null-terminator can also result in memory corruption. When passing a C string, remember
+to allocate a large buffer and perform bounds checking whenever possible. The CommandLine::AddValue
+variant for ``char*`` performs bounds checking and aborts the execution in case the parsed value
+does not fit in the buffer. Make sure to pass the complete size of the buffer, including the null terminator.
+
+There is an example below demonstrating how the memory corruption could happen in case there was
+no bounds checking in CommandLine::AddValue variant for ``char*``.
+
+.. sourcecode:: python
+
+    from ns import ns
+    from ctypes import c_char_p, c_char, create_string_buffer, byref, cast
+
+    # The following buffer represent the memory contents
+    # of a program containing two adjacent C strings
+    # This could be the result of two subsequent variables
+    # on the stack or dynamically allocated
+    memoryContents = create_string_buffer(b"SHORT_STRING_CONTENTS\0"+b"DoNotWriteHere_"*5+b"\0")
+    lenShortString = len(b"SHORT_STRING_CONTENTS\0")
+
+    # In the next lines, we pick pointers to these two C strings
+    shortStringBuffer = cast(byref(memoryContents, 0), c_char_p)
+    victimBuffer = cast(byref(memoryContents, lenShortString), c_char_p)
+
+    cmd = ns.core.CommandLine(__file__)
+    # in the real implementation, the buffer size of 21+1 bytes containing SHORT_STRING_CONTENTS\0 is passed
+    cmd.AddValue("shortString", "", shortStringBuffer)
+
+    print("Memory contents before the memory corruption")
+    print("Full Memory contents", memoryContents.raw)
+    print("shortStringBuffer contents: ", shortStringBuffer.value)
+    print("victimBuffer contents: ", victimBuffer.value)
+
+    # The following block should print to the terminal.
+    # Note that the strings are correctly
+    # identified due to the null terminator (\x00)
+    #
+    # Memory contents before the memory corruption
+    # Full Memory contents b'SHORT_STRING_CONTENTS\x00DoNotWriteHere_DoNotWriteHere_DoNotWriteHere_DoNotWriteHere_DoNotWriteHere_\x00\x00'
+    # shortStringBuffer size=21, contents: b'SHORT_STRING_CONTENTS'
+    # victimBuffer size=75, contents: b'DoNotWriteHere_DoNotWriteHere_DoNotWriteHere_DoNotWriteHere_DoNotWriteHere_'
+
+    # Write a very long string to a small buffer of size lenShortString = 22
+    cmd.Parse(["python", "--shortString="+("OkToWrite"*lenShortString)[:lenShortString]+"CORRUPTED_"*3])
+
+    print("\n\nMemory contents after the memory corruption")
+    print("Full Memory contents", memoryContents.raw)
+    print("shortStringBuffer contents: ", shortStringBuffer.value)
+    print("victimBuffer contents: ", victimBuffer.value)
+
+    # The following block should print to the terminal.
+    #
+    # Memory contents after the memory corruption
+    # Full Memory contents b'OkToWriteOkToWriteOkToCORRUPTED_CORRUPTED_CORRUPTED_\x00oNotWriteHere_DoNotWriteHere_DoNotWriteHere_\x00\x00'
+    # shortStringBuffer size=52, contents: b'OkToWriteOkToWriteOkToCORRUPTED_CORRUPTED_CORRUPTED_'
+    # victimBuffer size=30, contents: b'CORRUPTED_CORRUPTED_CORRUPTED_'
+    #
+    # Note that shortStringBuffer invaded the victimBuffer since the
+    # string being written was bigger than the shortStringBuffer.
+    #
+    # Since no bounds checks were performed, the adjacent memory got
+    # overwritten and both buffers are now corrupted.
+    #
+    # We also have a memory leak of the final block in the memory
+    # 'oNotWriteHere_DoNotWriteHere_DoNotWriteHere_\x00\x00', caused
+    # by the null terminator written at the middle of the victimBuffer.
 
 If you find a segmentation violation, be sure to wait for the stacktrace provided by Cppyy
 and try to find the root cause of the issue. If you have multiple cores, the number of
@@ -190,9 +296,9 @@ define the environment variable `OPENBLAS_NUM_THREADS=1`.
 Operators
 #########
 
-Cppyy may fail to map C++ operators due to the implementation style used by ns-3.
+Cppyy may fail to map C++ operators due to the implementation style used by |ns3|.
 This happens for the fundamental type `Time`. To provide the expected behavior, we
-redefine these operators from the Python side during the setup of the ns-3 bindings
+redefine these operators from the Python side during the setup of the |ns3| bindings
 module (`ns-3-dev/bindings/python/ns__init__.py`).
 
 .. sourcecode:: python
@@ -215,23 +321,14 @@ module (`ns-3-dev/bindings/python/ns__init__.py`).
     cppyy.gbl.ns3.Time.__lt__ = cppyy.gbl.Time_lt
 
 
-A different operator used by ns-3 is `operator Address()`, used to
+A different operator used by |ns3| is `operator Address()`, used to
 convert different types of Addresses into the generic type Address.
 This is not supported by Cppyy and requires explicit conversion.
-Some helpers have been added to handle the common cases.
 
 .. sourcecode:: python
 
-    # Define ns.cppyy.gbl.addressFromIpv4Address and others
-    cppyy.cppdef("""using namespace ns3;
-                    Address addressFromIpv4Address(Ipv4Address ip){ return Address(ip); };
-                    Address addressFromInetSocketAddress(InetSocketAddress addr){ return Address(addr); };
-                    Address addressFromPacketSocketAddress(PacketSocketAddress addr){ return Address(addr); };
-                    """)
-    # Expose addressFromIpv4Address as a member of the ns3 namespace (equivalent to ns)
-    setattr(cppyy.gbl.ns3, "addressFromIpv4Address", cppyy.gbl.addressFromIpv4Address)
-    setattr(cppyy.gbl.ns3, "addressFromInetSocketAddress", cppyy.gbl.addressFromInetSocketAddress)
-    setattr(cppyy.gbl.ns3, "addressFromPacketSocketAddress", cppyy.gbl.addressFromPacketSocketAddress)
+    # Explicitly convert the InetSocketAddress to Address using InetSocketAddress.ConvertTo()
+    sink.Bind(ns.network.InetSocketAddress(ns.network.Ipv4Address.GetAny(), 80).ConvertTo())
 
 Most of the missing APIs can be wrapped, given enough time, patience, and expertise, and will likely be wrapped if bug reports are submitted.
 However, don't file a bug report saying "bindings are incomplete", because the project does not have maintainers to maintain every API.
@@ -261,8 +358,6 @@ That means that the 'ascii' variable above must not be allowed to go out of scop
 
 Working with Python Bindings
 ****************************
-
-Python bindings are built on a module-by-module basis, and can be found in each module's  ``bindings`` directory.
 
 Overview
 ========

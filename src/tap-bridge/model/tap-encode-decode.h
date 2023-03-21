@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2009 University of Washington
  *
@@ -21,13 +20,12 @@
 
 #include <string>
 
-namespace ns3 {
+namespace ns3
+{
 
-std::string TapBufferToString (uint8_t *buffer, uint32_t len);
-bool TapStringToBuffer (std::string s, uint8_t *buffer, uint32_t *len);
-
+std::string TapBufferToString(uint8_t* buffer, uint32_t len);
+bool TapStringToBuffer(std::string s, uint8_t* buffer, uint32_t* len);
 
 } // namespace ns3
 
 #endif /* TAP_ENCODE_DECODE_H */
-

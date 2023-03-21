@@ -18,48 +18,57 @@
  * Author: Michele Polese <michele.polese@gmail.com>
  */
 
-
 #ifndef CORE_NETWORK_STATS_CALCULATOR_H_
 #define CORE_NETWORK_STATS_CALCULATOR_H_
 
-#include "ns3/lte-common.h"
-#include "ns3/uinteger.h"
-#include "ns3/object.h"
 #include "ns3/basic-data-calculators.h"
 #include "ns3/lte-common.h"
-#include <string>
-#include <map>
+#include "ns3/object.h"
+#include "ns3/uinteger.h"
+
 #include <fstream>
+#include <map>
+#include <string>
 
-namespace ns3 {
+namespace ns3
+{
 
-namespace mmwave {
+namespace mmwave
+{
 
 class CoreNetworkStatsCalculator : public Object
 {
-public:
-  CoreNetworkStatsCalculator ();
-  ~CoreNetworkStatsCalculator ();
+  public:
+    CoreNetworkStatsCalculator();
+    ~CoreNetworkStatsCalculator();
 
-  static TypeId GetTypeId (void);
+    static TypeId GetTypeId(void);
 
-  void DoDispose ();
+    void DoDispose();
 
-  void LogX2Packet (std::string path, uint16_t sourceCellId, uint16_t targetCellId, uint32_t size, uint64_t delay, bool data);
-  void LogMmePacket (std::string path, uint16_t sourceCellId, uint16_t targetCellId, uint32_t size, uint64_t delay);
+    void LogX2Packet(std::string path,
+                     uint16_t sourceCellId,
+                     uint16_t targetCellId,
+                     uint32_t size,
+                     uint64_t delay,
+                     bool data);
+    void LogMmePacket(std::string path,
+                      uint16_t sourceCellId,
+                      uint16_t targetCellId,
+                      uint32_t size,
+                      uint64_t delay);
 
-  std::string GetX2OutputFilename (void);
-  std::string GetMmeOutputFilename (void);
-  void SetX2OutputFilename (std::string outputFilename);
-  void SetMmeOutputFilename (std::string outputFilename);
+    std::string GetX2OutputFilename(void);
+    std::string GetMmeOutputFilename(void);
+    void SetX2OutputFilename(std::string outputFilename);
+    void SetMmeOutputFilename(std::string outputFilename);
 
-private:
-  std::string m_mmeOutFileName;
-  std::string m_x2OutFileName;
+  private:
+    std::string m_mmeOutFileName;
+    std::string m_x2OutFileName;
 
-  std::ofstream m_x2OutFile;
-  std::ofstream m_mmeOutFile;
-
+    std::ofstream m_x2OutFile;
+    std::ofstream m_mmeOutFile;
 };
 
 } // namespace mmwave

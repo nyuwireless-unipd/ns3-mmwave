@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2007 Georgia Tech Research Corporation
  *
@@ -18,21 +17,21 @@
  * Author: Raj Bhattacharjea <raj.b@gatech.edu>
  */
 #include "tcp-socket-factory.h"
-#include "ns3/uinteger.h"
+
 #include "ns3/double.h"
+#include "ns3/uinteger.h"
 
-namespace ns3 {
+namespace ns3
+{
 
-NS_OBJECT_ENSURE_REGISTERED (TcpSocketFactory);
+NS_OBJECT_ENSURE_REGISTERED(TcpSocketFactory);
 
 TypeId
-TcpSocketFactory::GetTypeId (void)
+TcpSocketFactory::GetTypeId()
 {
-  static TypeId tid = TypeId ("ns3::TcpSocketFactory")
-    .SetParent<SocketFactory> ()
-    .SetGroupName ("Internet")
-  ;
-  return tid;
+    static TypeId tid =
+        TypeId("ns3::TcpSocketFactory").SetParent<SocketFactory>().SetGroupName("Internet");
+    return tid;
 }
 
 } // namespace ns3

@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2007,2008, 2009 INRIA, UDcast
  *
@@ -22,7 +21,8 @@
 #define CRC8_H
 #include <stdint.h>
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \param data buffer to calculate the checksum for
@@ -30,7 +30,7 @@ namespace ns3 {
  * \returns the computed crc.
  *
  */
-uint8_t CRC8Calculate (const uint8_t *data, int length);
+uint8_t CRC8Calculate(const uint8_t* data, int length);
 
 } // namespace ns3
 

@@ -23,10 +23,9 @@
 #define LTE_TEST_INTERFERENCE_H
 
 #include "ns3/test.h"
-
+#include <ns3/lte-common.h>
 
 using namespace ns3;
-
 
 /**
  * \ingroup lte-test
@@ -36,64 +35,73 @@ using namespace ns3;
  */
 class LteInterferenceTestSuite : public TestSuite
 {
-public:
-  LteInterferenceTestSuite ();
+  public:
+    LteInterferenceTestSuite();
 };
-
 
 /**
  * \ingroup lte-test
  * \ingroup tests
  *
- * \brief Test that SINR calculation and MCS selection works fine in a 
+ * \brief Test that SINR calculation and MCS selection works fine in a
  * multi-cell interference scenario.
  */
 class LteInterferenceTestCase : public TestCase
 {
-public:
-  /**
-   * Constructor
-   *
-   * \param name the reference name
-   * \param d1 distance between ENB and UE
-   * \param d2 distnace between ENB and other UE
-   * \param dlSinr the DL SINR
-   * \param ulSinr the UL SINR
-   * \param dlSe the DL se
-   * \param ulSe the UL se
-   * \param dlMcs the DL MCS
-   * \param ulMcs the UL MCS
-   */
-  LteInterferenceTestCase (std::string name, double d1, double d2, double dlSinr, double ulSinr, double dlSe, double ulSe, uint16_t dlMcs, uint16_t ulMcs);
-  virtual ~LteInterferenceTestCase ();
+  public:
+    /**
+     * Constructor
+     *
+     * \param name the reference name
+     * \param d1 distance between ENB and UE
+     * \param d2 distnace between ENB and other UE
+     * \param dlSinr the DL SINR
+     * \param ulSinr the UL SINR
+     * \param dlSe the DL se
+     * \param ulSe the UL se
+     * \param dlMcs the DL MCS
+     * \param ulMcs the UL MCS
+     */
+    LteInterferenceTestCase(std::string name,
+                            double d1,
+                            double d2,
+                            double dlSinr,
+                            double ulSinr,
+                            double dlSe,
+                            double ulSe,
+                            uint16_t dlMcs,
+                            uint16_t ulMcs);
+    virtual ~LteInterferenceTestCase();
 
-  /**
-   * DL scheduling function
-   * \param dlInfo the DL info
-   */
-  void DlScheduling (DlSchedulingCallbackInfo dlInfo);
+    /**
+     * DL scheduling function
+     * \param dlInfo the DL info
+     */
+    void DlScheduling(DlSchedulingCallbackInfo dlInfo);
 
-  /**
-   * UL scheduling function
-   * \param frameNo the frame number
-   * \param subframeNo the subframe number
-   * \param rnti the RNTI
-   * \param mcs the MCS
-   * \param sizeTb
-   */
-  void UlScheduling (uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
-                     uint8_t mcs, uint16_t sizeTb);
+    /**
+     * UL scheduling function
+     * \param frameNo the frame number
+     * \param subframeNo the subframe number
+     * \param rnti the RNTI
+     * \param mcs the MCS
+     * \param sizeTb
+     */
+    void UlScheduling(uint32_t frameNo,
+                      uint32_t subframeNo,
+                      uint16_t rnti,
+                      uint8_t mcs,
+                      uint16_t sizeTb);
 
-private:
-  virtual void DoRun (void);
+  private:
+    virtual void DoRun(void);
 
-
-  double m_d1; ///< distance between UE and ENB
-  double m_d2; ///< distance between UE and other ENB
-  double m_expectedDlSinrDb; ///< expected DL SINR in dB
-  double m_expectedUlSinrDb; ///< expected UL SINR in dB
-  uint16_t m_dlMcs; ///< the DL MCS
-  uint16_t m_ulMcs; ///< the UL MCS
+    double m_d1;               ///< distance between UE and ENB
+    double m_d2;               ///< distance between UE and other ENB
+    double m_expectedDlSinrDb; ///< expected DL SINR in dB
+    double m_expectedUlSinrDb; ///< expected UL SINR in dB
+    uint16_t m_dlMcs;          ///< the DL MCS
+    uint16_t m_ulMcs;          ///< the UL MCS
 };
 
 #endif /* LTE_TEST_INTERFERENCE_H */

@@ -13,7 +13,6 @@ is available at U{http://www.opensource.org/licenses/bsd-license.php}
 # this file is a modified version of source code from the Accerciser project
 # https://wiki.gnome.org/Apps/Accerciser
 
-from __future__ import print_function
 import gtk, gobject
 import re
 import sys
@@ -24,6 +23,7 @@ import IPython
 
 from pkg_resources import parse_version
 
+## Try to import IPython
 try:
   import IPython
 except ImportError:
@@ -47,30 +47,10 @@ class IterableIPShell:
   #  header
   ## @var config
   #  config
-  ## @var user_ns
-  #  user_ns
-  ## @var old_stdout
-  #  saved stdout
-  ## @var old_stderr
-  #  saved stderr
-  ## @var system
-  #  system
-  ## @var cfg
-  # configuration
   ## @var colors
   #  colors
-  ## @var raw_input_original
-  #  original raw input
-  ## @var stdin
-  #  cin
-  ## @var stdout
-  #  cout
-  ## @var stderr
-  #  cerr
   ## @var raw_input
   #  raw input
-  ## @var excepthook
-  #  exception hook
   ## Constructor
   def __init__(self,argv=None,user_ns=None,user_global_ns=None,
                cin=None, cout=None,cerr=None, input_func=None):

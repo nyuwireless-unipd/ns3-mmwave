@@ -23,10 +23,10 @@
 #define LTE_TEST_RLC_AM_E2E_H
 
 #include "ns3/test.h"
-
+#include <ns3/ptr.h>
+#include <ns3/packet.h>
 
 using namespace ns3;
-
 
 /**
  * \ingroup lte-test
@@ -36,8 +36,8 @@ using namespace ns3;
  */
 class LteRlcAmE2eTestSuite : public TestSuite
 {
-public:
-  LteRlcAmE2eTestSuite ();
+  public:
+    LteRlcAmE2eTestSuite();
 };
 
 /**
@@ -50,39 +50,38 @@ public:
 class LteRlcAmE2eTestCase : public TestCase
 {
   public:
-  /**
-   * Constructor
-   *
-   * \param name the reference name
-   * \param seed the random variable seed
-   * \param losses the error rate
-   * \param bulkSduArrival true if bulk SDU arrival
-   */
-  LteRlcAmE2eTestCase (std::string name, uint32_t seed, double losses, bool bulkSduArrival);
-    LteRlcAmE2eTestCase ();
-    virtual ~LteRlcAmE2eTestCase ();
+    /**
+     * Constructor
+     *
+     * \param name the reference name
+     * \param seed the random variable seed
+     * \param losses the error rate
+     * \param bulkSduArrival true if bulk SDU arrival
+     */
+    LteRlcAmE2eTestCase(std::string name, uint32_t seed, double losses, bool bulkSduArrival);
+    LteRlcAmE2eTestCase();
+    virtual ~LteRlcAmE2eTestCase();
 
   private:
-    virtual void DoRun (void);
+    virtual void DoRun(void);
 
     /**
      * DL drop event
      * \param p the packet
      */
-    void DlDropEvent (Ptr<const Packet> p);
+    void DlDropEvent(Ptr<const Packet> p);
     /**
      * UL drop event
      * \param p the packet
      */
-    void UlDropEvent (Ptr<const Packet> p);
+    void UlDropEvent(Ptr<const Packet> p);
 
-    uint32_t m_run; ///< rng run
-    double   m_losses; ///< error rate
+    uint32_t m_run;        ///< rng run
+    double m_losses;       ///< error rate
     bool m_bulkSduArrival; ///< bulk SDU arrival
 
     uint32_t m_dlDrops; ///< number of Dl drops
     uint32_t m_ulDrops; ///< number of UL drops
-
 };
 
 #endif // LTE_TEST_RLC_AM_E2E_H

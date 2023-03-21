@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2020 Lawrence Livermore National Laboratory
  *
@@ -27,52 +26,51 @@
  * ns3::SystemWallClockTimestamp declaration.
  */
 
+#include <ctime> // ctime, time_t
 #include <string>
-#include <ctime>  // ctime, time_t
 
-
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * Utility class to record the difference between two wall-clock times.
  */
 class SystemWallClockTimestamp
 {
-public:
-  /** Constructor */
-  SystemWallClockTimestamp (void);
+  public:
+    /** Constructor */
+    SystemWallClockTimestamp();
 
-  /** Record the current wall-clock time and delta since the last stamp(). */
-  void Stamp (void);
+    /** Record the current wall-clock time and delta since the last stamp(). */
+    void Stamp();
 
-  /**
-   * Get the last time stamp as a string.
-   * \return The last time stamp.
-   */
-  std::string ToString (void) const;
+    /**
+     * Get the last time stamp as a string.
+     * \return The last time stamp.
+     */
+    std::string ToString() const;
 
-  /**
-   * Get the last recorded raw value.
-   * \returns The last time stamp recorded.
-   */
-  std::time_t GetLast (void) const;
+    /**
+     * Get the last recorded raw value.
+     * \returns The last time stamp recorded.
+     */
+    std::time_t GetLast() const;
 
-  /**
-   * Get the last recorded interval.
-   * \returns The interval between the last two time stamps.
-   */
-  std::time_t GetInterval (void) const;
+    /**
+     * Get the last recorded interval.
+     * \returns The interval between the last two time stamps.
+     */
+    std::time_t GetInterval() const;
 
-private:
+  private:
+    /** The last time stamp. */
+    std::time_t m_last;
 
-  /** The last time stamp. */
-  std::time_t m_last;
+    /** Difference between the two previous time stamps. */
+    std::time_t m_diff;
 
-  /** Difference between the two previous time stamps. */
-  std::time_t m_diff;
+}; // class SystemWallClockTimestamp
 
-};  // class SystemWallClockTimestamp
+} // namespace ns3
 
-}  // namespace ns3
-
-#endif  /* SYSTEM_WALL_CLOCK_TIMESTAMP_H */
+#endif /* SYSTEM_WALL_CLOCK_TIMESTAMP_H */

@@ -21,207 +21,214 @@
  */
 
 #include "phy-rx-stats-calculator.h"
+
 #include "ns3/string.h"
-#include <ns3/simulator.h>
 #include <ns3/log.h>
+#include <ns3/simulator.h>
 
-namespace ns3 {
-
-NS_LOG_COMPONENT_DEFINE ("PhyRxStatsCalculator");
-
-NS_OBJECT_ENSURE_REGISTERED (PhyRxStatsCalculator);
-
-PhyRxStatsCalculator::PhyRxStatsCalculator ()
-  : m_dlRxFirstWrite (true),
-    m_ulRxFirstWrite (true)
+namespace ns3
 {
-  NS_LOG_FUNCTION (this);
 
+NS_LOG_COMPONENT_DEFINE("PhyRxStatsCalculator");
+
+NS_OBJECT_ENSURE_REGISTERED(PhyRxStatsCalculator);
+
+PhyRxStatsCalculator::PhyRxStatsCalculator()
+    : m_dlRxFirstWrite(true),
+      m_ulRxFirstWrite(true)
+{
+    NS_LOG_FUNCTION(this);
 }
 
-PhyRxStatsCalculator::~PhyRxStatsCalculator ()
+PhyRxStatsCalculator::~PhyRxStatsCalculator()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 TypeId
-PhyRxStatsCalculator::GetTypeId (void)
+PhyRxStatsCalculator::GetTypeId(void)
 {
-  static TypeId tid = TypeId ("ns3::PhyRxStatsCalculator")
-    .SetParent<LteStatsCalculator> ()
-    .SetGroupName("Lte")
-    .AddConstructor<PhyRxStatsCalculator> ()
-    .AddAttribute ("DlRxOutputFilename",
-                   "Name of the file where the downlink results will be saved.",
-                   StringValue ("DlRxPhyStats.txt"),
-                   MakeStringAccessor (&PhyRxStatsCalculator::SetDlRxOutputFilename),
-                   MakeStringChecker ())
-    .AddAttribute ("UlRxOutputFilename",
-                   "Name of the file where the uplink results will be saved.",
-                   StringValue ("UlRxPhyStats.txt"),
-                   MakeStringAccessor (&PhyRxStatsCalculator::SetUlRxOutputFilename),
-                   MakeStringChecker ())
-  ;
-  return tid;
+    static TypeId tid =
+        TypeId("ns3::PhyRxStatsCalculator")
+            .SetParent<LteStatsCalculator>()
+            .SetGroupName("Lte")
+            .AddConstructor<PhyRxStatsCalculator>()
+            .AddAttribute("DlRxOutputFilename",
+                          "Name of the file where the downlink results will be saved.",
+                          StringValue("DlRxPhyStats.txt"),
+                          MakeStringAccessor(&PhyRxStatsCalculator::SetDlRxOutputFilename),
+                          MakeStringChecker())
+            .AddAttribute("UlRxOutputFilename",
+                          "Name of the file where the uplink results will be saved.",
+                          StringValue("UlRxPhyStats.txt"),
+                          MakeStringAccessor(&PhyRxStatsCalculator::SetUlRxOutputFilename),
+                          MakeStringChecker());
+    return tid;
 }
 
 void
-PhyRxStatsCalculator::SetUlRxOutputFilename (std::string outputFilename)
+PhyRxStatsCalculator::SetUlRxOutputFilename(std::string outputFilename)
 {
-  LteStatsCalculator::SetUlOutputFilename (outputFilename);
+    LteStatsCalculator::SetUlOutputFilename(outputFilename);
 }
 
 std::string
-PhyRxStatsCalculator::GetUlRxOutputFilename (void)
+PhyRxStatsCalculator::GetUlRxOutputFilename(void)
 {
-  return LteStatsCalculator::GetUlOutputFilename ();
+    return LteStatsCalculator::GetUlOutputFilename();
 }
 
 void
-PhyRxStatsCalculator::SetDlRxOutputFilename (std::string outputFilename)
+PhyRxStatsCalculator::SetDlRxOutputFilename(std::string outputFilename)
 {
-  LteStatsCalculator::SetDlOutputFilename (outputFilename);
+    LteStatsCalculator::SetDlOutputFilename(outputFilename);
 }
 
 std::string
-PhyRxStatsCalculator::GetDlRxOutputFilename (void)
+PhyRxStatsCalculator::GetDlRxOutputFilename(void)
 {
-  return LteStatsCalculator::GetDlOutputFilename ();
+    return LteStatsCalculator::GetDlOutputFilename();
 }
 
 void
-PhyRxStatsCalculator::DlPhyReception (PhyReceptionStatParameters params)
+PhyRxStatsCalculator::DlPhyReception(PhyReceptionStatParameters params)
 {
-  NS_LOG_FUNCTION (this << params.m_cellId << params.m_imsi << params.m_timestamp << params.m_rnti << params.m_layer << params.m_mcs << params.m_size << params.m_rv << params.m_ndi << params.m_correctness);
-  NS_LOG_INFO ("Write DL Rx Phy Stats in " << GetDlRxOutputFilename ().c_str ());
+    NS_LOG_FUNCTION(this << params.m_cellId << params.m_imsi << params.m_timestamp << params.m_rnti
+                         << params.m_layer << params.m_mcs << params.m_size << params.m_rv
+                         << params.m_ndi << params.m_correctness);
+    NS_LOG_INFO("Write DL Rx Phy Stats in " << GetDlRxOutputFilename().c_str());
 
-  std::ofstream outFile;
-  if ( m_dlRxFirstWrite == true )
+    std::ofstream outFile;
+    if (m_dlRxFirstWrite == true)
     {
-      outFile.open (GetDlRxOutputFilename ().c_str ());
-      if (!outFile.is_open ())
+        outFile.open(GetDlRxOutputFilename().c_str());
+        if (!outFile.is_open())
         {
-          NS_LOG_ERROR ("Can't open file " << GetDlRxOutputFilename ().c_str ());
-          return;
+            NS_LOG_ERROR("Can't open file " << GetDlRxOutputFilename().c_str());
+            return;
         }
-      m_dlRxFirstWrite = false;
-      outFile << "% time\tcellId\tIMSI\tRNTI\ttxMode\tlayer\tmcs\tsize\trv\tndi\tcorrect\tccId";
-      outFile << std::endl;
+        m_dlRxFirstWrite = false;
+        outFile << "% time\tcellId\tIMSI\tRNTI\ttxMode\tlayer\tmcs\tsize\trv\tndi\tcorrect\tccId";
+        outFile << std::endl;
     }
-  else
+    else
     {
-      outFile.open (GetDlRxOutputFilename ().c_str (),  std::ios_base::app);
-      if (!outFile.is_open ())
+        outFile.open(GetDlRxOutputFilename().c_str(), std::ios_base::app);
+        if (!outFile.is_open())
         {
-          NS_LOG_ERROR ("Can't open file " << GetDlRxOutputFilename ().c_str ());
-          return;
+            NS_LOG_ERROR("Can't open file " << GetDlRxOutputFilename().c_str());
+            return;
         }
     }
 
-//   outFile << Simulator::Now ().GetNanoSeconds () / (double) 1e9 << "\t";
-  outFile << params.m_timestamp << "\t";
-  outFile << (uint32_t) params.m_cellId << "\t";
-  outFile << params.m_imsi << "\t";
-  outFile << params.m_rnti << "\t";
-  outFile << (uint32_t) params.m_txMode << "\t";
-  outFile << (uint32_t) params.m_layer << "\t";
-  outFile << (uint32_t) params.m_mcs << "\t";
-  outFile << params.m_size << "\t";
-  outFile << (uint32_t) params.m_rv << "\t";
-  outFile << (uint32_t) params.m_ndi << "\t";
-  outFile << (uint32_t) params.m_correctness << "\t";
-  outFile << (uint32_t) params.m_ccId << std::endl;
-  outFile.close ();
+    //   outFile << Simulator::Now ().GetNanoSeconds () / (double) 1e9 << "\t";
+    outFile << params.m_timestamp << "\t";
+    outFile << (uint32_t)params.m_cellId << "\t";
+    outFile << params.m_imsi << "\t";
+    outFile << params.m_rnti << "\t";
+    outFile << (uint32_t)params.m_txMode << "\t";
+    outFile << (uint32_t)params.m_layer << "\t";
+    outFile << (uint32_t)params.m_mcs << "\t";
+    outFile << params.m_size << "\t";
+    outFile << (uint32_t)params.m_rv << "\t";
+    outFile << (uint32_t)params.m_ndi << "\t";
+    outFile << (uint32_t)params.m_correctness << "\t";
+    outFile << (uint32_t)params.m_ccId << std::endl;
+    outFile.close();
 }
 
 void
-PhyRxStatsCalculator::UlPhyReception (PhyReceptionStatParameters params)
+PhyRxStatsCalculator::UlPhyReception(PhyReceptionStatParameters params)
 {
-  NS_LOG_FUNCTION (this << params.m_cellId << params.m_imsi << params.m_timestamp << params.m_rnti << params.m_layer << params.m_mcs << params.m_size << params.m_rv << params.m_ndi << params.m_correctness);
-  NS_LOG_INFO ("Write UL Rx Phy Stats in " << GetUlRxOutputFilename ().c_str ());
+    NS_LOG_FUNCTION(this << params.m_cellId << params.m_imsi << params.m_timestamp << params.m_rnti
+                         << params.m_layer << params.m_mcs << params.m_size << params.m_rv
+                         << params.m_ndi << params.m_correctness);
+    NS_LOG_INFO("Write UL Rx Phy Stats in " << GetUlRxOutputFilename().c_str());
 
-  std::ofstream outFile;
-  if ( m_ulRxFirstWrite == true )
+    std::ofstream outFile;
+    if (m_ulRxFirstWrite == true)
     {
-      outFile.open (GetUlRxOutputFilename ().c_str ());
-      if (!outFile.is_open ())
+        outFile.open(GetUlRxOutputFilename().c_str());
+        if (!outFile.is_open())
         {
-          NS_LOG_ERROR ("Can't open file " << GetUlRxOutputFilename ().c_str ());
-          return;
+            NS_LOG_ERROR("Can't open file " << GetUlRxOutputFilename().c_str());
+            return;
         }
-      m_ulRxFirstWrite = false;
-      outFile << "% time\tcellId\tIMSI\tRNTI\tlayer\tmcs\tsize\trv\tndi\tcorrect\tccId";
-      outFile << std::endl;
+        m_ulRxFirstWrite = false;
+        outFile << "% time\tcellId\tIMSI\tRNTI\tlayer\tmcs\tsize\trv\tndi\tcorrect\tccId";
+        outFile << std::endl;
     }
-  else
+    else
     {
-      outFile.open (GetUlRxOutputFilename ().c_str (),  std::ios_base::app);
-      if (!outFile.is_open ())
+        outFile.open(GetUlRxOutputFilename().c_str(), std::ios_base::app);
+        if (!outFile.is_open())
         {
-          NS_LOG_ERROR ("Can't open file " << GetUlRxOutputFilename ().c_str ());
-          return;
+            NS_LOG_ERROR("Can't open file " << GetUlRxOutputFilename().c_str());
+            return;
         }
     }
 
-//   outFile << Simulator::Now ().GetNanoSeconds () / (double) 1e9 << "\t";
-  outFile << params.m_timestamp << "\t";
-  outFile << (uint32_t) params.m_cellId << "\t";
-  outFile << params.m_imsi << "\t";
-  outFile << params.m_rnti << "\t";
-  outFile << (uint32_t) params.m_layer << "\t";
-  outFile << (uint32_t) params.m_mcs << "\t";
-  outFile << params.m_size << "\t";
-  outFile << (uint32_t) params.m_rv << "\t";
-  outFile << (uint32_t) params.m_ndi << "\t";
-  outFile << (uint32_t) params.m_correctness << "\t";
-  outFile << (uint32_t) params.m_ccId <<std::endl;
-  outFile.close ();
+    //   outFile << Simulator::Now ().GetNanoSeconds () / (double) 1e9 << "\t";
+    outFile << params.m_timestamp << "\t";
+    outFile << (uint32_t)params.m_cellId << "\t";
+    outFile << params.m_imsi << "\t";
+    outFile << params.m_rnti << "\t";
+    outFile << (uint32_t)params.m_layer << "\t";
+    outFile << (uint32_t)params.m_mcs << "\t";
+    outFile << params.m_size << "\t";
+    outFile << (uint32_t)params.m_rv << "\t";
+    outFile << (uint32_t)params.m_ndi << "\t";
+    outFile << (uint32_t)params.m_correctness << "\t";
+    outFile << (uint32_t)params.m_ccId << std::endl;
+    outFile.close();
 }
 
 void
-PhyRxStatsCalculator::DlPhyReceptionCallback (Ptr<PhyRxStatsCalculator> phyRxStats,
-                      std::string path, PhyReceptionStatParameters params)
+PhyRxStatsCalculator::DlPhyReceptionCallback(Ptr<PhyRxStatsCalculator> phyRxStats,
+                                             std::string path,
+                                             PhyReceptionStatParameters params)
 {
-  NS_LOG_FUNCTION (phyRxStats << path);
-  uint64_t imsi = 0;
-  std::ostringstream pathAndRnti;
-  pathAndRnti << path << "/" << params.m_rnti;
-  std::string pathUePhy  = path.substr (0, path.find ("/ComponentCarrierMapUe"));
-  if (phyRxStats->ExistsImsiPath (pathAndRnti.str ()) == true)
+    NS_LOG_FUNCTION(phyRxStats << path);
+    uint64_t imsi = 0;
+    std::ostringstream pathAndRnti;
+    pathAndRnti << path << "/" << params.m_rnti;
+    std::string pathUePhy = path.substr(0, path.find("/ComponentCarrierMapUe"));
+    if (phyRxStats->ExistsImsiPath(pathAndRnti.str()) == true)
     {
-      imsi = phyRxStats->GetImsiPath (pathAndRnti.str ());
+        imsi = phyRxStats->GetImsiPath(pathAndRnti.str());
     }
-  else
+    else
     {
-      imsi = FindImsiFromLteNetDevice (pathUePhy);
-      phyRxStats->SetImsiPath (pathAndRnti.str (), imsi);
+        imsi = FindImsiFromLteNetDevice(pathUePhy);
+        phyRxStats->SetImsiPath(pathAndRnti.str(), imsi);
     }
 
-  params.m_imsi = imsi;
-  phyRxStats->DlPhyReception (params);
+    params.m_imsi = imsi;
+    phyRxStats->DlPhyReception(params);
 }
 
 void
-PhyRxStatsCalculator::UlPhyReceptionCallback (Ptr<PhyRxStatsCalculator> phyRxStats,
-                      std::string path, PhyReceptionStatParameters params)
+PhyRxStatsCalculator::UlPhyReceptionCallback(Ptr<PhyRxStatsCalculator> phyRxStats,
+                                             std::string path,
+                                             PhyReceptionStatParameters params)
 {
-  NS_LOG_FUNCTION (phyRxStats << path);
-  uint64_t imsi = 0;
-  std::ostringstream pathAndRnti;
-  std::string pathEnb  = path.substr (0, path.find ("/ComponentCarrierMap"));
-  pathAndRnti << pathEnb << "/LteEnbRrc/UeMap/" << params.m_rnti;
-  if (phyRxStats->ExistsImsiPath (pathAndRnti.str ()) == true)
+    NS_LOG_FUNCTION(phyRxStats << path);
+    uint64_t imsi = 0;
+    std::ostringstream pathAndRnti;
+    std::string pathEnb = path.substr(0, path.find("/ComponentCarrierMap"));
+    pathAndRnti << pathEnb << "/LteEnbRrc/UeMap/" << params.m_rnti;
+    if (phyRxStats->ExistsImsiPath(pathAndRnti.str()) == true)
     {
-      imsi = phyRxStats->GetImsiPath (pathAndRnti.str ());
+        imsi = phyRxStats->GetImsiPath(pathAndRnti.str());
     }
-  else
+    else
     {
-      imsi = FindImsiFromEnbRlcPath (pathAndRnti.str ());
-      phyRxStats->SetImsiPath (pathAndRnti.str (), imsi);
+        imsi = FindImsiFromEnbRlcPath(pathAndRnti.str());
+        phyRxStats->SetImsiPath(pathAndRnti.str(), imsi);
     }
 
-  params.m_imsi = imsi;
-  phyRxStats->UlPhyReception (params);
+    params.m_imsi = imsi;
+    phyRxStats->UlPhyReception(params);
 }
 
 } // namespace ns3

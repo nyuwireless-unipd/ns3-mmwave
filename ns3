@@ -16,7 +16,10 @@ lock_file = os.sep.join([ns3_path, ".lock-ns3_%s_build" % sys.platform])
 max_cpu_threads = max(1, os.cpu_count() - 1)
 print_buffer = ""
 run_verbose = True
-path_sep = ";" if sys.platform == "win32" else ":"
+# Windows uses ; as a PATH entry separator,
+# but msys shell uses : just like most Unix-like systems
+path_sep = ";" if ";" in os.environ["PATH"] else ":"
+path_variable = "$PATH" if path_sep == ":" else "%PATH%"
 
 
 # Prints everything in the print_buffer on exit
@@ -27,6 +30,7 @@ def exit_handler(dry_run):
         return
     if print_buffer == "":
         return
+    print_buffer = print_buffer.replace('\\', '/').replace('//', '/').replace('/', os.sep)
     if dry_run:
         print("The following commands would be executed:")
     elif run_verbose:
@@ -77,17 +81,22 @@ def add_argument_to_subparsers(parsers: list,
 def parse_args(argv):
     parser = argparse.ArgumentParser(description="ns-3 wrapper for the CMake build system", add_help=False)
 
+    sub_parser = parser.add_subparsers()
+
     parser.add_argument('-h', '--help',
                         help="Print a summary of available commands",
-                        action="store_true", default=None, dest="help")
+                        action="store_true", default=None, dest="main_help")
+    parser_help = sub_parser.add_parser('help',
+                                        help='Print a summary of available commands')
+    parser_help.add_argument('help',
+                             help='Print a summary of available commands',
+                             action="store_true", default=False)
     # parser.add_argument('--docset',
     #               help=(
     #                   'Create Docset, without building. This requires the docsetutil tool from Xcode 9.2 or earlier.'
     #                   'See Bugzilla 2196 for more details.'),
     #               action="store_true", default=None,
     #               dest="docset_build")
-
-    sub_parser = parser.add_subparsers()
 
     parser_build = sub_parser.add_parser('build',
                                          help=('Accepts a list of targets to build,'
@@ -106,7 +115,7 @@ def parse_args(argv):
     parser_configure.add_argument('-d', '--build-profile',
                                   help='Build profile',
                                   dest='build_profile',
-                                  choices=["debug", "default", "release", "optimized"],
+                                  choices=["debug", "default", "release", "optimized", "minsizerel"],
                                   action="store", type=str, default=None)
 
     parser_configure.add_argument('-G',
@@ -129,7 +138,9 @@ def parse_args(argv):
                         "(which must call CommandLine::Parse(argc, argv))"
          ),
         ("build-version", "embedding git changes as a build version during build"),
+        ("clang-tidy", "clang-tidy static analysis"),
         ("dpdk", "the fd-net-device DPDK features"),
+        ("eigen", "Eigen3 library support"),
         ("examples", "the ns-3 examples"),
         ("gcov", "code coverage analysis"),
         ("gsl", "GNU Scientific Library (GSL) features"),
@@ -137,6 +148,8 @@ def parse_args(argv):
         ("logs", "the logs regardless of the compile mode"),
         ("monolib", "a single shared library with all ns-3 modules"),
         ("mpi", "the MPI support for distributed simulation"),
+        ("ninja-tracing", "the conversion of the Ninja generator log file into about://tracing format"),
+        ("precompiled-headers", "precompiled headers"),
         ("python-bindings", "python bindings"),
         ("tests", "the ns-3 tests"),
         ("sanitizers", "address, memory leaks and undefined behavior sanitizers"),
@@ -158,6 +171,9 @@ def parse_args(argv):
                                   action="store", type=str, default=None)
     parser_configure.add_argument('--disable-modules',
                                   help='List of modules not to build (e.g. lte;wimax)',
+                                  action="store", type=str, default=None)
+    parser_configure.add_argument('--filter-module-examples-and-tests',
+                                  help='List of modules that should have their examples and tests built (e.g. lte;wifi)',
                                   action="store", type=str, default=None)
     parser_configure.add_argument('--lcov-report',
                                   help=('Generate a code coverage report '
@@ -196,6 +212,9 @@ def parse_args(argv):
 
     parser_clean = sub_parser.add_parser('clean', help='Removes files created by ns3')
     parser_clean.add_argument('clean', action="store_true", default=False)
+
+    parser_distclean = sub_parser.add_parser('distclean', help='Removes files created by ns3, tests and documentation')
+    parser_distclean.add_argument('distclean', action="store_true", default=False)
 
     parser_install = sub_parser.add_parser('install', help='Install ns-3')
     parser_install.add_argument('install', action="store_true", default=False)
@@ -236,6 +255,15 @@ def parse_args(argv):
     parser_run.add_argument('-g', '--valgrind',
                             help='Change the default command template to run programs with valgrind',
                             action="store_true", default=None)
+    parser_run.add_argument('--memray',
+                            help='Use Memray memory profiler for Python scripts. Output will be saved to memray.output',
+                            action="store_true", default=None)
+    parser_run.add_argument('--heaptrack',
+                            help='Use Heaptrack memory profiler for C++',
+                            action="store_true", default=None)
+    parser_run.add_argument('--perf',
+                            help='Use Linux\'s perf to profile a program',
+                            action="store_true", default=None)
     parser_run.add_argument('--vis', '--visualize',
                             help='Modify --run arguments to enable the visualizer',
                             action="store_true", dest="visualize", default=None)
@@ -267,7 +295,7 @@ def parse_args(argv):
                              action="store", type=str, nargs="?", default="all")
 
     add_argument_to_subparsers(
-        [parser, parser_build, parser_configure, parser_clean, parser_docs, parser_run, parser_show],
+        [parser, parser_build, parser_configure, parser_clean, parser_distclean, parser_docs, parser_run, parser_show],
         ["--dry-run"],
         help_msg="Do not execute the commands.",
         dest="dry_run")
@@ -307,6 +335,15 @@ def parse_args(argv):
         parser_run.print_help()
         exit(-1)
 
+    # Merge attributes
+    attributes_to_merge = ["dry_run", "help", "verbose", "quiet"]
+    filtered_attributes = list(
+        filter(lambda x: x if ("disable" not in x and "enable" not in x) else None, args.__dir__()))
+    for attribute in attributes_to_merge:
+        merging_attributes = list(
+            map(lambda x: args.__getattribute__(x) if attribute in x else None, filtered_attributes))
+        setattr(args, attribute, merging_attributes.count(True) > 0)
+
     if args.help:
         print(parser.description)
         print("")
@@ -328,15 +365,6 @@ def parse_args(argv):
         print(parser.format_help().replace(parser.description, "").replace(parser.format_usage(), ""))
         exit(0)
 
-    # Merge attributes
-    attributes_to_merge = ["dry_run", "verbose", "quiet"]
-    filtered_attributes = list(
-        filter(lambda x: x if ("disable" not in x and "enable" not in x) else None, args.__dir__()))
-    for attribute in attributes_to_merge:
-        merging_attributes = list(
-            map(lambda x: args.__getattribute__(x) if attribute in x else None, filtered_attributes))
-        setattr(args, attribute, merging_attributes.count(True) > 0)
-
     attributes_to_merge = ["jobs"]
     filtered_attributes = list(filter(lambda x: x if ("disable" not in x and "enable" not in x) else 0, args.__dir__()))
     for attribute in attributes_to_merge:
@@ -345,7 +373,7 @@ def parse_args(argv):
         setattr(args, attribute, min(merging_attributes))
 
     # If some positional options are not in args, set them to false.
-    for option in ["clean", "configure", "docs", "install", "run", "shell", "uninstall", "show"]:
+    for option in ["clean", "configure", "docs", "install", "run", "shell", "uninstall", "show", "distclean"]:
         if option not in args:
             setattr(args, option, False)
 
@@ -399,23 +427,83 @@ def print_and_buffer(message):
     print_buffer += "\n" + message
 
 
-def clean_cmake_artifacts(dry_run=False):
-    print_and_buffer("rm -R %s" % os.path.relpath(out_dir, ns3_path))
+def remove_dir(dir_to_remove, dry_run, directory_qualifier=""):
+    dir_to_remove = os.path.abspath(dir_to_remove)
+    if os.path.exists(dir_to_remove):
+        if ".." in os.path.relpath(dir_to_remove, ns3_path):
+            # In case the directory to remove isn't within
+            # the current ns-3 directory, print an error
+            # message for the dry-run case
+            # Or throw an exception in a normal run
+            error_message = (f"The {directory_qualifier} directory '{dir_to_remove}' "
+                             "is not within the current ns-3 directory. "
+                             "Deleting it can cause data loss.")
+            if dry_run:
+                print_and_buffer(error_message)
+                return
+            else:
+                raise Exception(error_message)
 
-    if not dry_run:
-        shutil.rmtree(out_dir, ignore_errors=True)
+        # Remove directories that are within the current ns-3 directory
+        print_and_buffer("rm -R %s" % os.path.relpath(dir_to_remove, ns3_path))
+        if not dry_run:
+            shutil.rmtree(dir_to_remove, ignore_errors=True)
+
+
+def remove_file(file_to_remove, dry_run):
+    if os.path.exists(file_to_remove):
+        print_and_buffer("rm -R %s" % os.path.relpath(file_to_remove, ns3_path))
+        if not dry_run:
+            os.remove(file_to_remove)
+
+
+def clean_cmake_artifacts(dry_run=False):
+    remove_dir(out_dir, dry_run, "output")
 
     cmake_cache_files = glob.glob("%s/**/CMakeCache.txt" % ns3_path, recursive=True)
     for cmake_cache_file in cmake_cache_files:
         dirname = os.path.dirname(cmake_cache_file)
-        print_and_buffer("rm -R %s" % os.path.relpath(dirname, ns3_path))
-        if not dry_run:
-            shutil.rmtree(dirname, ignore_errors=True)
+        remove_dir(dirname, dry_run, "CMake cache")
 
-    if os.path.exists(lock_file):
-        print_and_buffer("rm %s" % os.path.relpath(lock_file, ns3_path))
-        if not dry_run:
-            os.remove(lock_file)
+    dirs_to_remove = [os.path.join(ns3_path, "testpy-output"),
+                      os.path.join(ns3_path, "__pycache__")
+                      ]
+    for dir_to_remove in dirs_to_remove:
+        remove_dir(dir_to_remove, dry_run)
+
+    remove_file(lock_file, dry_run)
+
+
+def clean_docs_and_tests_artifacts(dry_run=False):
+    docs_dir = os.path.join(ns3_path, 'doc')
+
+    file_artifacts = ["doxygen.log",
+                      "doxygen.warnings.log",
+                      "introspected-command-line.h",
+                      "introspected-doxygen.h",
+                      "ns3-object.txt"]
+    docs_files = [os.path.join(docs_dir, filename) for filename in file_artifacts]
+
+    docs_and_tests_dirs = [os.path.join(docs_dir, "html"),
+                           os.path.join(docs_dir, "html-warn"),
+                           ]
+    docs_and_tests_dirs.extend(glob.glob(f"{docs_dir}/**/build", recursive=True))
+    docs_and_tests_dirs.extend(glob.glob(f"{docs_dir}/**/source-temp", recursive=True))
+
+    for directory in docs_and_tests_dirs:
+        remove_dir(directory, dry_run)
+
+    for file in docs_files:
+        remove_file(file, dry_run)
+
+
+def clean_pip_packaging_artifacts(dry_run=False):
+    pip_dirs = [os.path.join(ns3_path, "dist"),
+                os.path.join(ns3_path, "nsnam.egg-info"),
+                os.path.join(ns3_path, "wheelhouse")
+                ]
+    for directory in pip_dirs:
+        remove_dir(directory, dry_run)
 
 
 def search_cmake_cache(build_profile):
@@ -529,25 +617,30 @@ def configure_cmake(cmake, args, current_cmake_cache_folder, current_cmake_gener
     # Build type
     if args.build_profile is not None:
         args.build_profile = args.build_profile.lower()
-        if args.build_profile not in ["debug", "default", "release", "optimized"]:
+        if args.build_profile not in ["debug", "default", "release", "optimized", "minsizerel", "relwithdebinfo"]:
             raise Exception("Unknown build type")
         else:
             if args.build_profile == "debug":
                 cmake_args.extend(
                     "-DCMAKE_BUILD_TYPE=debug -DNS3_ASSERT=ON -DNS3_LOG=ON -DNS3_WARNINGS_AS_ERRORS=ON".split())
-            elif args.build_profile == "default":
+            elif args.build_profile in ["default", "relwithdebinfo"]:
                 cmake_args.extend(
                     "-DCMAKE_BUILD_TYPE=default -DNS3_ASSERT=ON -DNS3_LOG=ON -DNS3_WARNINGS_AS_ERRORS=OFF".split())
+            elif args.build_profile in ["release", "optimized"]:
+                cmake_args.extend(
+                    "-DCMAKE_BUILD_TYPE=release -DNS3_ASSERT=OFF -DNS3_LOG=OFF -DNS3_WARNINGS_AS_ERRORS=OFF".split())
             else:
                 cmake_args.extend(
-                    "-DCMAKE_BUILD_TYPE=release -DNS3_ASSERT=OFF -DNS3_LOG=OFF -DNS3_WARNINGS_AS_ERRORS=OFF".split()
+                    "-DCMAKE_BUILD_TYPE=minsizerel -DNS3_ASSERT=OFF -DNS3_LOG=OFF -DNS3_WARNINGS_AS_ERRORS=OFF".split()
                 )
             cmake_args.append("-DNS3_NATIVE_OPTIMIZATIONS=%s" % on_off((args.build_profile == "optimized")))
 
     options = (("ASSERT", "asserts"),
+               ("CLANG_TIDY", "clang_tidy"),
                ("COVERAGE", "gcov"),
                ("DES_METRICS", "des_metrics"),
                ("DPDK", "dpdk"),
+               ("EIGEN", "eigen"),
                ("ENABLE_BUILD_VERSION", "build_version"),
                ("ENABLE_SUDO", "sudo"),
                ("EXAMPLES", "examples"),
@@ -556,6 +649,8 @@ def configure_cmake(cmake, args, current_cmake_cache_folder, current_cmake_gener
                ("LOG", "logs"),
                ("MONOLIB", "monolib"),
                ("MPI", "mpi"),
+               ("NINJA_TRACING", "ninja_tracing"),
+               ("PRECOMPILE_HEADERS", "precompiled_headers"),
                ("PYTHON_BINDINGS", "python_bindings"),
                ("SANITIZE", "sanitizers"),
                ("STATIC", "static"),
@@ -567,12 +662,17 @@ def configure_cmake(cmake, args, current_cmake_cache_folder, current_cmake_gener
     for (cmake_flag, option_name) in options:
         arg = on_off_condition(args, cmake_flag, option_name)
         if arg:
+            is_on = "=ON" in arg
+            reverse = arg.replace("=ON" if is_on else "=OFF",
+                                  "=OFF" if is_on else "=ON")
+            if reverse in cmake_args:
+                cmake_args.remove(reverse)
             cmake_args.append(arg)
 
     if args.lcov_zerocounters is not None:
         cmake_args.append("-DNS3_COVERAGE_ZERO_COUNTERS=%s" % on_off(args.lcov_zerocounters))
 
-    # Output, Brite, Click and Openflow directories
+    # Output, Brite, Click and Openflow dirs
     if args.output_directory is not None:
         cmake_args.append("-DNS3_OUTPUT_DIRECTORY=%s" % args.output_directory)
 
@@ -589,11 +689,14 @@ def configure_cmake(cmake, args, current_cmake_cache_folder, current_cmake_gener
         cmake_args.append("-DCMAKE_INSTALL_PREFIX=%s" % args.prefix)
 
     # Process enabled/disabled modules
-    if args.enable_modules:
+    if args.enable_modules is not None:
         cmake_args.append("-DNS3_ENABLED_MODULES=%s" % args.enable_modules)
 
-    if args.disable_modules:
+    if args.disable_modules is not None:
         cmake_args.append("-DNS3_DISABLED_MODULES=%s" % args.disable_modules)
+
+    if args.filter_module_examples_and_tests is not None:
+        cmake_args.append("-DNS3_FILTER_MODULE_EXAMPLES_AND_TESTS=%s" % args.filter_module_examples_and_tests)
 
     # Try to set specified generator (will probably fail if there is an old cache)
     if args.G:
@@ -636,7 +739,8 @@ def update_scratches_list(current_cmake_cache_folder):
 
 
 def refresh_cmake(current_cmake_cache_folder, output):
-    ret = subprocess.run([shutil.which("cmake"), ".."], cwd=current_cmake_cache_folder, stdout=output)
+    cmake, _ = cmake_check_version()
+    ret = subprocess.run([cmake, ".."], cwd=current_cmake_cache_folder, stdout=output)
     if ret.returncode != 0:
         exit(ret.returncode)
     update_scratches_list(current_cmake_cache_folder)
@@ -654,7 +758,10 @@ def get_program_shortcuts(build_profile, ns3_version):
     for program in programs_dict["ns3_runnable_programs"]:
         if "pch_exec" in program:
             continue
-        temp_path = program.replace(out_dir, "").split(os.sep)
+        temp_path = program.replace(out_dir, "")
+        # Sometimes Windows uses \\, sometimes /
+        # quite the mess
+        temp_path = temp_path.split(os.sep if os.sep in temp_path else '/')
         temp_path.pop(0)  # remove first path separator
 
         # Remove version prefix and build type suffix from shortcuts (or keep them too?)
@@ -686,9 +793,19 @@ def get_program_shortcuts(build_profile, ns3_version):
                 longest_shortcut_map[shortcut_path].append(longest_shortcut)
 
             ns3_program_map[shortcut_path] = [program]
+
+            # Add an additional shortcut with .exe suffix when running on Windows
+            if sys.platform == "win32":
+                ns3_program_map[shortcut_path.replace("\\", "/")] = [program]
+                ns3_program_map[shortcut_path + ".exe"] = [program]
+                ns3_program_map[shortcut_path.replace("\\", "/") + ".exe"] = [program]
+
             if source_shortcut:
                 cc_shortcut_path = shortcut_path + ".cc"
                 ns3_program_map[cc_shortcut_path] = [program]
+                if sys.platform == "win32":
+                    ns3_program_map[cc_shortcut_path] = [program]
+                    ns3_program_map[cc_shortcut_path.replace("\\", "/")] = [program]
 
                 # Store longest shortcut path for collisions
                 if cc_shortcut_path not in longest_shortcut_map:
@@ -724,9 +841,10 @@ def parse_version(version_str):
 
 def cmake_check_version():
     # Check CMake version
-    cmake = shutil.which("cmake")
+    cmake3 = shutil.which("cmake3")
+    cmake = cmake3 if cmake3 else shutil.which("cmake")
     if not cmake:
-        print("Error:  CMake not found; please install version 3.10 or greater, or modify $PATH")
+        print("Error:  CMake not found; please install version 3.10 or greater, or modify", path_variable)
         exit(1)
     cmake_output = subprocess.check_output([cmake, "--version"]).decode("utf-8")
     version = re.findall("version (.*)", cmake_output)[0]
@@ -737,12 +855,12 @@ def cmake_check_version():
 
 
 def cmake_build(current_cmake_cache_folder, output, jobs, target=None, dry_run=False, build_verbose=False):
-    _, version = cmake_check_version()
+    cmake, version = cmake_check_version()
 
     # Older CMake versions don't accept the number of jobs directly
     jobs_part = ("-j %d" % jobs) if parse_version(version) >= parse_version("3.12.0") else ""
     target_part = (" --target %s" % target) if target else ""
-    cmake_build_command = "cmake --build . %s%s" % (jobs_part, target_part)
+    cmake_build_command = "%s --build . %s%s" % (cmake, jobs_part, target_part)
 
     print_and_buffer("cd %s; %s ; cd %s" % (os.path.relpath(current_cmake_cache_folder, ns3_path),
                                             cmake_build_command,
@@ -923,12 +1041,14 @@ def build_step(args,
         non_executable_targets = ["assemble-introspected-command-line",
                                   "check-version",
                                   "cmake-format",
+                                  "coverage_gcc",
                                   "docs",
                                   "doxygen",
                                   "doxygen-no-build",
                                   "sphinx",
                                   "manual",
                                   "models",
+                                  "ninjaTrace",
                                   "timeTraceReport",
                                   "tutorial",
                                   "contributing",
@@ -973,6 +1093,23 @@ def build_step(args,
                     )
 
 
+def check_program_installed(program_name: str) -> str:
+    program_path = shutil.which(program_name)
+    if program_path is None:
+        print("Executable '{program}' was not found".format(program=program_name.capitalize()))
+        exit(-1)
+    return program_path
+
+
+def check_module_installed(module_name: str):
+    import importlib
+    try:
+        importlib.import_module(module_name)
+    except ImportError:
+        print("Python module '{module}' was not found".format(module=module_name))
+        exit(-1)
+
+
 def run_step(args, target_to_run, target_args):
     libdir = "%s/lib" % out_dir
 
@@ -1003,21 +1140,42 @@ def run_step(args, target_to_run, target_args):
             target_args = [target_to_run] + target_args
             target_to_run = "python3"
 
+            # running with memray?
+            if args.memray:
+                check_module_installed("memray")
+                target_args = ["-m", "memray", "run", "-o", "memray.output", "--native"] + target_args
+
         # running from ns-3-dev (ns3_path) or cwd
         if args.cwd:
             working_dir = args.cwd
 
+        # running with heaptrack?
+        if args.heaptrack:
+            debugging_software.append(check_program_installed("heaptrack"))
+
         # running valgrind?
         if args.valgrind:
-            debugging_software.extend([shutil.which("valgrind"), "--leak-check=full", "--show-leak-kinds=all"])
+            debugging_software.extend(
+                [check_program_installed("valgrind"), "--leak-check=full", "--show-leak-kinds=all"])
 
         # running gdb?
         if args.gdb:
-            debugging_software.extend([shutil.which("gdb"), "--args"])
+            gdb_eval_command = []
+            if os.getenv("gdb_eval"):
+                gdb_eval_command.append("--eval-command=quit")
+            debugging_software.extend([check_program_installed("gdb"), *gdb_eval_command, "--args"])
 
         # running lldb?
         if args.lldb:
-            debugging_software.extend([shutil.which("lldb"), "--"])
+            debugging_software.extend([check_program_installed("lldb"), "--"])
+
+        # running with perf?
+        if args.perf:
+            debugging_software.extend([
+                check_program_installed("perf"),
+                "record", "--call-graph", "dwarf", "-e",
+                "cache-misses,branch-misses,cpu-cycles,stalled-cycles-frontend,stalled-cycles-backend"
+            ])
 
         # running with the visualizer?
         if args.visualize:
@@ -1026,6 +1184,7 @@ def run_step(args, target_to_run, target_args):
         # running with command template?
         if args.command_template:
             commands = (args.command_template % target_to_run).split()
+            check_program_installed(commands[0])
             target_to_run = commands[0]
             target_args = commands[1:] + target_args
 
@@ -1041,7 +1200,7 @@ def run_step(args, target_to_run, target_args):
         exported_variables = "export "
         for (variable, value) in custom_env.items():
             if variable == "PATH":
-                value = "$PATH" + path_sep + libdir
+                value = path_variable + path_sep + libdir
             exported_variables += "%s=%s " % (variable, value)
         print_and_buffer("cd %s; %s; %s" % (os.path.relpath(ns3_path, working_dir),
                                             exported_variables,
@@ -1053,10 +1212,10 @@ def run_step(args, target_to_run, target_args):
         try:
             subprocess.run(program_arguments, env=proc_env, cwd=working_dir, shell=use_shell, check=True)
         except subprocess.CalledProcessError as e:
-            # Replace full path to binary to relative path
-            e.cmd[0] = os.path.relpath(target_to_run, ns3_path)
             # Replace list of arguments with a single string
             e.cmd = " ".join(e.cmd)
+            # Replace full path to binary to relative path
+            e.cmd = e.cmd.replace(os.path.abspath(target_to_run), os.path.relpath(target_to_run, ns3_path))
             # Print error message and forward the return code
             print(e)
             exit(e.returncode)
@@ -1084,7 +1243,7 @@ def non_ambiguous_program_target_list(programs: dict) -> list:
 
 
 def print_targets_list(ns3_modules: list, ns3_programs: dict) -> None:
-    def list_to_table(l: list) -> str:
+    def list_to_table(targets_list: list) -> str:
         # Set column width and check how much is space is left at the end
         columnwidth = 30
         try:
@@ -1094,10 +1253,10 @@ def print_targets_list(ns3_modules: list, ns3_programs: dict) -> None:
         dead_space = terminal_width % columnwidth
 
         # Filter the targets with names longer than the column width
-        large_items = list(filter(lambda x: len(x) >= columnwidth, l))
+        large_items = list(filter(lambda x: len(x) >= columnwidth, targets_list))
 
         # Then filter the targets with names shorter than the column width
-        small_items = sorted(list(set(l) - set(large_items)))
+        small_items = sorted(list(set(targets_list) - set(large_items)))
 
         prev_new_line = 0
         output = "\n"
@@ -1243,7 +1402,8 @@ def main():
     refuse_run_as_root()
 
     # Enable colorized output for CMake and GCC/Clang
-    os.environ["CLICOLOR"] = "1"
+    if os.getenv("CLICOLOR") is None:
+        os.environ["CLICOLOR"] = "1"
 
     # If pybindgen exists in the parent directory
     # (e.g. ns3-all-in-one), add it to the PYTHONPATH
@@ -1272,6 +1432,13 @@ def main():
         # We end things earlier when cleaning
         return
 
+    if args.distclean:
+        clean_cmake_artifacts(dry_run=args.dry_run)
+        clean_docs_and_tests_artifacts(dry_run=args.dry_run)
+        clean_pip_packaging_artifacts(dry_run=args.dry_run)
+        # We end things earlier when cleaning
+        return
+
     # Installation and uninstallation options become cmake targets
     if args.install:
         args.build = ['install']
@@ -1290,7 +1457,7 @@ def main():
         args.build = [args.docs] if args.docs != "all" else ["sphinx", "doxygen"]
         if "doxygen" in args.build and (not build_info["ENABLE_EXAMPLES"] or not build_info["ENABLE_TESTS"]):
             print('The "./ns3 docs doxygen" and "./ns3 docs all" commands,\n'
-                  'require examples and tests to generate introspected documentation.\n'
+                  'requires examples and tests to generate introspected documentation.\n'
                   'Try "./ns3 docs doxygen-no-build" or enable examples and tests.')
             exit(1)
 
@@ -1424,8 +1591,8 @@ def main():
         :param target_path: path to the executable to run
         :return: target_path without the overlapping parts
         """
-        target_path = target_path.split(os.sep)
-        base_path = base_path.split(os.sep)
+        target_path = target_path.replace('/', os.sep).split(os.sep)
+        base_path = base_path.replace('/', os.sep).split(os.sep)
         while target_path[0] in base_path:
             target_path = target_path[1:]
         target_path = os.sep.join(target_path)
@@ -1441,6 +1608,8 @@ def main():
                 if os.path.exists(os.sep.join([out_dir, waf_target_to_run])):
                     target_to_run = waf_target_to_run
         target_to_run = os.sep.join([out_dir, target_to_run])
+        if sys.platform == "win32":
+            target_to_run += ".exe"
 
         # If we're only trying to run the target, we need to check if it actually exists first
         if (run_only or build_and_run) and ".py" not in target_to_run and not os.path.exists(target_to_run):

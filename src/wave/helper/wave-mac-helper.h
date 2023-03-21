@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2008 INRIA
  * Copyright (c) 2009 MIRKO BANCHI
@@ -25,7 +24,8 @@
 #define WAVE_MAC_HELPER_H
 #include "ns3/wifi-mac-helper.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup wave
@@ -33,36 +33,36 @@ namespace ns3 {
  */
 class NqosWaveMacHelper : public WifiMacHelper
 {
-public:
-  /**
-   * Create a NqosWaveMacHelper to make life easier for people who want to
-   * work with non-QOS Wave MAC layers.
-   */
-  NqosWaveMacHelper (void);
+  public:
+    /**
+     * Create a NqosWaveMacHelper to make life easier for people who want to
+     * work with non-QOS Wave MAC layers.
+     */
+    NqosWaveMacHelper();
 
-  /**
-   * Destroy a NqosWaveMacHelper.
-   */
-  virtual ~NqosWaveMacHelper (void);
-  /**
-   * Create a mac helper in a default working state.
-   * i.e., this is an ocb mac by default.
-   * \returns NqosWaveMacHelper
-   */
-  static NqosWaveMacHelper Default (void);
-  /**
-   * \tparam Ts \deduced Argument types
-   * \param type the type of ns3::WifiMac to create.
-   * \param [in] args Name and AttributeValue pairs to set.
-   *
-   * All the attributes specified in this method should exist
-   * in the requested mac.
-   *
-   * note: Here we require users set type with OcbWifiMac or its
-   * subclass, otherwise it will become error
-   */
-  template <typename... Ts>
-  void SetType (std::string type, Ts&&... args);
+    /**
+     * Destroy a NqosWaveMacHelper.
+     */
+    ~NqosWaveMacHelper() override;
+    /**
+     * Create a mac helper in a default working state.
+     * i.e., this is an ocb mac by default.
+     * \returns NqosWaveMacHelper
+     */
+    static NqosWaveMacHelper Default();
+    /**
+     * \tparam Ts \deduced Argument types
+     * \param type the type of ns3::WifiMac to create.
+     * \param [in] args Name and AttributeValue pairs to set.
+     *
+     * All the attributes specified in this method should exist
+     * in the requested mac.
+     *
+     * note: Here we require users set type with OcbWifiMac or its
+     * subclass, otherwise it will become error
+     */
+    template <typename... Ts>
+    void SetType(std::string type, Ts&&... args);
 };
 
 /**
@@ -71,65 +71,65 @@ public:
  */
 class QosWaveMacHelper : public WifiMacHelper
 {
-public:
-  /**
-   * Create a QosWaveMacHelper that is used to make life easier when working
-   * with Wifi 802.11p devices using a QOS MAC layer.
-   */
-  QosWaveMacHelper (void);
+  public:
+    /**
+     * Create a QosWaveMacHelper that is used to make life easier when working
+     * with Wifi 802.11p devices using a QOS MAC layer.
+     */
+    QosWaveMacHelper();
 
-  /**
-   * Destroy a QosWaveMacHelper
-   */
-  virtual ~QosWaveMacHelper (void);
+    /**
+     * Destroy a QosWaveMacHelper
+     */
+    ~QosWaveMacHelper() override;
 
-  /**
-   * Create a mac helper in a default working state.
-   * \return A mac helper
-   */
-  static QosWaveMacHelper Default (void);
+    /**
+     * Create a mac helper in a default working state.
+     * \return A mac helper
+     */
+    static QosWaveMacHelper Default();
 
-  /**
-   * \tparam Ts \deduced Argument types
-   * \param type the type of ns3::WifiMac to create.
-   * \param [in] args Name and AttributeValue pairs to set.
-   *
-   * All the attributes specified in this method should exist
-   * in the requested mac.
-   *
-   * note: Here we require users set type with OcbWifiMac or its
-   * subclass, otherwise it will become error
-   */
-  template <typename... Ts>
-  void SetType (std::string type, Ts&&... args);
+    /**
+     * \tparam Ts \deduced Argument types
+     * \param type the type of ns3::WifiMac to create.
+     * \param [in] args Name and AttributeValue pairs to set.
+     *
+     * All the attributes specified in this method should exist
+     * in the requested mac.
+     *
+     * note: Here we require users set type with OcbWifiMac or its
+     * subclass, otherwise it will become error
+     */
+    template <typename... Ts>
+    void SetType(std::string type, Ts&&... args);
 };
-
-
 
 /***************************************************************
  *  Implementation of the templates declared above.
  ***************************************************************/
 
 template <typename... Ts>
- void NqosWaveMacHelper::SetType (std::string type, Ts&&... args)
+void
+NqosWaveMacHelper::SetType(std::string type, Ts&&... args)
 {
-  if (type.compare ("ns3::OcbWifiMac") != 0)
+    if (type != "ns3::OcbWifiMac")
     {
-      NS_FATAL_ERROR ("QosWaveMacHelper shall set OcbWifiMac");
+        NS_FATAL_ERROR("QosWaveMacHelper shall set OcbWifiMac");
     }
-  WifiMacHelper::SetType ("ns3::OcbWifiMac", std::forward<Ts> (args)...);
+    WifiMacHelper::SetType("ns3::OcbWifiMac", std::forward<Ts>(args)...);
 }
 
 template <typename... Ts>
-void QosWaveMacHelper::SetType (std::string type, Ts&&... args)
+void
+QosWaveMacHelper::SetType(std::string type, Ts&&... args)
 {
-  if (type.compare ("ns3::OcbWifiMac") != 0)
+    if (type != "ns3::OcbWifiMac")
     {
-      NS_FATAL_ERROR ("QosWaveMacHelper shall set OcbWifiMac");
+        NS_FATAL_ERROR("QosWaveMacHelper shall set OcbWifiMac");
     }
-  WifiMacHelper::SetType ("ns3::OcbWifiMac", std::forward<Ts> (args)...);
+    WifiMacHelper::SetType("ns3::OcbWifiMac", std::forward<Ts>(args)...);
 }
 
-}
+} // namespace ns3
 
 #endif /* WAVE_MAC_HELPER_H */

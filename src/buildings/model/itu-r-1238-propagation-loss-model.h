@@ -1,4 +1,3 @@
-/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2011, 2012 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *
@@ -23,10 +22,11 @@
 #ifndef ITU_R_1238_PROPAGATION_LOSS_MODEL_H
 #define ITU_R_1238_PROPAGATION_LOSS_MODEL_H
 
-#include <ns3/propagation-loss-model.h>
 #include <ns3/propagation-environment.h>
+#include <ns3/propagation-loss-model.h>
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * This class implements the ITU-R 1238 propagation loss model.
@@ -34,40 +34,34 @@ namespace ns3 {
  */
 class ItuR1238PropagationLossModel : public PropagationLossModel
 {
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return The object TypeId.
+     */
+    static TypeId GetTypeId();
 
-public:
+    /**
+     *
+     *
+     * \param a the first mobility model
+     * \param b the second mobility model
+     *
+     * \return the loss in dBm for the propagation between
+     * the two given mobility models
+     */
+    double GetLoss(Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
 
-  /**
-   * \brief Get the type ID.
-   * \return The object TypeId.
-   */
-  static TypeId GetTypeId (void);
+  private:
+    // inherited from PropagationLossModel
+    double DoCalcRxPower(double txPowerDbm,
+                         Ptr<MobilityModel> a,
+                         Ptr<MobilityModel> b) const override;
+    int64_t DoAssignStreams(int64_t stream) override;
 
-  /**
-   *
-   *
-   * \param a the first mobility model
-   * \param b the second mobility model
-   *
-   * \return the loss in dBm for the propagation between
-   * the two given mobility models
-   */
-  double GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
-
-private:
-
-  // inherited from PropagationLossModel
-  virtual double DoCalcRxPower (double txPowerDbm,
-                                Ptr<MobilityModel> a,
-                                Ptr<MobilityModel> b) const;
-  virtual int64_t DoAssignStreams (int64_t stream);
-
-  double m_frequency; ///< frequency in MHz
-
+    double m_frequency; ///< frequency in MHz
 };
 
 } // namespace ns3
 
-
 #endif // ITU_R_1238_PROPAGATION_LOSS_MODEL_H
-

@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2011 Adrian Sai-wah Tam
  * Copyright (c) 2015 ResiliNets, ITTC, University of Kansas
@@ -26,10 +25,11 @@
 #ifndef TCP_OPTION_SACK_H
 #define TCP_OPTION_SACK_H
 
-#include "ns3/tcp-option.h"
 #include "ns3/sequence-number.h"
+#include "ns3/tcp-option.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \brief Defines the TCP option of kind 5 (selective acknowledgment option) as
@@ -48,54 +48,54 @@ namespace ns3 {
  */
 class TcpOptionSack : public TcpOption
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
-  virtual TypeId GetInstanceTypeId (void) const;
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
+    TypeId GetInstanceTypeId() const override;
 
-  typedef std::pair<SequenceNumber32, SequenceNumber32> SackBlock; //!< SACK block definition
-  typedef std::list<SackBlock> SackList;                           //!< SACK list definition
+    typedef std::pair<SequenceNumber32, SequenceNumber32> SackBlock; //!< SACK block definition
+    typedef std::list<SackBlock> SackList;                           //!< SACK list definition
 
-  TcpOptionSack ();
-  virtual ~TcpOptionSack ();
+    TcpOptionSack();
+    ~TcpOptionSack() override;
 
-  virtual void Print (std::ostream &os) const;
-  virtual void Serialize (Buffer::Iterator start) const;
-  virtual uint32_t Deserialize (Buffer::Iterator start);
+    void Print(std::ostream& os) const override;
+    void Serialize(Buffer::Iterator start) const override;
+    uint32_t Deserialize(Buffer::Iterator start) override;
 
-  virtual uint8_t GetKind (void) const;
-  virtual uint32_t GetSerializedSize (void) const;
+    uint8_t GetKind() const override;
+    uint32_t GetSerializedSize() const override;
 
-  /**
-   * \brief Add a SACK block
-   * \param s the SACK block to be added
-   */
-  void AddSackBlock (SackBlock s);
+    /**
+     * \brief Add a SACK block
+     * \param s the SACK block to be added
+     */
+    void AddSackBlock(SackBlock s);
 
-  /**
-   * \brief Count the total number of SACK blocks
-   * \return the total number of SACK blocks
-   */
-  uint32_t GetNumSackBlocks (void) const;
+    /**
+     * \brief Count the total number of SACK blocks
+     * \return the total number of SACK blocks
+     */
+    uint32_t GetNumSackBlocks() const;
 
-  /**
-   * \brief Clear the SACK list
-   */
-  void ClearSackList (void);
+    /**
+     * \brief Clear the SACK list
+     */
+    void ClearSackList();
 
-  /**
-   * \brief Get the SACK list
-   * \return the SACK list
-   */
-  SackList GetSackList (void) const;
+    /**
+     * \brief Get the SACK list
+     * \return the SACK list
+     */
+    SackList GetSackList() const;
 
-  friend std::ostream & operator<< (std::ostream & os, TcpOptionSack const & sackOption);
+    friend std::ostream& operator<<(std::ostream& os, const TcpOptionSack& sackOption);
 
-protected:
-  SackList m_sackList; //!< the list of SACK blocks
+  protected:
+    SackList m_sackList; //!< the list of SACK blocks
 };
 
 /**
@@ -104,8 +104,7 @@ protected:
  * \param sackOption the option to print.
  * \returns The output stream.
  */
-std::ostream & operator<< (std::ostream & os,
-                           TcpOptionSack const & sackOption);
+std::ostream& operator<<(std::ostream& os, const TcpOptionSack& sackOption);
 
 /**
  * \brief Output operator.
@@ -113,8 +112,7 @@ std::ostream & operator<< (std::ostream & os,
  * \param sackBlock the block to print.
  * \returns The output stream.
  */
-std::ostream & operator<< (std::ostream & os,
-                           TcpOptionSack::SackBlock const & sackBlock);
+std::ostream& operator<<(std::ostream& os, const TcpOptionSack::SackBlock& sackBlock);
 
 } // namespace ns3
 

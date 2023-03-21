@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2008,2009 IITP RAS
  *
@@ -19,45 +18,53 @@
  */
 
 #include "ie-dot11s-peering-protocol.h"
-namespace ns3 {
-namespace dot11s {
-uint8_t
-IePeeringProtocol::GetInformationFieldSize () const
+
+namespace ns3
 {
-  return 1;
+namespace dot11s
+{
+uint16_t
+IePeeringProtocol::GetInformationFieldSize() const
+{
+    return 1;
 }
-IePeeringProtocol::IePeeringProtocol () :
-  m_protocol (0)
+
+IePeeringProtocol::IePeeringProtocol()
+    : m_protocol(0)
 {
 }
+
 WifiInformationElementId
-IePeeringProtocol::ElementId () const
+IePeeringProtocol::ElementId() const
 {
-  return IE11S_MESH_PEERING_PROTOCOL_VERSION;
+    return IE11S_MESH_PEERING_PROTOCOL_VERSION;
 }
+
 void
-IePeeringProtocol::SerializeInformationField (Buffer::Iterator i) const
+IePeeringProtocol::SerializeInformationField(Buffer::Iterator i) const
 {
-  i.WriteU8 (m_protocol);
+    i.WriteU8(m_protocol);
 }
-uint8_t
-IePeeringProtocol::DeserializeInformationField (Buffer::Iterator i, uint8_t length)
+
+uint16_t
+IePeeringProtocol::DeserializeInformationField(Buffer::Iterator i, uint16_t length)
 {
-  Buffer::Iterator start = i;
-  m_protocol = i.ReadU8 ();
-  return i.GetDistanceFrom (start);
+    Buffer::Iterator start = i;
+    m_protocol = i.ReadU8();
+    return i.GetDistanceFrom(start);
 }
+
 void
-IePeeringProtocol::Print (std::ostream& os) const
+IePeeringProtocol::Print(std::ostream& os) const
 {
-  os << "PeeringProtocol=(peering protocol=" << m_protocol << ")";
+    os << "PeeringProtocol=(peering protocol=" << m_protocol << ")";
 }
-std::ostream &
-operator << (std::ostream &os, const IePeeringProtocol &a)
+
+std::ostream&
+operator<<(std::ostream& os, const IePeeringProtocol& a)
 {
-  a.Print (os);
-  return os;
+    a.Print(os);
+    return os;
 }
 } // namespace dot11s
 } // namespace ns3
-

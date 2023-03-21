@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2005 INRIA
  *
@@ -22,9 +21,10 @@
 #define LIST_SCHEDULER_H
 
 #include "scheduler.h"
+
 #include <list>
-#include <utility>
 #include <stdint.h>
+#include <utility>
 
 /**
  * \file
@@ -32,7 +32,8 @@
  * ns3::ListScheduler declaration.
  */
 
-namespace ns3 {
+namespace ns3
+{
 
 class EventImpl;
 
@@ -63,33 +64,33 @@ class EventImpl;
  */
 class ListScheduler : public Scheduler
 {
-public:
-  /**
-   *  Register this type.
-   *  \return The object TypeId.
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     *  Register this type.
+     *  \return The object TypeId.
+     */
+    static TypeId GetTypeId();
 
-  /** Constructor. */
-  ListScheduler ();
-  /** Destructor. */
-  virtual ~ListScheduler ();
+    /** Constructor. */
+    ListScheduler();
+    /** Destructor. */
+    ~ListScheduler() override;
 
-  // Inherited
-  virtual void Insert (const Scheduler::Event &ev);
-  virtual bool IsEmpty (void) const;
-  virtual Scheduler::Event PeekNext (void) const;
-  virtual Scheduler::Event RemoveNext (void);
-  virtual void Remove (const Scheduler::Event &ev);
+    // Inherited
+    void Insert(const Scheduler::Event& ev) override;
+    bool IsEmpty() const override;
+    Scheduler::Event PeekNext() const override;
+    Scheduler::Event RemoveNext() override;
+    void Remove(const Scheduler::Event& ev) override;
 
-private:
-  /** Event list type: a simple list of Events. */
-  typedef std::list<Scheduler::Event> Events;
-  /** Events iterator. */
-  typedef std::list<Scheduler::Event>::iterator EventsI;
+  private:
+    /** Event list type: a simple list of Events. */
+    typedef std::list<Scheduler::Event> Events;
+    /** Events iterator. */
+    typedef std::list<Scheduler::Event>::iterator EventsI;
 
-  /** The event list. */
-  Events m_events;
+    /** The event list. */
+    Events m_events;
 };
 
 } // namespace ns3

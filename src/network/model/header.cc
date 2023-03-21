@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2008 INRIA
  *
@@ -19,33 +18,33 @@
  */
 
 #include "header.h"
+
 #include "ns3/log.h"
 
-namespace ns3 {
-
-NS_LOG_COMPONENT_DEFINE ("Header");
-
-NS_OBJECT_ENSURE_REGISTERED (Header);
-
-Header::~Header ()
+namespace ns3
 {
-  NS_LOG_FUNCTION (this);
+
+NS_LOG_COMPONENT_DEFINE("Header");
+
+NS_OBJECT_ENSURE_REGISTERED(Header);
+
+Header::~Header()
+{
+    NS_LOG_FUNCTION(this);
 }
 
 TypeId
-Header::GetTypeId (void)
+Header::GetTypeId()
 {
-  static TypeId tid = TypeId ("ns3::Header")
-    .SetParent<Chunk> ()
-    .SetGroupName("Network")
-  ;
-  return tid;
+    static TypeId tid = TypeId("ns3::Header").SetParent<Chunk>().SetGroupName("Network");
+    return tid;
 }
 
-std::ostream & operator << (std::ostream &os, const Header &header)
+std::ostream&
+operator<<(std::ostream& os, const Header& header)
 {
-  header.Print (os);
-  return os;
+    header.Print(os);
+    return os;
 }
 
 } // namespace ns3

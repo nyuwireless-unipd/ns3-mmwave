@@ -23,6 +23,7 @@ on the IEEE 802.11 standard [ieee80211]_. We will go into more detail below but 
 * **802.11a**, **802.11b**, **802.11g**, **802.11n** (both 2.4 and 5 GHz bands), **802.11ac**, **802.11ax** (2.4, 5 and 6 GHz bands) and **802.11be** physical layers
 * **MSDU aggregation** and **MPDU aggregation** extensions of 802.11n, and both can be combined together (two-level aggregation)
 * 802.11ax **DL OFDMA** and **UL OFDMA** (including support for the MU EDCA Parameter Set)
+* 802.11be **Multi-link** discovery and setup
 * QoS-based EDCA and queueing extensions of **802.11e**
 * the ability to use different propagation loss models and propagation delay models,
   please see the chapter on :ref:`Propagation` for more detail
@@ -61,8 +62,10 @@ The implementation is modular and provides roughly three sublayers of models:
   this sublayer is sometimes called the **upper MAC** and consists of more
   software-oriented implementations vs. time-critical hardware implementations.
 
-Next, we provide an design overview of each layer, shown in
-Figure :ref:`wifi-architecture`.
+Next, we provide a design overview of each layer, shown in
+Figure :ref:`wifi-architecture`. For 802.11be Multi-Link Devices (MLDs),
+there as many instances of WifiPhy, FrameExchangeManager and ChannelAccessManager
+as the number of links.
 
 .. _wifi-architecture:
 
@@ -727,14 +730,35 @@ The MAC model
 Infrastructure association
 ##########################
 
-Association in infrastructure mode is a high-level MAC function.
-Either active probing or passive scanning is used (default is passive scan).
-At the start of the simulation, Wi-Fi network devices configured as
-STA will attempt to scan the channel. Depends on whether passive or active
-scanning is selected, STA will attempt to gather beacons, or send a probe
-request and gather probe responses until the respective timeout occurs. The
-end result will be a list of candidate AP to associate to. STA will then try
-to associate to the best AP (i.e., best SNR).
+Association in infrastructure mode is a high-level MAC function performed by
+the Association Manager, which is implemented through a base class (``WifiAssocManager``)
+and a default subclass (``WifiDefaultAssocManager``). The interaction between
+the station MAC, the Association Manager base class and subclass is illustrated
+in Figure :ref:`fig-assoc-manager`.
+
+.. _fig-assoc-manager:
+
+.. figure:: figures/assoc-manager.*
+   :align: center
+
+   Scanning procedure
+
+The STA wifi MAC requests the Association Manager to start a scanning procedure
+with specified parameters, including the type of scanning (active or passive),
+the desired SSID, the list of channels to scan, etc. The STA wifi MAC then expects
+to be notified of the best AP to associate with at the end of the scanning procedure.
+Every Beacon or Probe Response frame received during scanning is forwarded to the
+Association Manager, which keeps a list of candidate APs that match the scanning
+parameters. The sorting criterium for such a list is defined by the Association
+Manager subclass. The default Association Manager sorts APs in decreasing order
+of the SNR of the received Beacon/Probe Response frame.
+
+When notified of the start of a scanning procedure, the default Association Manager
+schedules a call to a method that processes the information included in the frames
+received up to the time such a method is called. When both the AP and the STA have
+multiple links (i.e., they are 802.11be MLDs), the default Association Manager attempts
+to setup as many links as possible. This involves switching operating channel on some of
+the STA's links to match those on which the APs affiliated with the AP MLD are operating.
 
 If association is rejected by the AP for some reason, the STA will try to
 associate to the next best AP until the candidate list is exhausted which
@@ -890,6 +914,37 @@ The features supported by every FrameExchangeManager class are as follows:
   multi-user frames via DL OFDMA and UL OFDMA, as detailed below.
 
 .. _wifi-mu-ack-sequences:
+
+MAC queues
+##########
+Each EDCA function (on QoS stations) and the DCF (on non-QoS stations) have their own
+MAC queue (an instance of the ``WifiMacQueue`` class) to store packets received from
+the upper layer and waiting for transmission. On QoS stations, each received packet is
+assigned a User Priority based on the socket priority (see, e.g., the wifi-multi-tos or
+the wifi-mac-ofdma examples), which determines the Access Category that handles the
+packet. By default, wifi MAC queues support flow control, hence upper layers do not
+forward a packet down if there is no room for it in the corresponding MAC queue.
+Packets stay in the wifi MAC queue until they are acknowledged or discarded. A packet
+may be discarded because, e.g., its lifetime expired (i.e., it stayed in the queue for too
+long) or the maximum number of retries was reached. The maximum lifetime for a packet can
+be configured via the ``MaxDelay`` attribute of ``WifiMacQueue``. There are a number of
+traces that can be used to track the outcome of a packet transmission (see the corresponding
+doxygen documentation):
+
+* ``WifiMac`` trace sources: ``AckedMpdu``, ``NAckedMpdu``, ``DroppedMpdu``,
+  ``MpduResponseTimeout``, ``PsduResponseTimeout``, ``PsduMapResponseTimeout``
+* ``WifiMacQueue`` trace source: ``Expired``
+
+Internally, a wifi MAC queue is made of multiple sub-queues, each storing frames of
+a given type (i.e., data or management) and having a given receiver address and TID.
+For single-user transmissions, the next station to serve is determined by a wifi MAC
+queue scheduler (held by the ``WifiMac`` instance). A wifi MAC queue scheduler is
+implemented through a base class (``WifiMacQueueScheduler``) and subclasses defining
+specific scheduling policies. The default scheduler (``FcfsWifiQueueScheduler``)
+gives management frames higher priority than data frames and serves data frames in a
+first come first serve fashion. For multi-user transmissions (see below), scheduling
+is performed by a Multi-User scheduler, which may or may not consult the wifi MAC queue
+scheduler to identify the stations to serve with a Multi-User DL or UL transmission.
 
 Multi-user transmissions
 ########################
@@ -1207,7 +1262,7 @@ Second, when a PHY reset is requested by the algorithm, it performs the computat
 restrictions and informs the PHY object.
 
 The PHY keeps tracks of incoming requests from the MAC to get access to the channel.
-If a request is received and if PHY reset(s) indicating TX power limitations occured
+If a request is received and if PHY reset(s) indicating TX power limitations occurred
 before a packet was transmitted, the next packet to be transmitted will be sent with
 a reduced power. Otherwise, no TX power restrictions will be applied.
 

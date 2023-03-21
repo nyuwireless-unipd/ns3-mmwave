@@ -24,50 +24,49 @@
 #ifndef MAC_TX_STATS_CALCULATOR_H_
 #define MAC_TX_STATS_CALCULATOR_H_
 
-#include "ns3/lte-common.h"
-#include "ns3/uinteger.h"
-#include "ns3/object.h"
 #include "ns3/basic-data-calculators.h"
 #include "ns3/lte-common.h"
-#include <string>
-#include <map>
+#include "ns3/object.h"
+#include "ns3/uinteger.h"
+
 #include <fstream>
+#include <map>
+#include <string>
 
 namespace ns3
 {
 
 class MacTxStatsCalculator : public Object
 {
-public:
-  /**
-   * Class constructor
-   */
-  MacTxStatsCalculator ();
+  public:
+    /**
+     * Class constructor
+     */
+    MacTxStatsCalculator();
 
-  /**
-   * Class destructor
-   */
-  virtual
-  ~MacTxStatsCalculator ();
+    /**
+     * Class destructor
+     */
+    virtual ~MacTxStatsCalculator();
 
-  // Inherited from ns3::Object
-  /**
-   *  Register this type.
-   *  \return The object TypeId.
-   */
-  static TypeId GetTypeId (void);
-  void DoDispose ();
+    // Inherited from ns3::Object
+    /**
+     *  Register this type.
+     *  \return The object TypeId.
+     */
+    static TypeId GetTypeId(void);
+    void DoDispose();
 
-  void RegisterMacTxDl(uint16_t rnti, uint16_t cellId, uint32_t packetSize, uint8_t numRetx);
-  void RegisterMacTxUl(uint16_t rnti, uint16_t cellId, uint32_t packetSize, uint8_t numRetx);
+    void RegisterMacTxDl(uint16_t rnti, uint16_t cellId, uint32_t packetSize, uint8_t numRetx);
+    void RegisterMacTxUl(uint16_t rnti, uint16_t cellId, uint32_t packetSize, uint8_t numRetx);
 
-  std::ofstream m_retxDlFile;
-  std::string m_retxDlFilename;
+    std::ofstream m_retxDlFile;
+    std::string m_retxDlFilename;
 
-  std::ofstream m_retxUlFile;
-  std::string m_retxUlFilename;
+    std::ofstream m_retxUlFile;
+    std::string m_retxUlFilename;
 };
 
-}
+} // namespace ns3
 
 #endif /* MAC_TX_STATS_CALCULATOR_H_ */

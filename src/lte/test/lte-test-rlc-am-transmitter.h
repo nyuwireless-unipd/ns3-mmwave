@@ -22,15 +22,17 @@
 #define LTE_TEST_RLC_AM_TRANSMITTER_H
 
 #include "ns3/test.h"
+#include <ns3/nstime.h>
+#include <ns3/lte-rlc.h>
 
-
-namespace ns3 {
+namespace ns3
+{
 
 class LteTestRrc;
 class LteTestMac;
 class LteTestPdcp;
 
-}
+} // namespace ns3
 
 using namespace ns3;
 
@@ -43,7 +45,7 @@ using namespace ns3;
 class LteRlcAmTransmitterTestSuite : public TestSuite
 {
   public:
-    LteRlcAmTransmitterTestSuite ();
+    LteRlcAmTransmitterTestSuite();
 };
 
 /**
@@ -62,9 +64,9 @@ class LteRlcAmTransmitterTestCase : public TestCase
      *
      * \param name the reference name
      */
-    LteRlcAmTransmitterTestCase (std::string name);
-    LteRlcAmTransmitterTestCase ();
-    virtual ~LteRlcAmTransmitterTestCase ();
+    LteRlcAmTransmitterTestCase(std::string name);
+    LteRlcAmTransmitterTestCase();
+    virtual ~LteRlcAmTransmitterTestCase();
 
     /**
      * Check data received function
@@ -72,14 +74,14 @@ class LteRlcAmTransmitterTestCase : public TestCase
      * \param shouldReceived shoul dhave received indicator
      * \param assertMsg the assert message
      */
-    void CheckDataReceived (Time time, std::string shouldReceived, std::string assertMsg);
+    void CheckDataReceived(Time time, std::string shouldReceived, std::string assertMsg);
 
   protected:
-    virtual void DoRun (void);
+    virtual void DoRun(void);
 
     Ptr<LteTestPdcp> txPdcp; ///< the transmit PDCP
-    Ptr<LteRlc> txRlc; ///< the RLC
-    Ptr<LteTestMac> txMac; ///< the MAC
+    Ptr<LteRlc> txRlc;       ///< the RLC
+    Ptr<LteTestMac> txMac;   ///< the MAC
 
   private:
     /**
@@ -87,8 +89,7 @@ class LteRlcAmTransmitterTestCase : public TestCase
      * \param shouldReceived shoul dhave received indicator
      * \param assertMsg the assert message
      */
-    void DoCheckDataReceived (std::string shouldReceived, std::string assertMsg);
-
+    void DoCheckDataReceived(std::string shouldReceived, std::string assertMsg);
 };
 
 /**
@@ -106,13 +107,12 @@ class LteRlcAmTransmitterOneSduTestCase : public LteRlcAmTransmitterTestCase
      *
      * \param name the reference name
      */
-    LteRlcAmTransmitterOneSduTestCase (std::string name);
-    LteRlcAmTransmitterOneSduTestCase ();
-    virtual ~LteRlcAmTransmitterOneSduTestCase ();
+    LteRlcAmTransmitterOneSduTestCase(std::string name);
+    LteRlcAmTransmitterOneSduTestCase();
+    virtual ~LteRlcAmTransmitterOneSduTestCase();
 
   private:
-    virtual void DoRun (void);
-
+    virtual void DoRun(void);
 };
 
 /**
@@ -130,13 +130,12 @@ class LteRlcAmTransmitterSegmentationTestCase : public LteRlcAmTransmitterTestCa
      *
      * \param name the reference name
      */
-    LteRlcAmTransmitterSegmentationTestCase (std::string name);
-    LteRlcAmTransmitterSegmentationTestCase ();
-    virtual ~LteRlcAmTransmitterSegmentationTestCase ();
+    LteRlcAmTransmitterSegmentationTestCase(std::string name);
+    LteRlcAmTransmitterSegmentationTestCase();
+    virtual ~LteRlcAmTransmitterSegmentationTestCase();
 
   private:
-    virtual void DoRun (void);
-
+    virtual void DoRun(void);
 };
 
 /**
@@ -154,13 +153,12 @@ class LteRlcAmTransmitterConcatenationTestCase : public LteRlcAmTransmitterTestC
      *
      * \param name the reference name
      */
-    LteRlcAmTransmitterConcatenationTestCase (std::string name);
-    LteRlcAmTransmitterConcatenationTestCase ();
-    virtual ~LteRlcAmTransmitterConcatenationTestCase ();
+    LteRlcAmTransmitterConcatenationTestCase(std::string name);
+    LteRlcAmTransmitterConcatenationTestCase();
+    virtual ~LteRlcAmTransmitterConcatenationTestCase();
 
   private:
-    virtual void DoRun (void);
-
+    virtual void DoRun(void);
 };
 
 /**
@@ -178,13 +176,12 @@ class LteRlcAmTransmitterReportBufferStatusTestCase : public LteRlcAmTransmitter
      *
      * \param name the reference name
      */
-    LteRlcAmTransmitterReportBufferStatusTestCase (std::string name);
-    LteRlcAmTransmitterReportBufferStatusTestCase ();
-    virtual ~LteRlcAmTransmitterReportBufferStatusTestCase ();
+    LteRlcAmTransmitterReportBufferStatusTestCase(std::string name);
+    LteRlcAmTransmitterReportBufferStatusTestCase();
+    virtual ~LteRlcAmTransmitterReportBufferStatusTestCase();
 
   private:
-    virtual void DoRun (void);
-
+    virtual void DoRun(void);
 };
 
 #endif // LTE_TEST_RLC_AM_TRANSMITTER_H

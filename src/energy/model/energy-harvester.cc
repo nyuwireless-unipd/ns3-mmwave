@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2014 Wireless Communications and Networking Group (WCNG),
  * University of Rochester, Rochester, NY, USA.
@@ -20,70 +19,68 @@
  */
 
 #include "energy-harvester.h"
+
 #include "ns3/log.h"
 
-namespace ns3 {
+namespace ns3
+{
 
-NS_LOG_COMPONENT_DEFINE ("EnergyHarvester");
+NS_LOG_COMPONENT_DEFINE("EnergyHarvester");
 
-NS_OBJECT_ENSURE_REGISTERED (EnergyHarvester);
+NS_OBJECT_ENSURE_REGISTERED(EnergyHarvester);
 
 TypeId
-EnergyHarvester::GetTypeId (void)
+EnergyHarvester::GetTypeId()
 {
-  static TypeId tid = TypeId ("ns3::EnergyHarvester")
-    .SetParent<Object> ()
-    .SetGroupName ("Energy")
-  ;
-  return tid;
+    static TypeId tid = TypeId("ns3::EnergyHarvester").SetParent<Object>().SetGroupName("Energy");
+    return tid;
 }
 
-EnergyHarvester::EnergyHarvester ()
+EnergyHarvester::EnergyHarvester()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
-EnergyHarvester::~EnergyHarvester ()
+EnergyHarvester::~EnergyHarvester()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 void
-EnergyHarvester::SetNode (Ptr<Node> node)
+EnergyHarvester::SetNode(Ptr<Node> node)
 {
-  NS_LOG_FUNCTION (this);
-  NS_ASSERT (node);
-  m_node = node;
+    NS_LOG_FUNCTION(this);
+    NS_ASSERT(node);
+    m_node = node;
 }
 
 Ptr<Node>
-EnergyHarvester::GetNode (void) const
+EnergyHarvester::GetNode() const
 {
-  NS_LOG_FUNCTION (this);
-  return m_node;
+    NS_LOG_FUNCTION(this);
+    return m_node;
 }
 
 void
-EnergyHarvester::SetEnergySource (Ptr<EnergySource> source)
+EnergyHarvester::SetEnergySource(Ptr<EnergySource> source)
 {
-  NS_LOG_FUNCTION (this);
-  NS_ASSERT (source);
-  m_energySource = source;
+    NS_LOG_FUNCTION(this);
+    NS_ASSERT(source);
+    m_energySource = source;
 }
 
 Ptr<EnergySource>
-EnergyHarvester::GetEnergySource (void) const
+EnergyHarvester::GetEnergySource() const
 {
-  NS_LOG_FUNCTION (this);
-  return m_energySource;
+    NS_LOG_FUNCTION(this);
+    return m_energySource;
 }
 
-
 double
-EnergyHarvester::GetPower (void) const
+EnergyHarvester::GetPower() const
 {
-  NS_LOG_FUNCTION (this);
-  return DoGetPower ();
+    NS_LOG_FUNCTION(this);
+    return DoGetPower();
 }
 
 /*
@@ -91,16 +88,16 @@ EnergyHarvester::GetPower (void) const
  */
 
 void
-EnergyHarvester::DoDispose (void)
+EnergyHarvester::DoDispose()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 double
-EnergyHarvester::DoGetPower (void) const
+EnergyHarvester::DoGetPower() const
 {
-  NS_LOG_FUNCTION (this);
-  return 0.0;
+    NS_LOG_FUNCTION(this);
+    return 0.0;
 }
 
-}
+} // namespace ns3

@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2009 University of Washington
  *
@@ -19,14 +18,15 @@
 #ifndef CHANNEL_LIST_H
 #define CHANNEL_LIST_H
 
-#include <vector>
 #include "ns3/ptr.h"
 
-namespace ns3 {
+#include <vector>
+
+namespace ns3
+{
 
 class Channel;
 class CallbackBase;
-
 
 /**
  * \ingroup network
@@ -37,37 +37,37 @@ class CallbackBase;
  */
 class ChannelList
 {
-public:
-  /// Channel container iterator
-  typedef std::vector< Ptr<Channel> >::const_iterator Iterator;
+  public:
+    /// Channel container iterator
+    typedef std::vector<Ptr<Channel>>::const_iterator Iterator;
 
-  /**
-   * \param channel channel to add
-   * \returns index of channel in list.
-   *
-   * This method is called automatically from Channel::Channel so
-   * the user has little reason to call it himself.
-   */
-  static uint32_t Add (Ptr<Channel> channel);
-  /**
-   * \returns a C++ iterator located at the beginning of this
-   *          list.
-   */
-  static Iterator Begin (void);
-  /**
-   * \returns a C++ iterator located at the end of this
-   *          list.
-   */
-  static Iterator End (void);
-  /**
-   * \param n index of requested channel.
-   * \returns the Channel associated to index n.
-   */
-  static Ptr<Channel> GetChannel (uint32_t n);
-  /**
-   * \returns the number of channels currently in the list.
-   */
-  static uint32_t GetNChannels (void);
+    /**
+     * \param channel channel to add
+     * \returns index of channel in list.
+     *
+     * This method is called automatically from Channel::Channel so
+     * the user has little reason to call it himself.
+     */
+    static uint32_t Add(Ptr<Channel> channel);
+    /**
+     * \returns a C++ iterator located at the beginning of this
+     *          list.
+     */
+    static Iterator Begin();
+    /**
+     * \returns a C++ iterator located at the end of this
+     *          list.
+     */
+    static Iterator End();
+    /**
+     * \param n index of requested channel.
+     * \returns the Channel associated to index n.
+     */
+    static Ptr<Channel> GetChannel(uint32_t n);
+    /**
+     * \returns the number of channels currently in the list.
+     */
+    static uint32_t GetNChannels();
 };
 
 } // namespace ns3

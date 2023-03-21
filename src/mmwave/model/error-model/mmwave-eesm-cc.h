@@ -1,8 +1,8 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
- *   Adapted from the release 1.0 of the 5G-LENA simulator, please refer to https://5g-lena.cttc.es/ for further details 
- *   and https://gitlab.com/cttc-lena/nr/-/tree/v1.0 for the reference code.
- * 
+ *   Adapted from the release 1.0 of the 5G-LENA simulator, please refer to https://5g-lena.cttc.es/
+ * for further details and https://gitlab.com/cttc-lena/nr/-/tree/v1.0 for the reference code.
+ *
  *   Copyright (c) 2020 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -24,9 +24,11 @@
 
 #include "mmwave-eesm-error-model.h"
 
-namespace ns3 {
+namespace ns3
+{
 
-namespace mmwave {
+namespace mmwave
+{
 
 /**
  * \ingroup error-models
@@ -48,47 +50,50 @@ namespace mmwave {
  */
 class MmWaveEesmCc : public MmWaveEesmErrorModel
 {
-public:
-  /**
-   * \brief Get the type id of the object
-   * \return the type id of the object
-   */
-  static TypeId GetTypeId (void);
-  /**
-   * \brief MmWaveEesmCc constructor
-   */
-  MmWaveEesmCc();
-  /**
-   * \brief ~MmWaveEesmCc
-   */
-  virtual ~MmWaveEesmCc () override;
+  public:
+    /**
+     * \brief Get the type id of the object
+     * \return the type id of the object
+     */
+    static TypeId GetTypeId(void);
+    /**
+     * \brief MmWaveEesmCc constructor
+     */
+    MmWaveEesmCc();
+    /**
+     * \brief ~MmWaveEesmCc
+     */
+    virtual ~MmWaveEesmCc() override;
 
-protected:
-  /**
-   * \brief Computes the effective SINR after retransmission combining with HARQ-CC.
-   *
-   * \param sinr the SINR vector of current transmission
-   * \param map the RB map of current transmission
-   * \param sizeBit the Transport block size in bits
-   * \param mcs the MCS of the transmission
-   * \param sinrHistory the History of the previous transmissions of the same block
-   * \return The effective SINR
-   */
-  double ComputeSINR (const SpectrumValue& sinr, const std::vector<int>& map, uint8_t mcs,
-                      uint32_t sizeBit, const MmWaveErrorModel::MmWaveErrorModelHistory &sinrHistory) const override;
+  protected:
+    /**
+     * \brief Computes the effective SINR after retransmission combining with HARQ-CC.
+     *
+     * \param sinr the SINR vector of current transmission
+     * \param map the RB map of current transmission
+     * \param sizeBit the Transport block size in bits
+     * \param mcs the MCS of the transmission
+     * \param sinrHistory the History of the previous transmissions of the same block
+     * \return The effective SINR
+     */
+    double ComputeSINR(const SpectrumValue& sinr,
+                       const std::vector<int>& map,
+                       uint8_t mcs,
+                       uint32_t sizeBit,
+                       const MmWaveErrorModel::MmWaveErrorModelHistory& sinrHistory) const override;
 
-  /**
-   * \brief Returns the MCS corresponding to the ECR after retransmissions. As the ECR
-   * does not change with retransmissions with HARQ-CC, and MCS is kept fixed through
-   * retransmissions, it returns current MCS.
-   *
-   * \param mcsTx the MCS of the transmission
-   * \return The equivalent MCS after retransmissions
-   */
-  double GetMcsEq (uint8_t mcsTx) const override;
+    /**
+     * \brief Returns the MCS corresponding to the ECR after retransmissions. As the ECR
+     * does not change with retransmissions with HARQ-CC, and MCS is kept fixed through
+     * retransmissions, it returns current MCS.
+     *
+     * \param mcsTx the MCS of the transmission
+     * \return The equivalent MCS after retransmissions
+     */
+    double GetMcsEq(uint8_t mcsTx) const override;
 };
 
-} // namespace ns3
 } // namespace mmwave
+} // namespace ns3
 
 #endif // SRC_MMWAVE_EESM_CC_H

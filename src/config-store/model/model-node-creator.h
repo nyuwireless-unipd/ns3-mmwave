@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  *  This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -18,6 +17,7 @@
  */
 
 #include "attribute-iterator.h"
+
 #include <gtk/gtk.h>
 
 namespace ns3
@@ -25,7 +25,8 @@ namespace ns3
 
 enum
 {
-  COL_NODE = 0, COL_LAST
+    COL_NODE = 0,
+    COL_LAST
 };
 
 /**
@@ -34,28 +35,28 @@ enum
  */
 struct ModelNode
 {
-/**
- * \enum node type
- * \brief node type structure
- *
- */
-  enum
-  {
-    // store object + attribute name
-    NODE_ATTRIBUTE,
-    // store object + attribute name
-    NODE_POINTER,
-    // store object + attribute name
-    NODE_VECTOR,
-    // store index + value (object)
-    NODE_VECTOR_ITEM,
-    // store object
-    NODE_OBJECT
-  } type; ///< node type
-  std::string name; ///< node name
-  Ptr<Object> object; ///< the object
-  uint32_t index; ///< index
+    /**
+     * \brief node type structure
+     */
+    enum
+    {
+        // store object + attribute name
+        NODE_ATTRIBUTE,
+        // store object + attribute name
+        NODE_POINTER,
+        // store object + attribute name
+        NODE_VECTOR,
+        // store index + value (object)
+        NODE_VECTOR_ITEM,
+        // store object
+        NODE_OBJECT
+    } type; ///< node type
+
+    std::string name;   ///< node name
+    Ptr<Object> object; ///< the object
+    uint32_t index;     ///< index
 };
+
 /**
  * \ingroup configstore
  * \brief ModelCreator class
@@ -63,35 +64,40 @@ struct ModelNode
  */
 class ModelCreator : public AttributeIterator
 {
-public:
-  ModelCreator ();
+  public:
+    ModelCreator();
 
-  /**
-   * Allocate attribute tree
-   * \param treestore GtkTreeStore *
-   */
-  void Build (GtkTreeStore *treestore);
-private:
-  virtual void DoVisitAttribute (Ptr<Object> object, std::string name);
-  virtual void DoStartVisitObject (Ptr<Object> object);
-  virtual void DoEndVisitObject (void);
-  virtual void DoStartVisitPointerAttribute (Ptr<Object> object, std::string name, Ptr<Object> value);
-  virtual void DoEndVisitPointerAttribute (void);
-  virtual void DoStartVisitArrayAttribute (Ptr<Object> object, std::string name,
-                                           const ObjectPtrContainerValue &vector);
-  virtual void DoEndVisitArrayAttribute (void);
-  virtual void DoStartVisitArrayItem (const ObjectPtrContainerValue &vector,
-                                      uint32_t index, Ptr<Object> item);
-  virtual void DoEndVisitArrayItem (void);
-  /**
-   * Add item to attribute tree
-   * \param node The model node
-   */
-  void Add (ModelNode *node);
-  /// Remove current tree item
-  void Remove (void);
+    /**
+     * Allocate attribute tree
+     * \param treestore GtkTreeStore *
+     */
+    void Build(GtkTreeStore* treestore);
 
-  GtkTreeStore *m_treestore; ///< attribute tree
-  std::vector<GtkTreeIter *> m_iters; ///< attribute tree item
+  private:
+    void DoVisitAttribute(Ptr<Object> object, std::string name) override;
+    void DoStartVisitObject(Ptr<Object> object) override;
+    void DoEndVisitObject() override;
+    void DoStartVisitPointerAttribute(Ptr<Object> object,
+                                      std::string name,
+                                      Ptr<Object> value) override;
+    void DoEndVisitPointerAttribute() override;
+    void DoStartVisitArrayAttribute(Ptr<Object> object,
+                                    std::string name,
+                                    const ObjectPtrContainerValue& vector) override;
+    void DoEndVisitArrayAttribute() override;
+    void DoStartVisitArrayItem(const ObjectPtrContainerValue& vector,
+                               uint32_t index,
+                               Ptr<Object> item) override;
+    void DoEndVisitArrayItem() override;
+    /**
+     * Add item to attribute tree
+     * \param node The model node
+     */
+    void Add(ModelNode* node);
+    /// Remove current tree item
+    void Remove();
+
+    GtkTreeStore* m_treestore;         ///< attribute tree
+    std::vector<GtkTreeIter*> m_iters; ///< attribute tree item
 };
-}
+} // namespace ns3

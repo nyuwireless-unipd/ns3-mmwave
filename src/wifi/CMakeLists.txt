@@ -27,11 +27,15 @@ set(source_files
     model/edca-parameter-set.cc
     model/eht/eht-capabilities.cc
     model/eht/eht-configuration.cc
+    model/eht/eht-frame-exchange-manager.cc
+    model/eht/eht-operation.cc
+    model/eht/tid-to-link-mapping-element.cc
     model/eht/eht-phy.cc
     model/eht/eht-ppdu.cc
     model/eht/multi-link-element.cc
     model/error-rate-model.cc
     model/extended-capabilities.cc
+    model/fcfs-wifi-queue-scheduler.cc
     model/frame-capture-model.cc
     model/frame-exchange-manager.cc
     model/he/constant-obss-pd-algorithm.cc
@@ -118,11 +122,14 @@ set(source_files
     model/wifi-information-element-vector.cc
     model/wifi-information-element.cc
     model/wifi-mac-header.cc
-    model/wifi-mac-queue-item.cc
+    model/wifi-mac-queue-container.cc
+    model/wifi-mac-queue-elem.cc
+    model/wifi-mac-queue-scheduler.cc
     model/wifi-mac-queue.cc
     model/wifi-mac-trailer.cc
     model/wifi-mac.cc
     model/wifi-mode.cc
+    model/wifi-mpdu.cc
     model/wifi-net-device.cc
     model/wifi-phy.cc
     model/wifi-phy-common.cc
@@ -169,11 +176,15 @@ set(header_files
     model/edca-parameter-set.h
     model/eht/eht-capabilities.h
     model/eht/eht-configuration.h
+    model/eht/eht-frame-exchange-manager.h
+    model/eht/eht-operation.h
+    model/eht/tid-to-link-mapping-element.h
     model/eht/eht-phy.h
     model/eht/eht-ppdu.h
     model/eht/multi-link-element.h
     model/error-rate-model.h
     model/extended-capabilities.h
+    model/fcfs-wifi-queue-scheduler.h
     model/frame-capture-model.h
     model/frame-exchange-manager.h
     model/he/constant-obss-pd-algorithm.h
@@ -261,12 +272,16 @@ set(header_files
     model/wifi-information-element-vector.h
     model/wifi-information-element.h
     model/wifi-mac-header.h
-    model/wifi-mac-queue-item.h
+    model/wifi-mac-queue-container.h
+    model/wifi-mac-queue-elem.h
+    model/wifi-mac-queue-scheduler-impl.h
+    model/wifi-mac-queue-scheduler.h
     model/wifi-mac-queue.h
     model/wifi-mac-trailer.h
     model/wifi-mac.h
     model/wifi-mode.h
     model/wifi-mpdu-type.h
+    model/wifi-mpdu.h
     model/wifi-net-device.h
     model/wifi-phy-band.h
     model/wifi-phy-common.h
@@ -318,15 +333,19 @@ build_lib(
     test/wifi-dynamic-bw-op-test.cc
     test/wifi-eht-info-elems-test.cc
     test/wifi-error-rate-models-test.cc
+    test/wifi-ie-fragment-test.cc
     test/wifi-mac-ofdma-test.cc
     test/wifi-mac-queue-test.cc
+    test/wifi-mlo-test.cc
     test/wifi-phy-ofdma-test.cc
     test/wifi-phy-reception-test.cc
     test/wifi-phy-thresholds-test.cc
     test/wifi-primary-channels-test.cc
+    test/wifi-ru-allocation-test.cc
     test/wifi-channel-switching-test.cc
     test/wifi-test.cc
     test/wifi-transmit-mask-test.cc
     test/wifi-txop-test.cc
     test/wifi-phy-cca-test.cc
+    test/wifi-non-ht-dup-test.cc
 )

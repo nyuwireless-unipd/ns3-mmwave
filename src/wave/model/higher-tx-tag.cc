@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2008 INRIA
  * Copyright (c) 2013 Dalian University of Technology
@@ -20,89 +19,101 @@
  *         Junling Bu <linlinjavaer@gmail.com>
  */
 #include "higher-tx-tag.h"
-#include "ns3/log.h"
+
 #include "ns3/abort.h"
+#include "ns3/log.h"
 
-namespace ns3 {
+namespace ns3
+{
 
-NS_LOG_COMPONENT_DEFINE ("HigherLayerTxVectorTag");
+NS_LOG_COMPONENT_DEFINE("HigherLayerTxVectorTag");
 
-NS_OBJECT_ENSURE_REGISTERED (HigherLayerTxVectorTag);
+NS_OBJECT_ENSURE_REGISTERED(HigherLayerTxVectorTag);
 
 TypeId
-HigherLayerTxVectorTag::GetTypeId (void)
+HigherLayerTxVectorTag::GetTypeId()
 {
-  static TypeId tid = TypeId ("ns3::HigherLayerTxVectorTag")
-    .SetParent<Tag> ()
-    .SetGroupName ("Wave")
-    .AddConstructor<HigherLayerTxVectorTag> ()
-  ;
-  return tid;
+    static TypeId tid = TypeId("ns3::HigherLayerTxVectorTag")
+                            .SetParent<Tag>()
+                            .SetGroupName("Wave")
+                            .AddConstructor<HigherLayerTxVectorTag>();
+    return tid;
 }
 
 TypeId
-HigherLayerTxVectorTag::GetInstanceTypeId (void) const
+HigherLayerTxVectorTag::GetInstanceTypeId() const
 {
-  NS_LOG_FUNCTION (this);
-  return GetTypeId ();
+    NS_LOG_FUNCTION(this);
+    return GetTypeId();
 }
 
-HigherLayerTxVectorTag::HigherLayerTxVectorTag (void)
-  : m_adaptable (false)
+HigherLayerTxVectorTag::HigherLayerTxVectorTag()
+    : m_adaptable(false)
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
-HigherLayerTxVectorTag::HigherLayerTxVectorTag (WifiTxVector txVector, bool adaptable)
-  : m_txVector (txVector),
-    m_adaptable (adaptable)
+HigherLayerTxVectorTag::HigherLayerTxVectorTag(WifiTxVector txVector, bool adaptable)
+    : m_txVector(txVector),
+      m_mode(txVector.GetMode()),
+      m_preamble(txVector.GetPreambleType()),
+      m_channelWidth(txVector.GetChannelWidth()),
+      m_adaptable(adaptable)
 {
-  NS_LOG_FUNCTION (this);
-  NS_ABORT_MSG_IF (txVector.GetPreambleType () == WIFI_PREAMBLE_HE_MU, "HE MU is not compatible with this tag");
+    NS_LOG_FUNCTION(this);
+    NS_ABORT_MSG_IF(txVector.GetPreambleType() == WIFI_PREAMBLE_HE_MU,
+                    "HE MU is not compatible with this tag");
 }
 
 WifiTxVector
-HigherLayerTxVectorTag::GetTxVector (void) const
+HigherLayerTxVectorTag::GetTxVector() const
 {
-  NS_LOG_FUNCTION (this);
-  return m_txVector;
+    NS_LOG_FUNCTION(this);
+    return m_txVector;
 }
 
 bool
-HigherLayerTxVectorTag::IsAdaptable (void) const
+HigherLayerTxVectorTag::IsAdaptable() const
 {
-  NS_LOG_FUNCTION (this);
-  return m_adaptable;
+    NS_LOG_FUNCTION(this);
+    return m_adaptable;
 }
 
 uint32_t
-HigherLayerTxVectorTag::GetSerializedSize (void) const
+HigherLayerTxVectorTag::GetSerializedSize() const
 {
-  NS_LOG_FUNCTION (this);
-  return (sizeof (WifiTxVector) + 1);
+    NS_LOG_FUNCTION(this);
+    return (sizeof(WifiMode) + 1 + 2 + 1);
 }
 
 void
-HigherLayerTxVectorTag::Serialize (TagBuffer i) const
+HigherLayerTxVectorTag::Serialize(TagBuffer i) const
 {
-  NS_LOG_FUNCTION (this << &i);
-  i.Write ((uint8_t *)&m_txVector, sizeof (WifiTxVector));
-  i.WriteU8 (static_cast<uint8_t> (m_adaptable));
+    NS_LOG_FUNCTION(this << &i);
+    i.Write((uint8_t*)&m_mode, sizeof(WifiMode));
+    i.WriteU8(static_cast<uint8_t>(m_preamble));
+    i.WriteU16(m_channelWidth);
+    i.WriteU8(static_cast<uint8_t>(m_adaptable));
 }
 
 void
-HigherLayerTxVectorTag::Deserialize (TagBuffer i)
+HigherLayerTxVectorTag::Deserialize(TagBuffer i)
 {
-  NS_LOG_FUNCTION (this << &i);
-  i.Read ((uint8_t *)&m_txVector, sizeof (WifiTxVector));
-  m_adaptable = i.ReadU8 ();
+    NS_LOG_FUNCTION(this << &i);
+    i.Read((uint8_t*)&m_mode, sizeof(WifiMode));
+    m_preamble = static_cast<WifiPreamble>(i.ReadU8());
+    m_channelWidth = i.ReadU16();
+    m_adaptable = i.ReadU8();
+    m_txVector.SetMode(m_mode);
+    m_txVector.SetPreambleType(m_preamble);
+    m_txVector.SetChannelWidth(m_channelWidth);
 }
 
 void
-HigherLayerTxVectorTag::Print (std::ostream &os) const
+HigherLayerTxVectorTag::Print(std::ostream& os) const
 {
-  NS_LOG_FUNCTION (this << &os);
-  os << " TxVector=" << m_txVector << ";  Adapter=" << m_adaptable;
+    NS_LOG_FUNCTION(this << &os);
+    os << " TxVector=" << m_txVector << ";  Adapter=" << m_adaptable;
 }
 
 } // namespace ns3

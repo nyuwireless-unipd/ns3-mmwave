@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2005 INRIA
  *
@@ -19,11 +18,13 @@
  */
 
 #include "list-scheduler.h"
+
+#include "assert.h"
 #include "event-impl.h"
 #include "log.h"
-#include <utility>
+
 #include <string>
-#include "assert.h"
+#include <utility>
 
 /**
  * \file
@@ -31,80 +32,84 @@
  * ns3::ListScheduler implementation.
  */
 
-namespace ns3 {
+namespace ns3
+{
 
-NS_LOG_COMPONENT_DEFINE ("ListScheduler");
+NS_LOG_COMPONENT_DEFINE("ListScheduler");
 
-NS_OBJECT_ENSURE_REGISTERED (ListScheduler);
+NS_OBJECT_ENSURE_REGISTERED(ListScheduler);
 
 TypeId
-ListScheduler::GetTypeId (void)
+ListScheduler::GetTypeId()
 {
-  static TypeId tid = TypeId ("ns3::ListScheduler")
-    .SetParent<Scheduler> ()
-    .SetGroupName ("Core")
-    .AddConstructor<ListScheduler> ()
-  ;
-  return tid;
+    static TypeId tid = TypeId("ns3::ListScheduler")
+                            .SetParent<Scheduler>()
+                            .SetGroupName("Core")
+                            .AddConstructor<ListScheduler>();
+    return tid;
 }
 
-ListScheduler::ListScheduler ()
+ListScheduler::ListScheduler()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
-ListScheduler::~ListScheduler ()
-{}
+
+ListScheduler::~ListScheduler()
+{
+}
 
 void
-ListScheduler::Insert (const Event &ev)
+ListScheduler::Insert(const Event& ev)
 {
-  NS_LOG_FUNCTION (this << &ev);
-  for (EventsI i = m_events.begin (); i != m_events.end (); i++)
+    NS_LOG_FUNCTION(this << &ev);
+    for (EventsI i = m_events.begin(); i != m_events.end(); i++)
     {
-      if (ev.key < i->key)
+        if (ev.key < i->key)
         {
-          m_events.insert (i, ev);
-          return;
+            m_events.insert(i, ev);
+            return;
         }
     }
-  m_events.push_back (ev);
+    m_events.push_back(ev);
 }
+
 bool
-ListScheduler::IsEmpty (void) const
+ListScheduler::IsEmpty() const
 {
-  NS_LOG_FUNCTION (this);
-  return m_events.empty ();
-}
-Scheduler::Event
-ListScheduler::PeekNext (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_events.front ();
+    NS_LOG_FUNCTION(this);
+    return m_events.empty();
 }
 
 Scheduler::Event
-ListScheduler::RemoveNext (void)
+ListScheduler::PeekNext() const
 {
-  NS_LOG_FUNCTION (this);
-  Event next = m_events.front ();
-  m_events.pop_front ();
-  return next;
+    NS_LOG_FUNCTION(this);
+    return m_events.front();
+}
+
+Scheduler::Event
+ListScheduler::RemoveNext()
+{
+    NS_LOG_FUNCTION(this);
+    Event next = m_events.front();
+    m_events.pop_front();
+    return next;
 }
 
 void
-ListScheduler::Remove (const Event &ev)
+ListScheduler::Remove(const Event& ev)
 {
-  NS_LOG_FUNCTION (this << &ev);
-  for (EventsI i = m_events.begin (); i != m_events.end (); i++)
+    NS_LOG_FUNCTION(this << &ev);
+    for (EventsI i = m_events.begin(); i != m_events.end(); i++)
     {
-      if (i->key.m_uid == ev.key.m_uid)
+        if (i->key.m_uid == ev.key.m_uid)
         {
-          NS_ASSERT (ev.impl == i->impl);
-          m_events.erase (i);
-          return;
+            NS_ASSERT(ev.impl == i->impl);
+            m_events.erase(i);
+            return;
         }
     }
-  NS_ASSERT (false);
+    NS_ASSERT(false);
 }
 
 } // namespace ns3

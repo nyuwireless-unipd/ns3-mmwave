@@ -19,33 +19,31 @@
  *
  */
 
-
-
 #ifndef MC_UE_NET_DEVICE_H
 #define MC_UE_NET_DEVICE_H
 
-#include <ns3/net-device.h>
-#include <ns3/event-id.h>
-#include <ns3/mac48-address.h>
-#include <ns3/traced-callback.h>
-#include <ns3/nstime.h>
-#include "ns3/lte-ue-mac.h"
-#include "ns3/lte-ue-rrc.h"
-#include "ns3/lte-ue-phy.h"
-#include "ns3/lte-phy.h"
+#include "ns3/component-carrier-ue.h"
 #include "ns3/epc-ue-nas.h"
+#include "ns3/lte-phy.h"
+#include "ns3/lte-ue-mac.h"
+#include "ns3/lte-ue-phy.h"
+#include "ns3/lte-ue-rrc.h"
+#include "ns3/mmwave-component-carrier-ue.h"
 #include "ns3/mmwave-ue-mac.h"
 #include "ns3/mmwave-ue-phy.h"
-#include "ns3/mmwave-component-carrier-ue.h"
-#include "ns3/component-carrier-ue.h"
+#include <ns3/event-id.h>
+#include <ns3/mac48-address.h>
+#include <ns3/net-device.h>
+#include <ns3/nstime.h>
+#include <ns3/traced-callback.h>
 
 //#include "ns3/mmwave-enb-net-device.h"
 //#include "ns3/lte-enb-net-device.h"
 //#include "ns3/lte-ue-net-device.h"
 //#include "ns3/mmwave-ue-net-device.h"
 
-
-namespace ns3 {
+namespace ns3
+{
 
 class Packet;
 class PacketBurst;
@@ -53,236 +51,233 @@ class Node;
 class LteEnbNetDevice;
 class LteUeComponentCarrierManager;
 
-namespace mmwave {
+namespace mmwave
+{
 
 class MmWaveEnbNetDevice;
 
-
-
-
 /**
-  * \ingroup mmWave
-  * This class represents a MC LTE + mmWave UE NetDevice, therefore
-  * it is a union of the UeNetDevice classes of those modules,
-  * up to some point
-  */
+ * \ingroup mmWave
+ * This class represents a MC LTE + mmWave UE NetDevice, therefore
+ * it is a union of the UeNetDevice classes of those modules,
+ * up to some point
+ */
 class McUeNetDevice : public NetDevice
 {
-public:
-  // methods inherited from NetDevide.
-  // TODO check if 2 (or more) Mac Addresses are needed or if the
-  // same can be used for the 2 (or more) eNB
+  public:
+    // methods inherited from NetDevide.
+    // TODO check if 2 (or more) Mac Addresses are needed or if the
+    // same can be used for the 2 (or more) eNB
 
-  static TypeId GetTypeId (void);
+    static TypeId GetTypeId(void);
 
-  McUeNetDevice ();
-  virtual ~McUeNetDevice ();
+    McUeNetDevice();
+    virtual ~McUeNetDevice();
 
-  virtual void DoDispose (void) override;
+    virtual void DoDispose(void) override;
 
-  virtual void SetIfIndex (const uint32_t index) override;
-  virtual uint32_t GetIfIndex (void) const override;
-  virtual Ptr<Channel> GetChannel (void) const override;
-  virtual void SetAddress (Address address) override;
-  virtual Address GetAddress (void) const override;
-  virtual bool SetMtu (const uint16_t mtu) override;
-  virtual uint16_t GetMtu (void) const override;
-  virtual bool IsLinkUp (void) const override;
-  virtual void AddLinkChangeCallback (Callback<void> callback) override;
-  virtual bool IsBroadcast (void) const override;
-  virtual Address GetBroadcast (void) const override;
-  virtual bool IsMulticast (void) const override;
-  virtual Address GetMulticast (Ipv4Address multicastGroup) const override;
-  virtual bool IsBridge (void) const override;
-  virtual bool IsPointToPoint (void) const override;
-  virtual bool SendFrom (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber) override;
-  virtual Ptr<Node> GetNode (void) const override;
-  virtual void SetNode (Ptr<Node> node) override;
-  virtual bool NeedsArp (void) const override;
-  virtual Address GetMulticast (Ipv6Address addr) const override;
-  virtual void SetReceiveCallback (ReceiveCallback cb) override;
-  virtual void SetPromiscReceiveCallback (PromiscReceiveCallback cb) override;
-  virtual bool SupportsSendFrom (void) const override;
-  virtual bool Send (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber) override;
+    virtual void SetIfIndex(const uint32_t index) override;
+    virtual uint32_t GetIfIndex(void) const override;
+    virtual Ptr<Channel> GetChannel(void) const override;
+    virtual void SetAddress(Address address) override;
+    virtual Address GetAddress(void) const override;
+    virtual bool SetMtu(const uint16_t mtu) override;
+    virtual uint16_t GetMtu(void) const override;
+    virtual bool IsLinkUp(void) const override;
+    virtual void AddLinkChangeCallback(Callback<void> callback) override;
+    virtual bool IsBroadcast(void) const override;
+    virtual Address GetBroadcast(void) const override;
+    virtual bool IsMulticast(void) const override;
+    virtual Address GetMulticast(Ipv4Address multicastGroup) const override;
+    virtual bool IsBridge(void) const override;
+    virtual bool IsPointToPoint(void) const override;
+    virtual bool SendFrom(Ptr<Packet> packet,
+                          const Address& source,
+                          const Address& dest,
+                          uint16_t protocolNumber) override;
+    virtual Ptr<Node> GetNode(void) const override;
+    virtual void SetNode(Ptr<Node> node) override;
+    virtual bool NeedsArp(void) const override;
+    virtual Address GetMulticast(Ipv6Address addr) const override;
+    virtual void SetReceiveCallback(ReceiveCallback cb) override;
+    virtual void SetPromiscReceiveCallback(PromiscReceiveCallback cb) override;
+    virtual bool SupportsSendFrom(void) const override;
+    virtual bool Send(Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber) override;
 
-  Ipv4Address GetPacketDestination (Ptr<Packet> packet);
+    Ipv4Address GetPacketDestination(Ptr<Packet> packet);
 
-  /**
-   * receive a packet from the lower layers in order to forward it to the upper layers
-   *
-   * \param p the packet
-   */
-  void Receive (Ptr<Packet> p);
+    /**
+     * receive a packet from the lower layers in order to forward it to the upper layers
+     *
+     * \param p the packet
+     */
+    void Receive(Ptr<Packet> p);
 
-  // ---------------------------- Common ----------------------------
-  /**
-      * \brief Returns the CSG ID the UE is currently a member of.
-      * \return the Closed Subscriber Group identity
-      */
-  uint32_t GetCsgId () const;
+    // ---------------------------- Common ----------------------------
+    /**
+     * \brief Returns the CSG ID the UE is currently a member of.
+     * \return the Closed Subscriber Group identity
+     */
+    uint32_t GetCsgId() const;
 
-  /**
-  * \brief Enlist the UE device as a member of a particular CSG.
-  * \param csgId the intended Closed Subscriber Group identity
-  *
-  * UE is associated with a single CSG identity, and thus becoming a member of
-  * this particular CSG. As a result, the UE may gain access to cells which
-  * belong to this CSG. This does not revoke the UE's access to non-CSG cells.
-  *
-  * \note This restriction only applies to initial cell selection and
-  *       EPC-enabled simulation.
-  */
-  void SetCsgId (uint32_t csgId);
+    /**
+     * \brief Enlist the UE device as a member of a particular CSG.
+     * \param csgId the intended Closed Subscriber Group identity
+     *
+     * UE is associated with a single CSG identity, and thus becoming a member of
+     * this particular CSG. As a result, the UE may gain access to cells which
+     * belong to this CSG. This does not revoke the UE's access to non-CSG cells.
+     *
+     * \note This restriction only applies to initial cell selection and
+     *       EPC-enabled simulation.
+     */
+    void SetCsgId(uint32_t csgId);
 
+    Ptr<EpcUeNas> GetNas(void) const;
 
-  Ptr<EpcUeNas> GetNas (void) const;
+    uint64_t GetImsi() const;
 
+    // -------------------------- LTE methods -------------------------
+    Ptr<LteUeMac> GetLteMac(void) const;
 
-  uint64_t GetImsi () const;
+    Ptr<LteUeMac> GetLteMac(uint8_t index) const;
 
+    Ptr<LteUeRrc> GetLteRrc() const;
 
-  // -------------------------- LTE methods -------------------------
-  Ptr<LteUeMac> GetLteMac (void) const;
+    Ptr<LteUeComponentCarrierManager> GetLteComponentCarrierManager(void) const;
 
-  Ptr<LteUeMac> GetLteMac (uint8_t index) const;
+    Ptr<LteUePhy> GetLtePhy(void) const;
 
+    Ptr<LteUePhy> GetLtePhy(uint8_t index) const;
 
-  Ptr<LteUeRrc> GetLteRrc () const;
+    std::map<uint8_t, Ptr<ComponentCarrierUe>> GetLteCcMap();
 
-  Ptr<LteUeComponentCarrierManager> GetLteComponentCarrierManager (void) const;
+    void SetLteCcMap(std::map<uint8_t, Ptr<ComponentCarrierUe>> ccm);
 
-  Ptr<LteUePhy> GetLtePhy (void) const;
+    /**
+     * \return the downlink carrier frequency (EARFCN)
+     *
+     * Note that real-life handset typically supports more than one EARFCN, but
+     * the sake of simplicity we assume only one EARFCN is supported.
+     */
+    uint16_t GetLteDlEarfcn() const;
 
-  Ptr<LteUePhy> GetLtePhy (uint8_t index) const;
+    /**
+     * \param earfcn the downlink carrier frequency (EARFCN)
+     *
+     * Note that real-life handset typically supports more than one EARFCN, but
+     * the sake of simplicity we assume only one EARFCN is supported.
+     */
+    void SetLteDlEarfcn(uint16_t earfcn);
 
-  std::map < uint8_t, Ptr<ComponentCarrierUe> > GetLteCcMap ();
+    /**
+     * \brief Set the targer eNB where the UE is registered
+     * \param enb
+     */
+    void SetLteTargetEnb(Ptr<LteEnbNetDevice> enb);
 
-  void SetLteCcMap (std::map< uint8_t, Ptr<ComponentCarrierUe> > ccm);
+    /**
+     * \brief Get the targer eNB where the UE is registered
+     * \return the pointer to the enb
+     */
+    Ptr<LteEnbNetDevice> GetLteTargetEnb(void);
 
+    // ---------------------------- From mmWave ------------------------
 
-  /**
-  * \return the downlink carrier frequency (EARFCN)
-  *
-  * Note that real-life handset typically supports more than one EARFCN, but
-  * the sake of simplicity we assume only one EARFCN is supported.
-  */
-  uint16_t GetLteDlEarfcn () const;
+    Ptr<MmWaveUePhy> GetMmWavePhy(void) const;
 
-  /**
-  * \param earfcn the downlink carrier frequency (EARFCN)
-  *
-  * Note that real-life handset typically supports more than one EARFCN, but
-  * the sake of simplicity we assume only one EARFCN is supported.
-  */
-  void SetLteDlEarfcn (uint16_t earfcn);
+    Ptr<MmWaveUePhy> GetMmWavePhy(uint8_t index) const;
 
-  /**
-  * \brief Set the targer eNB where the UE is registered
-  * \param enb
-  */
-  void SetLteTargetEnb (Ptr<LteEnbNetDevice> enb);
+    Ptr<MmWaveUeMac> GetMmWaveMac(void) const;
 
-  /**
-  * \brief Get the targer eNB where the UE is registered
-  * \return the pointer to the enb
-  */
-  Ptr<LteEnbNetDevice> GetLteTargetEnb (void);
+    Ptr<MmWaveUeMac> GetMmWaveMac(uint8_t index) const;
 
-  // ---------------------------- From mmWave ------------------------
+    std::map<uint8_t, Ptr<MmWaveComponentCarrierUe>> GetMmWaveCcMap();
 
-  Ptr<MmWaveUePhy> GetMmWavePhy (void) const;
+    void SetMmWaveCcMap(std::map<uint8_t, Ptr<MmWaveComponentCarrierUe>> ccm);
 
-  Ptr<MmWaveUePhy> GetMmWavePhy (uint8_t index) const;
+    Ptr<LteUeRrc> GetMmWaveRrc() const;
 
-  Ptr<MmWaveUeMac> GetMmWaveMac (void) const;
+    Ptr<LteUeComponentCarrierManager> GetMmWaveComponentCarrierManager(void) const;
 
-  Ptr<MmWaveUeMac> GetMmWaveMac (uint8_t index) const;
+    uint16_t GetMmWaveEarfcn() const;
 
-  std::map < uint8_t, Ptr<MmWaveComponentCarrierUe> > GetMmWaveCcMap ();
+    void SetMmWaveEarfcn(uint16_t earfcn);
 
-  void SetMmWaveCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrierUe> > ccm);
+    void SetMmWaveTargetEnb(Ptr<MmWaveEnbNetDevice> enb);
 
-  Ptr<LteUeRrc> GetMmWaveRrc () const;
+    Ptr<MmWaveEnbNetDevice> GetMmWaveTargetEnb(void);
 
-  Ptr<LteUeComponentCarrierManager> GetMmWaveComponentCarrierManager (void) const;
+    void SetAntennaNum(uint16_t antennaNum);
 
-  uint16_t GetMmWaveEarfcn () const;
+    uint16_t GetAntennaNum() const;
 
-  void SetMmWaveEarfcn (uint16_t earfcn);
+    /**
+     * Get the antenna for the given mmWave component carrier
+     * \param ccId the target mmwave Component Carrier ID
+     * \return the antenna
+     */
+    Ptr<PhasedArrayModel> GetAntenna(uint8_t ccId) const;
 
-  void SetMmWaveTargetEnb (Ptr<MmWaveEnbNetDevice> enb);
+  protected:
+    NetDevice::ReceiveCallback m_rxCallback;
+    virtual void DoInitialize(void) override;
 
-  Ptr<MmWaveEnbNetDevice> GetMmWaveTargetEnb (void);
+  private:
+    McUeNetDevice(const McUeNetDevice&);
 
-  void SetAntennaNum (uint16_t antennaNum);
+    Mac64Address m_macaddress;
+    Ptr<Node> m_node;
+    mutable uint16_t m_mtu;
+    bool m_linkUp;
+    uint32_t m_ifIndex;
 
-  uint16_t GetAntennaNum () const;
+    // From LTE
+    bool m_isConstructed;
+    TracedCallback<> m_linkChangeCallbacks;
 
-  /**
-   * Get the antenna for the given mmWave component carrier
-   * \param ccId the target mmwave Component Carrier ID
-   * \return the antenna
-   */
-  Ptr<PhasedArrayModel> GetAntenna (uint8_t ccId) const;
+    /**
+     * \brief Propagate attributes and configuration to sub-modules.
+     *
+     * Several attributes (e.g., the IMSI) are exported as the attributes of the
+     * McUeNetDevice from a user perspective, but are actually used also in other
+     * sub-modules (the RRC, the PHY, etc.). This method takes care of updating
+     * the configuration of all these sub-modules so that their copy of attribute
+     * values are in sync with the one in the McUeNetDevice.
+     */
+    void UpdateConfig();
 
-protected:
-  NetDevice::ReceiveCallback m_rxCallback;
-  virtual void DoInitialize (void) override;
+    bool DoSend(Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber);
+    // LTE
 
-private:
-  McUeNetDevice (const McUeNetDevice &);
+    Ptr<LteEnbNetDevice> m_lteTargetEnb;
+    Ptr<LteUeRrc> m_lteRrc;
+    Ptr<LteUeComponentCarrierManager>
+        m_lteComponentCarrierManager;                      ///< LTE component carrier manager
+    std::map<uint8_t, Ptr<ComponentCarrierUe>> m_lteCcMap; ///< LTE CC map
+    uint16_t m_lteDlEarfcn;                                /**< LTE downlink carrier frequency */
 
-  Mac64Address m_macaddress;
-  Ptr<Node> m_node;
-  mutable uint16_t m_mtu;
-  bool m_linkUp;
-  uint32_t m_ifIndex;
+    // MmWave
+    Ptr<MmWaveEnbNetDevice> m_mmWaveTargetEnb;
+    Ptr<LteUeRrc> m_mmWaveRrc; // TODO consider a lightweight RRC for the mmwave part
+    Ptr<LteUeComponentCarrierManager>
+        m_mmWaveComponentCarrierManager; ///< mmWave component carrier manager
+    std::map<uint8_t, Ptr<MmWaveComponentCarrierUe>> m_mmWaveCcMap; ///< mmWave CC map
+    uint16_t m_mmWaveEarfcn;                                        /**< MmWave carrier frequency */
+    uint16_t m_mmWaveAntennaNum;
 
-  // From LTE
-  bool m_isConstructed;
-  TracedCallback<> m_linkChangeCallbacks;
+    // Common
+    Ptr<EpcUeNas> m_nas;
+    uint64_t m_imsi;
+    uint32_t m_csgId;
 
-  /**
-  * \brief Propagate attributes and configuration to sub-modules.
-  *
-  * Several attributes (e.g., the IMSI) are exported as the attributes of the
-  * McUeNetDevice from a user perspective, but are actually used also in other
-  * sub-modules (the RRC, the PHY, etc.). This method takes care of updating
-  * the configuration of all these sub-modules so that their copy of attribute
-  * values are in sync with the one in the McUeNetDevice.
-  */
-  void UpdateConfig ();
-
-  bool DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber);
-  // LTE
-
-  Ptr<LteEnbNetDevice> m_lteTargetEnb;
-  Ptr<LteUeRrc> m_lteRrc;
-  Ptr<LteUeComponentCarrierManager> m_lteComponentCarrierManager; ///< LTE component carrier manager
-  std::map < uint8_t, Ptr<ComponentCarrierUe> > m_lteCcMap; ///< LTE CC map
-  uint16_t m_lteDlEarfcn; /**< LTE downlink carrier frequency */
-
-  // MmWave
-  Ptr<MmWaveEnbNetDevice> m_mmWaveTargetEnb;
-  Ptr<LteUeRrc> m_mmWaveRrc;       // TODO consider a lightweight RRC for the mmwave part
-  Ptr<LteUeComponentCarrierManager> m_mmWaveComponentCarrierManager; ///< mmWave component carrier manager
-  std::map < uint8_t, Ptr<MmWaveComponentCarrierUe> > m_mmWaveCcMap; ///< mmWave CC map
-  uint16_t m_mmWaveEarfcn; /**< MmWave carrier frequency */
-  uint16_t m_mmWaveAntennaNum;
-
-  // Common
-  Ptr<EpcUeNas> m_nas;
-  uint64_t m_imsi;
-  uint32_t m_csgId;
-
-  // TODO this will be useless
-  Ptr<UniformRandomVariable> m_random;
-
+    // TODO this will be useless
+    Ptr<UniformRandomVariable> m_random;
 };
 
-} //namespace mmwave
+} // namespace mmwave
 
 } // namespace ns3
 
 #endif
-//MC_UE_NET_DEVICE_H
+// MC_UE_NET_DEVICE_H

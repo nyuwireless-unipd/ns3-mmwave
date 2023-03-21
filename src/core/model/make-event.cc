@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2008 INRIA
  *
@@ -18,44 +17,52 @@
  */
 
 #include "make-event.h"
+
 #include "log.h"
 
 /**
  * \file
  * \ingroup events
- * ns3::MakeEvent(void(*f)(void)) implementation.
+ * ns3::MakeEvent(void(*f)()) implementation.
  */
 
-namespace ns3 {
+namespace ns3
+{
 
-NS_LOG_COMPONENT_DEFINE ("MakeEvent");
+NS_LOG_COMPONENT_DEFINE("MakeEvent");
 
 // This is the only non-templated version of MakeEvent.
-EventImpl * MakeEvent (void (*f)(void))
+EventImpl*
+MakeEvent(void (*f)())
 {
-  NS_LOG_FUNCTION (f);
-  // zero arg version
-  class EventFunctionImpl0 : public EventImpl
-  {
-  public:
-    typedef void (*F)(void);
+    NS_LOG_FUNCTION(f);
 
-    EventFunctionImpl0 (F function)
-      : m_function (function)
-    {}
-    virtual ~EventFunctionImpl0 ()
-    {}
-
-  protected:
-    virtual void Notify (void)
+    // zero arg version
+    class EventFunctionImpl0 : public EventImpl
     {
-      (*m_function)();
-    }
+      public:
+        typedef void (*F)();
 
-  private:
-    F m_function;
-  } *ev = new EventFunctionImpl0 (f);
-  return ev;
+        EventFunctionImpl0(F function)
+            : m_function(function)
+        {
+        }
+
+        ~EventFunctionImpl0() override
+        {
+        }
+
+      protected:
+        void Notify() override
+        {
+            (*m_function)();
+        }
+
+      private:
+        F m_function;
+    }* ev = new EventFunctionImpl0(f);
+
+    return ev;
 }
 
 } // namespace ns3

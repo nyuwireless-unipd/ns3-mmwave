@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2007 INRIA
  *
@@ -18,22 +17,21 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 
-#include "ns3/uinteger.h"
-
 #include "ipv6-raw-socket-factory.h"
 
-namespace ns3 {
+#include "ns3/uinteger.h"
 
-NS_OBJECT_ENSURE_REGISTERED (Ipv6RawSocketFactory);
-
-TypeId Ipv6RawSocketFactory::GetTypeId ()
+namespace ns3
 {
-  static TypeId tid = TypeId ("ns3::Ipv6RawSocketFactory")
-    .SetParent<SocketFactory> ()
-    .SetGroupName ("Internet")
-  ;
-  return tid;
+
+NS_OBJECT_ENSURE_REGISTERED(Ipv6RawSocketFactory);
+
+TypeId
+Ipv6RawSocketFactory::GetTypeId()
+{
+    static TypeId tid =
+        TypeId("ns3::Ipv6RawSocketFactory").SetParent<SocketFactory>().SetGroupName("Internet");
+    return tid;
 }
 
 } // namespace ns3
-

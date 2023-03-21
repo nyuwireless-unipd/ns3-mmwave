@@ -225,13 +225,13 @@ If you prefer to use the ``ns3`` wrapper, try:
 
 .. sourcecode:: console
 
-   ~ns-3-dev/$ ./ns3 run "wifi-he-network --simulationTime=0.3 --frequency=5 --useRts=1 --minExpectedThroughput=6 --maxExpectedThroughput=745" --command-template "heaptrack %s" --no-build
+   ~ns-3-dev/$ ./ns3 run "wifi-he-network --simulationTime=0.3 --frequency=5 --useRts=1 --minExpectedThroughput=6 --maxExpectedThroughput=745" --heaptrack --no-build
 
 In both cases, heaptrack will print to the terminal the output file:
 
 .. sourcecode:: console
 
-    ~ns-3-dev/$ ./ns3 run "wifi-he-network --simulationTime=0.3 --frequency=5 --useRts=1 --minExpectedThroughput=6 --maxExpectedThroughput=745" --command-template "heaptrack %s" --no-build
+    ~ns-3-dev/$ ./ns3 run "wifi-he-network --simulationTime=0.3 --frequency=5 --useRts=1 --minExpectedThroughput=6 --maxExpectedThroughput=745" --heaptrack --no-build
     heaptrack output will be written to "~ns-3-dev/heaptrack.ns3-dev-wifi-he-network.210305.zst"
     starting application, this might take some time...
     MCS value               Channel width           GI                      Throughput
@@ -388,12 +388,85 @@ were removed, which translates to a 20% reduction. This resulted in a 1.07x spee
 test suite with Valgrind (``./test.py -d -g``) and 1.02x speedup without it.
 
 
+Memray
+++++++
+
+.. _Memray : https://bloomberg.github.io/memray/
+
+`Memray`_ is an utility made by Bloomberg to trace memory allocations of Python programs,
+including native code called by them. Along with stack traces, developers can trace down
+possible memory leaks and unnecessary allocations.
+
+Note: Memray is ineffective for profiling the ns-3 python bindings since Cppyy hides away
+the calls to the ns-3 module libraries. However, it is still useful for python scripts
+in general, for example ones used to parse and consolidate simulation results.
+
+The ``ns3`` script includes a run option to launch Python programs with Memray.
+Memray can produce different types of reports, such as a flamegraph in HTML, or
+text reports (``summary`` and ``stats``).
+
+.. sourcecode:: console
+
+    ~/ns-3-dev/$ ./ns3 run sample-rng-plot.py --memray
+    Writing profile results into memray.output
+    Memray WARNING: Correcting symbol for aligned_alloc from 0x7fd97023c890 to 0x7fd97102fce0
+    [memray] Successfully generated profile results.
+
+    You can now generate reports from the stored allocation records.
+    Some example commands to generate reports:
+
+    /usr/bin/python3 -m memray flamegraph memray.output
+    ~/ns-3-dev$ /usr/bin/python3 -m memray stats memray.output
+       Total allocations:
+             5364235
+
+       Total memory allocated:
+             10.748GB
+
+       Histogram of allocation size:
+             min: 0.000B
+             ----------------------------------------------
+             < 8.000B   :  264149 |||
+             < 78.000B  : 2051906 |||||||||||||||||||||||
+             < 699.000B : 2270941 |||||||||||||||||||||||||
+             < 6.064KB  :  608993 |||||||
+             < 53.836KB :  165307 ||
+             < 477.912KB:    2220 |
+             < 4.143MB  :     511 |
+             < 36.779MB :     188 |
+             < 326.492MB:      19 |
+             <=2.830GB  :       1 |
+             ----------------------------------------------
+             max: 2.830GB
+
+       Allocator type distribution:
+              MALLOC: 4647765
+              CALLOC: 435525
+              REALLOC: 277736
+              POSIX_MEMALIGN: 2686
+              MMAP: 523
+
+       Top 5 largest allocating locations (by size):
+             - include:/usr/local/lib/python3.10/dist-packages/cppyy/__init__.py:243 -> 8.814GB
+             - <stack trace unavailable> -> 746.999MB
+             - show:~/.local/lib/python3.10/site-packages/matplotlib/backends/backend_gtk4.py:340 -> 263.338MB
+             - load_library:/usr/local/lib/python3.10/dist-packages/cppyy/__init__.py:235 -> 245.684MB
+             - __init__:/usr/lib/python3.10/ctypes/__init__.py:374 -> 225.797MB
+
+       Top 5 largest allocating locations (by number of allocations):
+             - include:/usr/local/lib/python3.10/dist-packages/cppyy/__init__.py:243 -> 2246145
+             - show:~/.local/lib/python3.10/site-packages/matplotlib/backends/backend_gtk4.py:340 -> 1264614
+             - <stack trace unavailable> -> 1098543
+             - __init__:~/.local/lib/python3.10/site-packages/matplotlib/backends/backend_gtk4.py:61 -> 89466
+             - run:/usr/lib/python3/dist-packages/gi/overrides/Gio.py:42 -> 79582
+
+
 Performance Profilers
 *********************
 
 .. _Perf : https://perf.wiki.kernel.org/index.php/Tutorial
 .. _Hotspot : https://github.com/KDAB/hotspot
-.. _AMD uProf : https://developer.amd.com/amd-uprof/
+.. _AMD uProf : https://www.amd.com/en/developer/uprof.html
 .. _Intel VTune : https://www.intel.com/content/www/us/en/develop/documentation/get-started-with-vtune/top.html
 .. _Windows Performance Toolkit : https://docs.microsoft.com/en-us/windows-hardware/test/wpt/
 .. _Sysprof : https://wiki.gnome.org/Apps/Sysprof
@@ -458,6 +531,63 @@ to the ``perf.data`` output file.
 
     ~/ns-3-dev$ ./ns3 run "wifi-he-network --simulationTime=0.3 --frequency=5 --useRts=1 --minExpectedThroughput=6 --maxExpectedThroughput=745" --command-template "perf record -o ./perf.data --call-graph dwarf --event cycles,cache-misses,branch-misses --sample-cpu %s" --no-build
 
+For ease of use, ``ns3`` also provides the ``--perf`` run option, that
+include the recommended settings.
+
+.. sourcecode:: console
+
+    ~/ns-3-dev$ ./ns3 run "wifi-he-network --simulationTime=0.3 --frequency=5 --useRts=1 --minExpectedThroughput=6 --maxExpectedThroughput=745" --perf --no-build
+
+When running for the first time, you may receive the following error:
+
+.. sourcecode:: console
+
+    ~/ns-3-dev$ ./ns3 run "wifi-he-network --simulationTime=0.3 --frequency=5 --useRts=1 --minExpectedThroughput=6 --maxExpectedThroughput=745" --perf --no-build
+    Error:
+    Access to performance monitoring and observability operations is limited.
+    Consider adjusting /proc/sys/kernel/perf_event_paranoid setting to open
+    access to performance monitoring and observability operations for processes
+    without CAP_PERFMON, CAP_SYS_PTRACE or CAP_SYS_ADMIN Linux capability.
+    More information can be found at 'Perf events and tool security' document:
+    https://www.kernel.org/doc/html/latest/admin-guide/perf-security.html
+    perf_event_paranoid setting is 1:
+      -1: Allow use of (almost) all events by all users
+          Ignore mlock limit after perf_event_mlock_kb without CAP_IPC_LOCK
+    >= 0: Disallow raw and ftrace function tracepoint access
+    >= 1: Disallow CPU event access
+    >= 2: Disallow kernel profiling
+    To make the adjusted perf_event_paranoid setting permanent preserve it
+    in /etc/sysctl.conf (e.g. kernel.perf_event_paranoid = <setting>)
+    Command 'build/examples/wireless/ns3-dev-wifi-he-network-default record --call-graph dwarf -a -e cache-misses,branch-misses,cpu-cycles,instructions,context-switches build/examples/wireless/ns3-dev-wifi-he-network-default -n=100' returned non-zero exit status 255.
+
+This error is related to lacking permissions to access performance events from the kernel and CPU.
+As said in the error, permissions can be granted for the current session
+by changing the ``perf_event_paranoid`` setting with ``echo 0 > /proc/sys/kernel/perf_event_paranoid``.
+This change can be made permanent by changing the setting in ``/etc/sysctl.conf``, but
+this is not recommended. Administrative permissions (``sudo su``) are required in both cases.
+
+After the program finishes, it will print recording statistics.
+
+.. sourcecode:: console
+
+    MCS value               Channel width           GI                      Throughput
+    0                       20 MHz                  3200 ns                 6.01067 Mbit/s
+    0                       20 MHz                  1600 ns                 5.936 Mbit/s
+    ...
+    11                      160 MHz                 1600 ns                 493.397 Mbit/s
+    11                      160 MHz                 800 ns                  534.016 Mbit/s
+    [ perf record: Woken up 9529 times to write data ]
+    Warning:
+    Processed 517638 events and lost 94 chunks!
+
+    Check IO/CPU overload!
+
+    Warning:
+    1 out of order events recorded.
+    [ perf record: Captured and wrote 2898,307 MB perf.data (436509 samples) ]
+
+
+Results saved in ``perf.data`` can be reviewed with the ``perf report`` command.
 
 `Hotspot`_ is a GUI for Perf, that makes performance profiling more
 enjoyable and productive. It can parse the ``perf.data`` and show in
@@ -873,30 +1003,30 @@ output for a file is shown below. The line of ``---`` was inserted for clarity.
 
 .. sourcecode:: console
 
-  Time variable                                  usr           sys          wall               GGC
-  phase setup                        :   0.00 (  0%)   0.00 (  0%)   0.01 (  1%)    1478 kB (  2%)
-  phase parsing                      :   0.31 ( 46%)   0.17 ( 85%)   0.48 ( 55%)   55432 kB ( 71%)
-  phase lang. deferred               :   0.03 (  4%)   0.00 (  0%)   0.03 (  3%)    4287 kB (  5%)
-  phase opt and generate             :   0.32 ( 48%)   0.03 ( 15%)   0.35 ( 40%)   16635 kB ( 21%)
-  phase last asm                     :   0.01 (  1%)   0.00 (  0%)   0.01 (  1%)     769 kB (  1%)
-  ------------------------------------------------------------------------------------------------
-  |name lookup                       :   0.05 (  7%)   0.02 ( 10%)   0.04 (  5%)    2468 kB (  3%)
-  |overload resolution               :   0.05 (  7%)   0.00 (  0%)   0.05 (  6%)    4217 kB (  5%)
-  dump files                         :   0.00 (  0%)   0.00 (  0%)   0.01 (  1%)       0 kB (  0%)
-  callgraph construction             :   0.01 (  1%)   0.00 (  0%)   0.01 (  1%)    2170 kB (  3%)
+  Time variable                      usr           sys          wall               GGC
+  phase setup            :   0.00 (  0%)   0.00 (  0%)   0.01 (  1%)    1478 kB (  2%)
+  phase parsing          :   0.31 ( 46%)   0.17 ( 85%)   0.48 ( 55%)   55432 kB ( 71%)
+  phase lang. deferred   :   0.03 (  4%)   0.00 (  0%)   0.03 (  3%)    4287 kB (  5%)
+  phase opt and generate :   0.32 ( 48%)   0.03 ( 15%)   0.35 ( 40%)   16635 kB ( 21%)
+  phase last asm         :   0.01 (  1%)   0.00 (  0%)   0.01 (  1%)     769 kB (  1%)
+  ------------------------------------------------------------------------------------
+  |name lookup           :   0.05 (  7%)   0.02 ( 10%)   0.04 (  5%)    2468 kB (  3%)
+  |overload resolution   :   0.05 (  7%)   0.00 (  0%)   0.05 (  6%)    4217 kB (  5%)
+  dump files             :   0.00 (  0%)   0.00 (  0%)   0.01 (  1%)       0 kB (  0%)
+  callgraph construction :   0.01 (  1%)   0.00 (  0%)   0.01 (  1%)    2170 kB (  3%)
   ...
-  preprocessing                      :   0.05 (  7%)   0.06 ( 30%)   0.10 ( 11%)    1751 kB (  2%)
-  parser (global)                    :   0.06 (  9%)   0.03 ( 15%)   0.07 (  8%)   16303 kB ( 21%)
-  parser struct body                 :   0.06 (  9%)   0.04 ( 20%)   0.08 (  9%)   12525 kB ( 16%)
-  parser enumerator list             :   0.01 (  1%)   0.00 (  0%)   0.00 (  0%)     112 kB (  0%)
-  parser function body               :   0.02 (  3%)   0.02 ( 10%)   0.02 (  2%)    3039 kB (  4%)
-  parser inl. func. body             :   0.03 (  4%)   0.00 (  0%)   0.01 (  1%)    2024 kB (  3%)
-  parser inl. meth. body             :   0.02 (  3%)   0.01 (  5%)   0.06 (  7%)    5792 kB (  7%)
-  template instantiation             :   0.09 ( 13%)   0.01 (  5%)   0.13 ( 15%)   12274 kB ( 16%)
+  preprocessing          :   0.05 (  7%)   0.06 ( 30%)   0.10 ( 11%)    1751 kB (  2%)
+  parser (global)        :   0.06 (  9%)   0.03 ( 15%)   0.07 (  8%)   16303 kB ( 21%)
+  parser struct body     :   0.06 (  9%)   0.04 ( 20%)   0.08 (  9%)   12525 kB ( 16%)
+  parser enumerator list :   0.01 (  1%)   0.00 (  0%)   0.00 (  0%)     112 kB (  0%)
+  parser function body   :   0.02 (  3%)   0.02 ( 10%)   0.02 (  2%)    3039 kB (  4%)
+  parser inl. func. body :   0.03 (  4%)   0.00 (  0%)   0.01 (  1%)    2024 kB (  3%)
+  parser inl. meth. body :   0.02 (  3%)   0.01 (  5%)   0.06 (  7%)    5792 kB (  7%)
+  template instantiation :   0.09 ( 13%)   0.01 (  5%)   0.13 ( 15%)   12274 kB ( 16%)
   ...
-  symout                             :   0.01 (  1%)   0.00 (  0%)   0.02 (  2%)    8114 kB ( 10%)
+  symout                 :   0.01 (  1%)   0.00 (  0%)   0.02 (  2%)    8114 kB ( 10%)
   ...
-  TOTAL                              :   0.67          0.20          0.88          78612 kB
+  TOTAL                  :   0.67          0.20          0.88          78612 kB
 
 In the table above, the first few lines show the five main compilations steps: ``setup``,
 ``parsing``, ``lang. deferred`` (C++ specific transformations),
@@ -910,6 +1040,8 @@ Aggregating the data into a meaningful output to help focus where to improve is 
 and it is `not a priority`_ for GCC developers.
 
 It is recommended to use the Clang alternative.
+
+.. _Clang :
 
 Clang
 +++++
@@ -1034,6 +1166,37 @@ Precompiled headers (``-DNS3_PRECOMPILE_HEADERS=ON``) can `drastically speed up 
 however, they can increase ccache misses, reducing the time of the first
 compilation at the cost of increasing recompilation times.
 
+.. _Perfetto UI : https://ui.perfetto.dev/
+.. _NinjaTracing : https://github.com/nico/ninjatracing
+
+NinjaTracing
+++++++++++++
+
+If the Ninja generator is being used (``./ns3 configure -G Ninja``), its build log
+can be used to identify targets slowing down the build process. The `NinjaTracing`_
+utility is used to convert the log format into a tracing Json file.
+
+The following steps show how it can be used:
+
+.. sourcecode:: console
+
+  ~/ns-3-dev$ ./ns3 configure --enable-ninja-tracing
+  ~/ns-3-dev$ ./ns3 build
+  ~/ns-3-dev$ ./ns3 build ninjaTrace
+
+The output ``ninja_performance_trace.json`` should be located in the ``~/ns-3-dev`` directory.
+You can then visualize the results using the ``about:tracing`` panel available in
+Chromium-based browser or with a compatible trace viewer such as `Perfetto UI`_.
+
+It can also be used in conjunction with the `Clang`_ time-trace feature for more granular
+information from within the compiler and linker.
+
+.. sourcecode:: console
+
+  ~/ns-3-dev$ CXX=clang++ ./ns3 configure --enable-ninja-tracing -- -DNS3_CLANG_TIMETRACE=ON
+  ~/ns-3-dev$ ./ns3 build
+  ~/ns-3-dev$ ./ns3 build ninjaTrace
+
 
 CMake Profiler
 **************
@@ -1051,9 +1214,6 @@ Or using the ns3 wrapper:
 .. sourcecode:: console
 
   ~/ns-3-dev$ ./ns3 configure --trace-performance
-
-
-.. _Perfetto UI: https://ui.perfetto.dev/
 
 A ``cmake_performance_trace.log`` file will be generated in the ns-3-dev directory.
 The tracing results can be visualized using the ``about:tracing`` panel available

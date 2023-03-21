@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2010 Network Security Lab, University of Washington, Seattle.
  *
@@ -19,33 +18,35 @@
  */
 
 #include "rv-battery-model-helper.h"
+
 #include "ns3/energy-source.h"
 
-namespace ns3 {
-
-RvBatteryModelHelper::RvBatteryModelHelper ()
+namespace ns3
 {
-  m_rvBatteryModel.SetTypeId ("ns3::RvBatteryModel");
+
+RvBatteryModelHelper::RvBatteryModelHelper()
+{
+    m_rvBatteryModel.SetTypeId("ns3::RvBatteryModel");
 }
 
-RvBatteryModelHelper::~RvBatteryModelHelper ()
+RvBatteryModelHelper::~RvBatteryModelHelper()
 {
 }
 
 void
-RvBatteryModelHelper::Set (std::string name, const AttributeValue &v)
+RvBatteryModelHelper::Set(std::string name, const AttributeValue& v)
 {
-  m_rvBatteryModel.Set (name, v);
+    m_rvBatteryModel.Set(name, v);
 }
 
 Ptr<EnergySource>
-RvBatteryModelHelper::DoInstall (Ptr<Node> node) const
+RvBatteryModelHelper::DoInstall(Ptr<Node> node) const
 {
-  NS_ASSERT (node);
-  Ptr<EnergySource> source = m_rvBatteryModel.Create<EnergySource> ();
-  NS_ASSERT (source);
-  source->SetNode (node);
-  return source;
+    NS_ASSERT(node);
+    Ptr<EnergySource> source = m_rvBatteryModel.Create<EnergySource>();
+    NS_ASSERT(source);
+    source->SetNode(node);
+    return source;
 }
 
 } // namespace ns3

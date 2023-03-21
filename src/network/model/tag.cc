@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2008 INRIA
  *
@@ -19,19 +18,16 @@
  */
 #include "tag.h"
 
-namespace ns3 {
+namespace ns3
+{
 
-NS_OBJECT_ENSURE_REGISTERED (Tag);
+NS_OBJECT_ENSURE_REGISTERED(Tag);
 
 TypeId
-Tag::GetTypeId (void)
+Tag::GetTypeId()
 {
-  static TypeId tid = TypeId ("ns3::Tag")
-    .SetParent<ObjectBase> ()
-    .SetGroupName("Network")
-  ;
-  return tid;
+    static TypeId tid = TypeId("ns3::Tag").SetParent<ObjectBase>().SetGroupName("Network");
+    return tid;
 }
-
 
 } // namespace ns3

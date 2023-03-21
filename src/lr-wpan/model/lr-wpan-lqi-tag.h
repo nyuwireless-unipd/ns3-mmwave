@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2013 Fraunhofer FKIE
  *
@@ -23,7 +22,8 @@
 
 #include <ns3/tag.h>
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup lr-wpan
@@ -36,52 +36,52 @@ namespace ns3 {
  */
 class LrWpanLqiTag : public Tag
 {
-public:
-  /**
-   * Get the type ID.
-   *
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     * Get the type ID.
+     *
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  virtual TypeId GetInstanceTypeId (void) const;
+    TypeId GetInstanceTypeId() const override;
 
-  /**
-   * Create a LrWpanLqiTag with the default LQI 0.
-   */
-  LrWpanLqiTag (void);
+    /**
+     * Create a LrWpanLqiTag with the default LQI 0.
+     */
+    LrWpanLqiTag();
 
-  /**
-   * Create a LrWpanLqiTag with the given LQI value.
-   * \param lqi The LQI.
-   */
-  LrWpanLqiTag (uint8_t lqi);
+    /**
+     * Create a LrWpanLqiTag with the given LQI value.
+     * \param lqi The LQI.
+     */
+    LrWpanLqiTag(uint8_t lqi);
 
-  virtual uint32_t GetSerializedSize (void) const;
-  virtual void Serialize (TagBuffer i) const;
-  virtual void Deserialize (TagBuffer i);
-  virtual void Print (std::ostream &os) const;
+    uint32_t GetSerializedSize() const override;
+    void Serialize(TagBuffer i) const override;
+    void Deserialize(TagBuffer i) override;
+    void Print(std::ostream& os) const override;
 
-  /**
-   * Set the LQI to the given value.
-   *
-   * \param lqi the value of the LQI to set
-   */
-  void Set (uint8_t lqi);
+    /**
+     * Set the LQI to the given value.
+     *
+     * \param lqi the value of the LQI to set
+     */
+    void Set(uint8_t lqi);
 
-  /**
-   * Get the LQI value.
-   *
-   * \return the LQI value
-   */
-  uint8_t Get (void) const;
-private:
-  /**
-   * The current LQI value of the tag.
-   */
-  uint8_t m_lqi;
+    /**
+     * Get the LQI value.
+     *
+     * \return the LQI value
+     */
+    uint8_t Get() const;
+
+  private:
+    /**
+     * The current LQI value of the tag.
+     */
+    uint8_t m_lqi;
 };
 
-
-}
+} // namespace ns3
 #endif /* LR_WPAN_LQI_TAG_H */

@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2008 Drexel University
  *
@@ -18,57 +17,57 @@
  * Author: Joe Kopena (tjkopena@cs.drexel.edu)
  */
 
-#include "ns3/log.h"
-
 #include "data-output-interface.h"
+
+#include "ns3/log.h"
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("DataOutputInterface");
+NS_LOG_COMPONENT_DEFINE("DataOutputInterface");
 
 //--------------------------------------------------------------
 //----------------------------------------------
 DataOutputInterface::DataOutputInterface()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
+
 DataOutputInterface::~DataOutputInterface()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
+
 /* static */
 TypeId
-DataOutputInterface::GetTypeId (void)
+DataOutputInterface::GetTypeId()
 {
-  static TypeId tid = TypeId ("ns3::DataOutputInterface")
-    .SetParent<Object> ()
-    .SetGroupName ("Stats")
-    // No AddConstructor because this is an abstract class.
-    ;
-  return tid;
+    static TypeId tid = TypeId("ns3::DataOutputInterface").SetParent<Object>().SetGroupName("Stats")
+        // No AddConstructor because this is an abstract class.
+        ;
+    return tid;
 }
 
 void
-DataOutputInterface::DoDispose ()
+DataOutputInterface::DoDispose()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 
-  Object::DoDispose ();
-  // end DataOutputInterface::DoDispose
+    Object::DoDispose();
+    // end DataOutputInterface::DoDispose
 }
 
 void
-DataOutputInterface::SetFilePrefix (const std::string prefix)
+DataOutputInterface::SetFilePrefix(const std::string prefix)
 {
-  NS_LOG_FUNCTION (this << prefix);
+    NS_LOG_FUNCTION(this << prefix);
 
-  m_filePrefix = prefix;
+    m_filePrefix = prefix;
 }
 
 std::string
-DataOutputInterface::GetFilePrefix () const
+DataOutputInterface::GetFilePrefix() const
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 
-  return m_filePrefix;
+    return m_filePrefix;
 }

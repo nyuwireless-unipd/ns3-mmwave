@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2008 INRIA
  *
@@ -61,10 +60,26 @@
  *     void SomethingUseful () { ... }
  *     \endcode.
  *
+ * \note Sometimes it is necessary to silence a deprecation warning.
+ * Even though this is highly discouraged, if necessary it is possible to use:
+ * \code
+ *   NS_WARNING_PUSH_DEPRECATED;
+ *   // call to a function or class that has been deprecated.
+ *   NS_WARNING_POP;
+ * \endcode
+ * These macros are defined in warnings.h
+ *
  * \param msg Optional message to add to the compiler warning.
  *
  */
-#define NS_DEPRECATED(msg) [[deprecated (msg)]]
+#define NS_DEPRECATED(msg) [[deprecated(msg)]]
+
+/**
+ * \ingroup core
+ * \def NS_DEPRECATED_3_38
+ * Tag for things deprecated in version ns-3.38.
+ */
+#define NS_DEPRECATED_3_38(msg) NS_DEPRECATED(msg)
 
 /**
  * \ingroup core
@@ -79,19 +94,5 @@
  * Tag for things deprecated in version ns-3.36.
  */
 #define NS_DEPRECATED_3_36(msg) NS_DEPRECATED(msg)
-
-/**
- * \ingroup core
- * \def NS_DEPRECATED_3_35
- * Tag for things deprecated in version ns-3.35.
- */
-#define NS_DEPRECATED_3_35 NS_DEPRECATED("")
-
-/**
- * \ingroup core
- * \def NS_DEPRECATED_3_34
- * Tag for things deprecated in version ns-3.34.
- */
-#define NS_DEPRECATED_3_34 NS_DEPRECATED("")
 
 #endif /* NS3_DEPRECATED_H */

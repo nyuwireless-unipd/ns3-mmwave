@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2008 INRIA
  * Copyright (c) 2013 Dalian University of Technology
@@ -25,7 +24,8 @@
 #include "ns3/tag.h"
 #include "ns3/wifi-tx-vector.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 class Tag;
 class TypeId;
@@ -46,39 +46,42 @@ class TypeId;
  */
 class HigherLayerTxVectorTag : public Tag
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
-  virtual TypeId GetInstanceTypeId (void) const;
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
+    TypeId GetInstanceTypeId() const override;
 
-  HigherLayerTxVectorTag (void);
-  /**
-   * Constructor
-   *
-   * \param txVector wifi transmit vector
-   * \param adaptable is adaptable?
-   */
-  HigherLayerTxVectorTag (WifiTxVector txVector, bool adaptable);
-  /**
-   * \returns the tx vector for transmission
-   */
-  WifiTxVector GetTxVector (void) const;
-  /**
-   * \returns the adaptable mode for transmission
-   */
-  bool IsAdaptable (void) const;
+    HigherLayerTxVectorTag();
+    /**
+     * Constructor
+     *
+     * \param txVector wifi transmit vector
+     * \param adaptable is adaptable?
+     */
+    HigherLayerTxVectorTag(WifiTxVector txVector, bool adaptable);
+    /**
+     * \returns the tx vector for transmission
+     */
+    WifiTxVector GetTxVector() const;
+    /**
+     * \returns the adaptable mode for transmission
+     */
+    bool IsAdaptable() const;
 
-  virtual uint32_t GetSerializedSize (void) const;
-  virtual void Serialize (TagBuffer i) const;
-  virtual void Deserialize (TagBuffer i);
-  virtual void Print (std::ostream &os) const;
+    uint32_t GetSerializedSize() const override;
+    void Serialize(TagBuffer i) const override;
+    void Deserialize(TagBuffer i) override;
+    void Print(std::ostream& os) const override;
 
-private:
-  WifiTxVector m_txVector; ///< transmit vector
-  bool m_adaptable; ///< adaptable
+  private:
+    WifiTxVector m_txVector; ///< transmit vector
+    WifiMode m_mode;         ///< wifi mode
+    WifiPreamble m_preamble; ///< wifi preamble
+    uint16_t m_channelWidth; ///< channel width in MHz
+    bool m_adaptable;        ///< adaptable
 };
 
 } // namespace ns3

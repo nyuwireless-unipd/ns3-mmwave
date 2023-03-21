@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2009 IITP RAS
  *
@@ -32,7 +31,8 @@
 /**
  * \defgroup aodv AODV Routing
  *
- * This section documents the API of the ns-3 AODV module. For a generic functional description, please refer to the ns-3 manual.
+ * This section documents the API of the ns-3 AODV module. For a generic functional description,
+ * please refer to the ns-3 manual.
  */
 
 #endif /* AODV_H */

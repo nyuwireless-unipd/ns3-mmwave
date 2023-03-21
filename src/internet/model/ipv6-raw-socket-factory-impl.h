@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2008 INRIA
  *
@@ -34,15 +33,14 @@ namespace ns3
  */
 class Ipv6RawSocketFactoryImpl : public Ipv6RawSocketFactory
 {
-public:
-  /**
-   * \brief Create a raw IPv6 socket.
-   * \returns A new RAW IPv6 socket.
-   */
-  virtual Ptr<Socket> CreateSocket ();
+  public:
+    /**
+     * \brief Create a raw IPv6 socket.
+     * \returns A new RAW IPv6 socket.
+     */
+    Ptr<Socket> CreateSocket() override;
 };
 
 } /* namespace ns3 */
 
 #endif /* IPV6_RAW_SOCKET_FACTORY_IMPL_H */
-

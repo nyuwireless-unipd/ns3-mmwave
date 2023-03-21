@@ -117,17 +117,17 @@ Using the helper functions defined in ``src/applications/helper`` and
 
   // Create a packet sink on the star "hub" to receive these packets
   uint16_t port = 50000;
-  Address sinkLocalAddress(InetSocketAddress (Ipv4Address::GetAny (), port));
-  PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory", sinkLocalAddress);
-  ApplicationContainer sinkApp = sinkHelper.Install (serverNode);
-  sinkApp.Start (Seconds (1.0));
-  sinkApp.Stop (Seconds (10.0));
+  Address sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(), port));
+  PacketSinkHelper sinkHelper("ns3::TcpSocketFactory", sinkLocalAddress);
+  ApplicationContainer sinkApp = sinkHelper.Install(serverNode);
+  sinkApp.Start(Seconds(1.0));
+  sinkApp.Stop(Seconds(10.0));
 
 Similarly, the below snippet configures OnOffApplication traffic source to use
 TCP::
 
   // Create the OnOff applications to send TCP to the server
-  OnOffHelper clientHelper ("ns3::TcpSocketFactory", Address ());
+  OnOffHelper clientHelper("ns3::TcpSocketFactory", Address());
 
 The careful reader will note above that we have specified the TypeId of an
 abstract base class :cpp:class:`TcpSocketFactory`. How does the script tell
@@ -139,7 +139,7 @@ native |ns3| TCP.
 
 To configure behavior of TCP, a number of parameters are exported through the
 |ns3| attribute system. These are documented in the `Doxygen
-<http://www.nsnam.org/doxygen/classns3_1_1_tcp_socket.html>`_ for class
+<https://www.nsnam.org/docs/doxygen/d3/dea/classns3_1_1_tcp_socket.html>`_ for class
 :cpp:class:`TcpSocket`. For example, the maximum segment size is a
 settable attribute.
 
@@ -147,7 +147,7 @@ To set the default socket type before any internet stack-related objects are
 created, one may put the following statement at the top of the simulation
 program::
 
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
+  Config::SetDefault("ns3::TcpL4Protocol::SocketType", StringValue("ns3::TcpNewReno"));
 
 For users who wish to have a pointer to the actual socket (so that
 socket operations like Bind(), setting socket options, etc. can be
@@ -161,10 +161,10 @@ the Node container "n0n1" is accessed to get the zeroth element, and a socket is
 created on this node::
 
   // Create and bind the socket...
-  TypeId tid = TypeId::LookupByName ("ns3::TcpNewReno");
-  Config::Set ("/NodeList/*/$ns3::TcpL4Protocol/SocketType", TypeIdValue (tid));
+  TypeId tid = TypeId::LookupByName("ns3::TcpNewReno");
+  Config::Set("/NodeList/*/$ns3::TcpL4Protocol/SocketType", TypeIdValue(tid));
   Ptr<Socket> localSocket =
-    Socket::CreateSocket (n0n1.Get (0), TcpSocketFactory::GetTypeId ());
+    Socket::CreateSocket(n0n1.Get(0), TcpSocketFactory::GetTypeId());
 
 Above, the "*" wild card for node number is passed to the attribute
 configuration system, so that all future sockets on all nodes are set to
@@ -172,13 +172,13 @@ NewReno, not just on node 'n0n1.Get (0)'. If one wants to limit it to just
 the specified node, one would have to do something like::
 
   // Create and bind the socket...
-  TypeId tid = TypeId::LookupByName ("ns3::TcpNewReno");
+  TypeId tid = TypeId::LookupByName("ns3::TcpNewReno");
   std::stringstream nodeId;
-  nodeId << n0n1.Get (0)->GetId ();
-  std::string specificNode = "/NodeList/" + nodeId.str () + "/$ns3::TcpL4Protocol/SocketType";
-  Config::Set (specificNode, TypeIdValue (tid));
+  nodeId << n0n1.Get(0)->GetId();
+  std::string specificNode = "/NodeList/" + nodeId.str() + "/$ns3::TcpL4Protocol/SocketType";
+  Config::Set(specificNode, TypeIdValue(tid));
   Ptr<Socket> localSocket =
-    Socket::CreateSocket (n0n1.Get (0), TcpSocketFactory::GetTypeId ());
+    Socket::CreateSocket(n0n1.Get(0), TcpSocketFactory::GetTypeId());
 
 Once a TCP socket is created, one will want to follow conventional socket logic
 and either connect() and send() (for a TCP client) or bind(), listen(), and
@@ -456,31 +456,31 @@ cwnd, 'bytes_acked' is reduced by the value of cwnd. Next, cwnd is incremented
 by a full-sized segment (SMSS).  In contrast, in ns-3 NewReno, cwnd is increased
 by (1/cwnd) with a rounding off due to type casting into int.
 
-.. code-block:: c++
+.. code-block::
+   :caption: Linux Reno `cwnd` update
 
    if (m_cWndCnt >= w)
-    {
+   {
       uint32_t delta = m_cWndCnt / w;
 
       m_cWndCnt -= delta * w;
       tcb->m_cWnd += delta * tcb->m_segmentSize;
-      NS_LOG_DEBUG ("Subtracting delta * w from m_cWndCnt " << delta * w);
-    }
+      NS_LOG_DEBUG("Subtracting delta * w from m_cWndCnt " << delta * w);
+   }
 
-   :label: linuxrenocongavoid
 
-.. code-block:: c++
+.. code-block::
+   :caption: New Reno `cwnd` update
 
    if (segmentsAcked > 0)
     {
-      double adder = static_cast<double> (tcb->m_segmentSize * tcb->m_segmentSize) / tcb->m_cWnd.Get ();
-      adder = std::max (1.0, adder);
-      tcb->m_cWnd += static_cast<uint32_t> (adder);
-      NS_LOG_INFO ("In CongAvoid, updated to cwnd " << tcb->m_cWnd <<
+      double adder = static_cast<double>(tcb->m_segmentSize * tcb->m_segmentSize) / tcb->m_cWnd.Get();
+      adder = std::max(1.0, adder);
+      tcb->m_cWnd += static_cast<uint32_t>(adder);
+      NS_LOG_INFO("In CongAvoid, updated to cwnd " << tcb->m_cWnd <<
                    " ssthresh " << tcb->m_ssThresh);
     }
 
-   :label: newrenocongavoid
 
 So, there are two main difference between the TCP Linux Reno and TCP NewReno
 in ns-3:
@@ -525,7 +525,7 @@ event, the slow start threshold is decreased by a value that depends on the
 size of the slow start threshold itself. Then, the congestion window is set
 to such value.
 
-.. math::   cWnd = (1-b(cWnd)) \cdot cWnd
+.. math::   cWnd = (1 - b(cWnd)) \cdot cWnd
    :label: highspeedcwnddecrement
 
 The lookup table for the function b() is taken from the same RFC.
@@ -553,6 +553,12 @@ instead of halving the cwnd, these protocols try to estimate the network's
 bandwidth and use the estimated value to adjust the cwnd.
 While Westwood performs the bandwidth sampling every ACK reception,
 Westwood+ samples the bandwidth every RTT.
+
+The TCP Westwood model has been removed in ns-3.38 due to bugs that are impossible
+to fix without modifying the original Westwood model as presented in the published papers.
+For further info refer to https://gitlab.com/nsnam/ns-3-dev/-/issues/579
+
+The Westwood+ model does not have such issues, and is still available.
 
 WARNING: this TCP model lacks validation and regression tests; use with caution.
 
@@ -833,13 +839,12 @@ congestion that the flow itself induces in the network.
 
 As a first approximation, the LEDBAT sender operates as shown below:
 
-On receipt of an ACK:
+On receipt of an ACK::
 
-::
        currentdelay = acknowledgement.delay
-       basedelay = min (basedelay, currentdelay)
+       basedelay = min(basedelay, currentdelay)
        queuingdelay = currentdelay - basedelay
-       offtarget = (TARGET - queuingdelay) / TARGET
+       offtarget =(TARGET - queuingdelay) / TARGET
        cWnd += GAIN * offtarget * bytesnewlyacked * MSS / cWnd
 
 ``TARGET`` is the maximum queueing delay that LEDBAT itself may introduce in the
@@ -856,17 +861,13 @@ Following the recommendation of RFC 6817, the default values of the parameters a
 * noiseFilterLen = 4
 * Gain = 1
 
-To enable LEDBAT on all TCP sockets, the following configuration can be used:
+To enable LEDBAT on all TCP sockets, the following configuration can be used::
 
-::
+  Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpLedbat::GetTypeId()));
 
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpLedbat::GetTypeId ()));
+To enable LEDBAT on a chosen TCP socket, the following configuration can be used::
 
-To enable LEDBAT on a chosen TCP socket, the following configuration can be used:
-
-::
-
-  Config::Set ("$ns3::NodeListPriv/NodeList/1/$ns3::TcpL4Protocol/SocketType", TypeIdValue (TcpLedbat::GetTypeId ()));
+  Config::Set("$ns3::NodeListPriv/NodeList/1/$ns3::TcpL4Protocol/SocketType", TypeIdValue(TcpLedbat::GetTypeId()));
 
 The following unit tests have been written to validate the implementation of LEDBAT:
 
@@ -968,11 +969,9 @@ Following the recommendation of RFC 8257, the default values of the parameters a
   initial alpha (\alpha) = 1
 
 
-To enable DCTCP on all TCP sockets, the following configuration can be used:
+To enable DCTCP on all TCP sockets, the following configuration can be used::
 
-::
-
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpDctcp::GetTypeId ()));
+  Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpDctcp::GetTypeId()));
 
 To enable DCTCP on a selected node, one can set the "SocketType" attribute
 on the TcpL4Protocol object of that node to the TcpDctcp TypeId.
@@ -985,23 +984,19 @@ mark packets. The current implementation of DCTCP in ns-3 can use RED with
 a simple
 configuration to achieve the behavior of desired queue management algorithm.
 
-To configure RED router for DCTCP:
+To configure RED router for DCTCP::
 
-::
-
-  Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true));
-  Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
-  Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (16));
-  Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (16));
+  Config::SetDefault("ns3::RedQueueDisc::UseEcn", BooleanValue(true));
+  Config::SetDefault("ns3::RedQueueDisc::QW", DoubleValue(1.0));
+  Config::SetDefault("ns3::RedQueueDisc::MinTh", DoubleValue(16));
+  Config::SetDefault("ns3::RedQueueDisc::MaxTh", DoubleValue(16));
 
 There is also the option, when running CoDel or FqCoDel, to enable ECN
 on the queue and to set the "CeThreshold" value to a low value such as 1ms.
-The following example uses CoDel:
+The following example uses CoDel::
 
-::
-
-  Config::SetDefault ("ns3::CoDelQueueDisc::UseEcn", BooleanValue (true));
-  Config::SetDefault ("ns3::CoDelQueueDisc::CeThreshold", TimeValue (MilliSeconds (1)));
+  Config::SetDefault("ns3::CoDelQueueDisc::UseEcn", BooleanValue(true));
+  Config::SetDefault("ns3::CoDelQueueDisc::CeThreshold", TimeValue(MilliSeconds(1)));
 
 The following unit tests have been written to validate the implementation of DCTCP:
 
@@ -1056,37 +1051,35 @@ of data to send.
 
 The following is a high level overview of BBR congestion control algorithm:
 
-On receiving an ACK:
-    rtt = now - packet.sent_time
-    update_minimum_rtt (rtt)
-    delivery_rate = estimate_delivery_rate (packet)
-    update_maximum_bandwidth (delivery_rate)
+On receiving an ACK::
 
-After transmitting a data packet:
+    rtt = now - packet.sent_time
+    update_minimum_rtt(rtt)
+    delivery_rate = estimate_delivery_rate(packet)
+    update_maximum_bandwidth(delivery_rate)
+
+After transmitting a data packet::
+
     bdp = max_bandwidth * min_rtt
     if (cwnd * bdp < inflight)
       return
     if (now > nextSendTime)
       {
-        transmit (packet)
-        nextSendTime = now + packet.size / (pacing_gain * max_bandwidth)
+        transmit(packet)
+        nextSendTime = now + packet.size /(pacing_gain * max_bandwidth)
       }
     else
       return
-    Schedule (nextSendTime, Send)
+    Schedule(nextSendTime, Send)
 
-To enable BBR on all TCP sockets, the following configuration can be used:
+To enable BBR on all TCP sockets, the following configuration can be used::
 
-::
-
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpBbr::GetTypeId ()));
+  Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpBbr::GetTypeId()));
 
 To enable BBR on a chosen TCP socket, the following configuration can be used
-(note that an appropriate Node ID must be used instead of 1):
+(note that an appropriate Node ID must be used instead of 1)::
 
-::
-
-  Config::Set ("$ns3::NodeListPriv/NodeList/1/$ns3::TcpL4Protocol/SocketType", TypeIdValue (TcpBbr::GetTypeId ()));
+  Config::Set("$ns3::NodeListPriv/NodeList/1/$ns3::TcpL4Protocol/SocketType", TypeIdValue(TcpBbr::GetTypeId()));
 
 The ns-3 implementation of BBR is based on its Linux implementation. Linux 5.4
 kernel implementation has been used to validate the behavior of ns-3
@@ -1097,7 +1090,7 @@ implementation of BBR in ns-3:
 
 * BBR should enable (if not already done) TCP pacing feature.
 * Test to validate the values of pacing_gain and cwnd_gain in different phases
-of BBR.
+  of BBR.
 
 An example program, examples/tcp/tcp-bbr-example.cc, is provided to experiment
 with BBR for one long running flow. This example uses a simple topology
@@ -1143,9 +1136,7 @@ The following ECN states are declared in ``src/internet/model/tcp-socket-state.h
 
 Current implementation of ECN is based on RFC 3168 and is referred as Classic ECN.
 
-The following enum represents the mode of ECN:
-
-::
+The following enum represents the mode of ECN::
 
   typedef enum
     {
@@ -1153,9 +1144,7 @@ The following enum represents the mode of ECN:
       DctcpEcn,    //!< ECN functionality as described in RFC 8257. Note: this mode is specific to DCTCP.
     } EcnMode_t;
 
-The following are some important ECN parameters:
-
-::
+The following are some important ECN parameters::
 
   // ECN parameters
   EcnMode_t              m_ecnMode {ClassicEcn}; //!< ECN mode
@@ -1178,11 +1167,9 @@ Linux: https://www.kernel.org/doc/Documentation/networking/ip-sysctl.txt
       AcceptOnly = 2,   //!< Enable only when the peer endpoint is ECN capable
     } UseEcn_t;
 
-For example:
+For example::
 
-::
-
-  Config::SetDefault ("ns3::TcpSocketBase::UseEcn", StringValue ("On"))
+  Config::SetDefault("ns3::TcpSocketBase::UseEcn", StringValue("On"))
 
 ECN negotiation
 ^^^^^^^^^^^^^^^
@@ -1195,11 +1182,11 @@ ECN capability is negotiated during the three-way TCP handshake:
 
     if (m_useEcn == UseEcn_t::On)
       {
-        SendEmptyPacket (TcpHeader::SYN | TcpHeader::ECE | TcpHeader::CWR);
+        SendEmptyPacket(TcpHeader::SYN | TcpHeader::ECE | TcpHeader::CWR);
       }
     else
       {
-        SendEmptyPacket (TcpHeader::SYN);
+        SendEmptyPacket(TcpHeader::SYN);
       }
     m_ecnState = ECN_DISABLED;
 
@@ -1207,14 +1194,14 @@ ECN capability is negotiated during the three-way TCP handshake:
 
 ::
 
-    if (m_useEcn != UseEcn_t::Off && (tcpHeader.GetFlags () & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::CWR | TcpHeader::ECE))
+    if (m_useEcn != UseEcn_t::Off &&(tcpHeader.GetFlags() &(TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::CWR | TcpHeader::ECE))
       {
-        SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK |TcpHeader::ECE);
+        SendEmptyPacket(TcpHeader::SYN | TcpHeader::ACK |TcpHeader::ECE);
         m_ecnState = ECN_IDLE;
       }
     else
       {
-        SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
+        SendEmptyPacket(TcpHeader::SYN | TcpHeader::ACK);
         m_ecnState = ECN_DISABLED;
       }
 
@@ -1222,7 +1209,7 @@ ECN capability is negotiated during the three-way TCP handshake:
 
 ::
 
-    if (m_useEcn != UseEcn_t::Off &&  (tcpHeader.GetFlags () & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::ECE))
+    if (m_useEcn != UseEcn_t::Off && (tcpHeader.GetFlags() &(TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::ECE))
       {
         m_ecnState = ECN_IDLE;
       }
@@ -1550,14 +1537,14 @@ All operations that are delegated to a congestion control are contained in
 the class TcpCongestionOps. It mimics the structure tcp_congestion_ops of
 Linux, and the following operations are defined:
 
-.. code-block:: c++
+::
 
-  virtual std::string GetName () const;
-  virtual uint32_t GetSsThresh (Ptr<const TcpSocketState> tcb, uint32_t bytesInFlight);
-  virtual void IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked);
-  virtual void PktsAcked (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked,const Time& rtt);
-  virtual Ptr<TcpCongestionOps> Fork ();
-  virtual void CwndEvent (Ptr<TcpSocketState> tcb, const TcpSocketState::TcpCaEvent_t event);
+  virtual std::string GetName() const;
+  virtual uint32_t GetSsThresh(Ptr<const TcpSocketState> tcb, uint32_t bytesInFlight);
+  virtual void IncreaseWindow(Ptr<TcpSocketState> tcb, uint32_t segmentsAcked);
+  virtual void PktsAcked(Ptr<TcpSocketState> tcb, uint32_t segmentsAcked,const Time& rtt);
+  virtual Ptr<TcpCongestionOps> Fork();
+  virtual void CwndEvent(Ptr<TcpSocketState> tcb, const TcpSocketState::TcpCaEvent_t event);
 
 The most interesting methods to write are GetSsThresh and IncreaseWindow.
 The latter is called when TcpSocketBase decides that it is time to increase
@@ -1652,7 +1639,7 @@ For SSRB, it is calculated as:
 
 .. math::  limit = MAX(prrDelivered - prrOut, DeliveredData) + MSS
 
-where ``DeliveredData`` represets the total number of bytes delivered to the
+where ``DeliveredData`` represents the total number of bytes delivered to the
 receiver as indicated by the current ACK and ``MSS`` is the maximum segment size.
 
 After limit calculation, the cWnd is updated as given below:
@@ -1674,24 +1661,24 @@ TcpSocketBase.
 All operations that are delegated to a loss recovery are contained in
 the class TcpRecoveryOps and are given below:
 
-.. code-block:: c++
+::
 
-  virtual std::string GetName () const;
-  virtual void EnterRecovery (Ptr<const TcpSocketState> tcb, uint32_t unAckDataCount,
-                              bool isSackEnabled, uint32_t dupAckCount,
-                              uint32_t bytesInFlight, uint32_t lastDeliveredBytes);
-  virtual void DoRecovery (Ptr<const TcpSocketState> tcb, uint32_t unAckDataCount,
-                           bool isSackEnabled, uint32_t dupAckCount,
-                           uint32_t bytesInFlight, uint32_t lastDeliveredBytes);
-  virtual void ExitRecovery (Ptr<TcpSocketState> tcb, uint32_t bytesInFlight);
-  virtual void UpdateBytesSent (uint32_t bytesSent);
-  virtual Ptr<TcpRecoveryOps> Fork ();
+  virtual std::string GetName() const;
+  virtual void EnterRecovery(Ptr<const TcpSocketState> tcb, uint32_t unAckDataCount,
+                             bool isSackEnabled, uint32_t dupAckCount,
+                             uint32_t bytesInFlight, uint32_t lastDeliveredBytes);
+  virtual void DoRecovery(Ptr<const TcpSocketState> tcb, uint32_t unAckDataCount,
+                          bool isSackEnabled, uint32_t dupAckCount,
+                          uint32_t bytesInFlight, uint32_t lastDeliveredBytes);
+  virtual void ExitRecovery(Ptr<TcpSocketState> tcb, uint32_t bytesInFlight);
+  virtual void UpdateBytesSent(uint32_t bytesSent);
+  virtual Ptr<TcpRecoveryOps> Fork();
 
 EnterRecovery is called when packet loss is detected and recovery is triggered.
 While in recovery phase, each time when an ACK arrives, DoRecovery is called which
 performs the necessary congestion window changes as per the recovery algorithm.
 ExitRecovery is called just prior to exiting recovery phase in order to perform the
-required congestion window ajustments. UpdateBytesSent is used to keep track of
+required congestion window adjustments. UpdateBytesSent is used to keep track of
 bytes sent and is called whenever a data packet is sent during recovery phase.
 
 Delivery Rate Estimation
@@ -1780,10 +1767,10 @@ To construct the test case, one first derives from the TcpGeneralTest class:
 
 The code is the following:
 
-.. code-block:: c++
+::
 
-   TcpZeroWindowTest::TcpZeroWindowTest (const std::string &desc)
-      : TcpGeneralTest (desc)
+   TcpZeroWindowTest::TcpZeroWindowTest(const std::string &desc)
+      : TcpGeneralTest(desc)
    {
    }
 
@@ -1809,16 +1796,16 @@ To define the properties of the environment (e.g. properties which should be
 set before the object creation, such as propagation delay) one next implements
 the method ConfigureEnvironment:
 
-.. code-block:: c++
+::
 
    void
-   TcpZeroWindowTest::ConfigureEnvironment ()
+   TcpZeroWindowTest::ConfigureEnvironment()
    {
-     TcpGeneralTest::ConfigureEnvironment ();
-     SetAppPktCount (20);
-     SetMTU (500);
-     SetTransmitStart (Seconds (2.0));
-     SetPropagationDelay (MilliSeconds (50));
+     TcpGeneralTest::ConfigureEnvironment();
+     SetAppPktCount(20);
+     SetMTU(500);
+     SetTransmitStart(Seconds(2.0));
+     SetPropagationDelay(MilliSeconds(50));
    }
 
 For other properties, set after the object creation, one can use
@@ -1829,13 +1816,13 @@ to every instance we have. Usually, methods that requires an id and a value
 are meant to be called inside ConfigureProperties (). Please see the Doxygen
 documentation for an exhaustive list of the tunable properties.
 
-.. code-block:: c++
+::
 
    void
-   TcpZeroWindowTest::ConfigureProperties ()
+   TcpZeroWindowTest::ConfigureProperties()
    {
-     TcpGeneralTest::ConfigureProperties ();
-     SetInitialCwnd (SENDER, 10);
+     TcpGeneralTest::ConfigureProperties();
+     SetInitialCwnd(SENDER, 10);
    }
 
 To see the default value for the experiment, please see the implementation of
@@ -1853,18 +1840,18 @@ advertises a zero window. This can be accomplished by implementing the method
 CreateReceiverSocket, setting an Rx buffer value of 0 bytes (at line 6 of the
 following code):
 
-.. code-block:: c++
+.. code-block::
    :linenos:
    :emphasize-lines: 6,7,8
 
    Ptr<TcpSocketMsgBase>
-   TcpZeroWindowTest::CreateReceiverSocket (Ptr<Node> node)
+   TcpZeroWindowTest::CreateReceiverSocket(Ptr<Node> node)
    {
-     Ptr<TcpSocketMsgBase> socket = TcpGeneralTest::CreateReceiverSocket (node);
+     Ptr<TcpSocketMsgBase> socket = TcpGeneralTest::CreateReceiverSocket(node);
 
-     socket->SetAttribute("RcvBufSize", UintegerValue (0));
-     Simulator::Schedule (Seconds (10.0),
-                          &TcpZeroWindowTest::IncreaseBufSize, this);
+     socket->SetAttribute("RcvBufSize", UintegerValue(0));
+     Simulator::Schedule(Seconds(10.0),
+                         &TcpZeroWindowTest::IncreaseBufSize, this);
 
      return socket;
    }
@@ -1873,12 +1860,12 @@ Even so, to check the active window update, we should schedule an increase
 of the buffer size. We do this at line 7 and 8, scheduling the function
 IncreaseBufSize.
 
-.. code-block:: c++
+::
 
    void
-   TcpZeroWindowTest::IncreaseBufSize ()
+   TcpZeroWindowTest::IncreaseBufSize()
    {
-     SetRcvBufSize (RECEIVER, 2500);
+     SetRcvBufSize(RECEIVER, 2500);
    }
 
 Which utilizes the SetRcvBufSize method to edit the RxBuffer object of the
@@ -1894,22 +1881,22 @@ to be aware of the various possibilities that it offers.
    of such method is SetRcvBufSize, which allows TcpGeneralSocket subclasses
    to forcefully set the RxBuffer size.
 
-   .. code-block:: c++
+   ::
 
       void
-      TcpGeneralTest::SetRcvBufSize (SocketWho who, uint32_t size)
+      TcpGeneralTest::SetRcvBufSize(SocketWho who, uint32_t size)
       {
         if (who == SENDER)
           {
-            m_senderSocket->SetRcvBufSize (size);
+            m_senderSocket->SetRcvBufSize(size);
           }
         else if (who == RECEIVER)
           {
-            m_receiverSocket->SetRcvBufSize (size);
+            m_receiverSocket->SetRcvBufSize(size);
           }
         else
           {
-            NS_FATAL_ERROR ("Not defined");
+            NS_FATAL_ERROR("Not defined");
           }
       }
 
@@ -1930,7 +1917,7 @@ connection (it will prevent the test from changing over the time, and it ensures
 that the behavior will stay consistent through releases). We start by ensuring that
 the first SYN-ACK has 0 as advertised window size:
 
-.. code-block:: c++
+::
 
    void
    TcpZeroWindowTest::Tx(const Ptr<const Packet> p, const TcpHeader &h, SocketWho who)
@@ -1938,18 +1925,18 @@ the first SYN-ACK has 0 as advertised window size:
      ...
      else if (who == RECEIVER)
        {
-         NS_LOG_INFO ("\tRECEIVER TX " << h << " size " << p->GetSize());
+         NS_LOG_INFO("\tRECEIVER TX " << h << " size " << p->GetSize());
 
-         if (h.GetFlags () & TcpHeader::SYN)
+         if (h.GetFlags() & TcpHeader::SYN)
            {
-             NS_TEST_ASSERT_MSG_EQ (h.GetWindowSize(), 0,
-                                    "RECEIVER window size is not 0 in the SYN-ACK");
+             NS_TEST_ASSERT_MSG_EQ(h.GetWindowSize(), 0,
+                                   "RECEIVER window size is not 0 in the SYN-ACK");
            }
        }
        ....
     }
 
-Pratically, we are checking that every SYN packet sent by the RECEIVER has the
+Practically, we are checking that every SYN packet sent by the RECEIVER has the
 advertised window set to 0. The same thing is done also by checking, in the Rx
 method, that each SYN received by SENDER has the advertised window set to 0.
 Thanks to the log subsystem, we can print what is happening through messages.
@@ -1961,12 +1948,12 @@ If we run the experiment, enabling the logging, we can see the following:
    gdb --args ./build/utils/ns3-dev-test-runner-debug --test-name=tcp-zero-window-test --stop-on-failure --fullness=QUICK --assert-on-failure --verbose
    (gdb) run
 
-   0.00s TcpZeroWindowTestSuite:Tx(): 0.00	SENDER TX 49153 > 4477 [SYN] Seq=0 Ack=0 Win=32768 ns3::TcpOptionWinScale(2) ns3::TcpOptionTS(0;0) size 36
-   0.05s TcpZeroWindowTestSuite:Rx(): 0.05	RECEIVER RX 49153 > 4477 [SYN] Seq=0 Ack=0 Win=32768 ns3::TcpOptionWinScale(2) ns3::TcpOptionTS(0;0) ns3::TcpOptionEnd(EOL) size 0
-   0.05s TcpZeroWindowTestSuite:Tx(): 0.05	RECEIVER TX 4477 > 49153 [SYN|ACK] Seq=0 Ack=1 Win=0 ns3::TcpOptionWinScale(0) ns3::TcpOptionTS(50;0) size 36
-   0.10s TcpZeroWindowTestSuite:Rx(): 0.10	SENDER RX 4477 > 49153 [SYN|ACK] Seq=0 Ack=1 Win=0 ns3::TcpOptionWinScale(0) ns3::TcpOptionTS(50;0) ns3::TcpOptionEnd(EOL) size 0
-   0.10s TcpZeroWindowTestSuite:Tx(): 0.10	SENDER TX 49153 > 4477 [ACK] Seq=1 Ack=1 Win=32768 ns3::TcpOptionTS(100;50) size 32
-   0.15s TcpZeroWindowTestSuite:Rx(): 0.15	RECEIVER RX 49153 > 4477 [ACK] Seq=1 Ack=1 Win=32768 ns3::TcpOptionTS(100;50) ns3::TcpOptionEnd(EOL) size 0
+   0.00s TcpZeroWindowTestSuite:Tx(): 0.00  SENDER TX 49153 > 4477 [SYN] Seq=0 Ack=0 Win=32768 ns3::TcpOptionWinScale(2) ns3::TcpOptionTS(0;0) size 36
+   0.05s TcpZeroWindowTestSuite:Rx(): 0.05  RECEIVER RX 49153 > 4477 [SYN] Seq=0 Ack=0 Win=32768 ns3::TcpOptionWinScale(2) ns3::TcpOptionTS(0;0) ns3::TcpOptionEnd(EOL) size 0
+   0.05s TcpZeroWindowTestSuite:Tx(): 0.05  RECEIVER TX 4477 > 49153 [SYN|ACK] Seq=0 Ack=1 Win=0 ns3::TcpOptionWinScale(0) ns3::TcpOptionTS(50;0) size 36
+   0.10s TcpZeroWindowTestSuite:Rx(): 0.10  SENDER RX 4477 > 49153 [SYN|ACK] Seq=0 Ack=1 Win=0 ns3::TcpOptionWinScale(0) ns3::TcpOptionTS(50;0) ns3::TcpOptionEnd(EOL) size 0
+   0.10s TcpZeroWindowTestSuite:Tx(): 0.10  SENDER TX 49153 > 4477 [ACK] Seq=1 Ack=1 Win=32768 ns3::TcpOptionTS(100;50) size 32
+   0.15s TcpZeroWindowTestSuite:Rx(): 0.15  RECEIVER RX 49153 > 4477 [ACK] Seq=1 Ack=1 Win=32768 ns3::TcpOptionTS(100;50) ns3::TcpOptionEnd(EOL) size 0
    (...)
 
 The output is cut to show the threeway handshake. As we can see from the headers,
@@ -1978,19 +1965,19 @@ ProcessedAck, which is the method called after each processed ACK. In the
 following, we show how to check if the persistent event is running after the
 processing of the SYN-ACK:
 
-.. code-block:: c++
+::
 
    void
-   TcpZeroWindowTest::ProcessedAck (const Ptr<const TcpSocketState> tcb,
-                                    const TcpHeader& h, SocketWho who)
+   TcpZeroWindowTest::ProcessedAck(const Ptr<const TcpSocketState> tcb,
+                                   const TcpHeader& h, SocketWho who)
    {
      if (who == SENDER)
        {
-         if (h.GetFlags () & TcpHeader::SYN)
+         if (h.GetFlags() & TcpHeader::SYN)
            {
-             EventId persistentEvent = GetPersistentEvent (SENDER);
-             NS_TEST_ASSERT_MSG_EQ (persistentEvent.IsRunning (), true,
-                                    "Persistent event not started");
+             EventId persistentEvent = GetPersistentEvent(SENDER);
+             NS_TEST_ASSERT_MSG_EQ(persistentEvent.IsRunning(), true,
+                                   "Persistent event not started");
            }
        }
     }
@@ -2000,26 +1987,26 @@ we expect the persistent timer to fire before any rWnd changes. When it fires,
 the SENDER should send a window probe, and the receiver should reply reporting
 again a zero window situation. At first, we investigates on what the sender sends:
 
-..  code-block:: c++
-    :linenos:
-    :emphasize-lines: 1,6,7,11
+.. code-block::
+      :linenos:
+      :emphasize-lines: 1,6,7,11
 
-      if (Simulator::Now ().GetSeconds () <= 6.0)
+      if (Simulator::Now().GetSeconds() <= 6.0)
         {
-          NS_TEST_ASSERT_MSG_EQ (p->GetSize () - h.GetSerializedSize(), 0,
-                                 "Data packet sent anyway");
+          NS_TEST_ASSERT_MSG_EQ(p->GetSize() - h.GetSerializedSize(), 0,
+                                "Data packet sent anyway");
         }
-      else if (Simulator::Now ().GetSeconds () > 6.0 &&
-               Simulator::Now ().GetSeconds () <= 7.0)
+      else if (Simulator::Now().GetSeconds() > 6.0 &&
+               Simulator::Now().GetSeconds() <= 7.0)
         {
-          NS_TEST_ASSERT_MSG_EQ (m_zeroWindowProbe, false, "Sent another probe");
+          NS_TEST_ASSERT_MSG_EQ(m_zeroWindowProbe, false, "Sent another probe");
 
           if (! m_zeroWindowProbe)
             {
-              NS_TEST_ASSERT_MSG_EQ (p->GetSize () - h.GetSerializedSize(), 1,
-                                     "Data packet sent instead of window probe");
-              NS_TEST_ASSERT_MSG_EQ (h.GetSequenceNumber(), SequenceNumber32 (1),
-                                     "Data packet sent instead of window probe");
+              NS_TEST_ASSERT_MSG_EQ(p->GetSize() - h.GetSerializedSize(), 1,
+                                    "Data packet sent instead of window probe");
+              NS_TEST_ASSERT_MSG_EQ(h.GetSequenceNumber(), SequenceNumber32(1),
+                                    "Data packet sent instead of window probe");
               m_zeroWindowProbe = true;
             }
         }
@@ -2033,17 +2020,17 @@ reader: edit the test, getting this value from the Attribute system), we need
 to check (line 6) between 6.0 and 7.0 simulated seconds that the probe is sent.
 Only one probe is allowed, and this is the reason for the check at line 11.
 
-.. code-block:: c++
+.. code-block::
    :linenos:
    :emphasize-lines: 6,7
 
-   if (Simulator::Now ().GetSeconds () > 6.0 &&
-       Simulator::Now ().GetSeconds () <= 7.0)
+   if (Simulator::Now().GetSeconds() > 6.0 &&
+       Simulator::Now().GetSeconds() <= 7.0)
      {
-       NS_TEST_ASSERT_MSG_EQ (h.GetSequenceNumber(), SequenceNumber32 (1),
-                              "Data packet sent instead of window probe");
-       NS_TEST_ASSERT_MSG_EQ (h.GetWindowSize(), 0,
-                              "No zero window advertised by RECEIVER");
+       NS_TEST_ASSERT_MSG_EQ(h.GetSequenceNumber(), SequenceNumber32(1),
+                             "Data packet sent instead of window probe");
+       NS_TEST_ASSERT_MSG_EQ(h.GetWindowSize(), 0,
+                             "No zero window advertised by RECEIVER");
      }
 
 For the RECEIVER, the interval between 6 and 7 seconds is when the zero-window
@@ -2052,47 +2039,47 @@ segment is sent.
 Other checks are redundant; the safest approach is to deny any other packet
 exchange between the 7 and 10 seconds mark.
 
-.. code-block:: c++
+::
 
-   else if (Simulator::Now ().GetSeconds () > 7.0 &&
-            Simulator::Now ().GetSeconds () < 10.0)
+   else if (Simulator::Now().GetSeconds() > 7.0 &&
+            Simulator::Now().GetSeconds() < 10.0)
      {
-       NS_FATAL_ERROR ("No packets should be sent before the window update");
+       NS_FATAL_ERROR("No packets should be sent before the window update");
      }
 
 The state checks are performed at the end of the methods, since they are valid
 in every condition:
 
-.. code-block:: c++
+::
 
-   NS_TEST_ASSERT_MSG_EQ (GetCongStateFrom (GetTcb(SENDER)), TcpSocketState::CA_OPEN,
-                          "Sender State is not OPEN");
-   NS_TEST_ASSERT_MSG_EQ (GetCongStateFrom (GetTcb(RECEIVER)), TcpSocketState::CA_OPEN,
-                          "Receiver State is not OPEN");
+   NS_TEST_ASSERT_MSG_EQ(GetCongStateFrom(GetTcb(SENDER)), TcpSocketState::CA_OPEN,
+                         "Sender State is not OPEN");
+   NS_TEST_ASSERT_MSG_EQ(GetCongStateFrom(GetTcb(RECEIVER)), TcpSocketState::CA_OPEN,
+                         "Receiver State is not OPEN");
 
 Now, the interesting part in the Tx method is to check that after the 10.0
 seconds mark (when the RECEIVER sends the active window update) the value of
 the window should be greater than zero (and precisely, set to 2500):
 
-.. code-block:: c++
+::
 
    else if (Simulator::Now().GetSeconds() >= 10.0)
      {
-       NS_TEST_ASSERT_MSG_EQ (h.GetWindowSize(), 2500,
-                              "Receiver window not updated");
+       NS_TEST_ASSERT_MSG_EQ(h.GetWindowSize(), 2500,
+                             "Receiver window not updated");
      }
 
 To be sure that the sender receives the window update, we can use the Rx
 method:
 
-.. code-block:: c++
+.. code-block::
    :linenos:
    :emphasize-lines: 5
 
    if (Simulator::Now().GetSeconds() >= 10.0)
      {
-       NS_TEST_ASSERT_MSG_EQ (h.GetWindowSize(), 2500,
-                              "Receiver window not updated");
+       NS_TEST_ASSERT_MSG_EQ(h.GetWindowSize(), 2500,
+                             "Receiver window not updated");
        m_windowUpdated = true;
      }
 
@@ -2103,10 +2090,10 @@ that we effectively reach this test.
 Last but not least, we implement also the NormalClose() method, to check that
 the connection ends with a success:
 
-.. code-block:: c++
+::
 
    void
-   TcpZeroWindowTest::NormalClose (SocketWho who)
+   TcpZeroWindowTest::NormalClose(SocketWho who)
    {
      if (who == SENDER)
        {
@@ -2122,19 +2109,19 @@ The method is called only if all bytes are transmitted successfully. Then, in
 the method FinalChecks(), we check all variables, which should be true (which
 indicates that we have perfectly closed the connection).
 
-.. code-block:: c++
+::
 
    void
-   TcpZeroWindowTest::FinalChecks ()
+   TcpZeroWindowTest::FinalChecks()
    {
-     NS_TEST_ASSERT_MSG_EQ (m_zeroWindowProbe, true,
-                            "Zero window probe not sent");
-     NS_TEST_ASSERT_MSG_EQ (m_windowUpdated, true,
-                            "Window has not updated during the connection");
-     NS_TEST_ASSERT_MSG_EQ (m_senderFinished, true,
-                            "Connection not closed successfully (SENDER)");
-     NS_TEST_ASSERT_MSG_EQ (m_receiverFinished, true,
-                            "Connection not closed successfully (RECEIVER)");
+     NS_TEST_ASSERT_MSG_EQ(m_zeroWindowProbe, true,
+                           "Zero window probe not sent");
+     NS_TEST_ASSERT_MSG_EQ(m_windowUpdated, true,
+                           "Window has not updated during the connection");
+     NS_TEST_ASSERT_MSG_EQ(m_senderFinished, true,
+                           "Connection not closed successfully(SENDER)");
+     NS_TEST_ASSERT_MSG_EQ(m_receiverFinished, true,
+                           "Connection not closed successfully(RECEIVER)");
    }
 
 To run the test, the usual way is
@@ -2158,8 +2145,7 @@ and then, hit "Run".
 .. note::
    This code magically runs without any reported errors; however, in real cases,
    when you discover a bug you should expect the existing test to fail (this
-   could indicate a well-written test and a bad-writted model, or a bad-written
+   could indicate a well-written test and a bad-written model, or a bad-written
    test; hopefully the first situation). Correcting bugs is an iterative
    process. For instance, commits created to make this test case running without
    errors are 11633:6b74df04cf44, (others to be merged).
-

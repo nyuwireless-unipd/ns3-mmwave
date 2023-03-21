@@ -99,6 +99,11 @@ function(pkgconfig_module libname)
 
   # Set file to be installed
   install(FILES ${pkgconfig_file} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+  add_custom_target(
+    uninstall_pkgconfig_${module_name}
+    COMMAND rm ${CMAKE_INSTALL_FULL_LIBDIR}/pkgconfig/ns3-${module_name}.pc
+  )
+  add_dependencies(uninstall uninstall_pkgconfig_${module_name})
 endfunction()
 
 function(ns3_cmake_package)
@@ -147,10 +152,24 @@ function(ns3_cmake_package)
 endfunction()
 
 # You will need administrative privileges to run this
+# cmake-format: off
+if(WIN32)
+  add_custom_target(
+    uninstall
+    COMMAND
+      powershell -Command \" Remove-Item \\"${CMAKE_INSTALL_FULL_LIBDIR}/libns3*\\" -Recurse \" &&
+      powershell -Command \" Remove-Item \\"${CMAKE_INSTALL_FULL_LIBDIR}/pkgconfig/ns3-*\\" -Recurse \" &&
+      powershell -Command \" Remove-Item \\"${CMAKE_INSTALL_FULL_LIBDIR}/cmake/ns3\\" -Recurse \" &&
+      powershell -Command \" Remove-Item \\"${CMAKE_INSTALL_FULL_INCLUDEDIR}/ns3\\" -Recurse \"
+  )
+else()
 add_custom_target(
   uninstall
   COMMAND
-    rm `ls ${CMAKE_INSTALL_FULL_LIBDIR}/libns3*` && rm -R
-    ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/ns3 && rm -R
-    ${CMAKE_INSTALL_FULL_INCLUDEDIR}/ns3
+    rm `ls ${CMAKE_INSTALL_FULL_LIBDIR}/libns3*` &&
+    rm `ls ${CMAKE_INSTALL_FULL_LIBDIR}/pkgconfig/ns3-*` &&
+    rm -R ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/ns3 &&
+    rm -R ${CMAKE_INSTALL_FULL_INCLUDEDIR}/ns3
 )
+endif()
+# cmake-format: on

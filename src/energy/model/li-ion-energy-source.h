@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2010 Andrea Sacco
  *
@@ -21,12 +20,13 @@
 #ifndef LI_ION_ENERGY_SOURCE_H
 #define LI_ION_ENERGY_SOURCE_H
 
-#include "ns3/traced-value.h"
 #include "ns3/energy-source.h"
-#include "ns3/nstime.h"
 #include "ns3/event-id.h"
+#include "ns3/nstime.h"
+#include "ns3/traced-value.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup energy
@@ -64,145 +64,148 @@ namespace ns3 {
  * fitting</a> page.
  *
  * References:
- * [1] C. M. Shepherd, "Design of Primary and Secondary Cells - Part 3. Battery discharge equation," U.S. Naval Research Laboratory, 1963
- * [2] Tremblay, O.; Dessaint, L.-A.; Dekkiche, A.-I., "A Generic Battery Model for the Dynamic Simulation of Hybrid Electric Vehicles," Ecole de Technologie Superieure, Universite du Quebec, 2007
- * [3] http://www.panasonic.com/industrial/includes/pdf/Panasonic_LiIon_CGR18650DA.pdf
+ * [1] C. M. Shepherd, "Design of Primary and Secondary Cells - Part 3. Battery discharge equation,"
+ * U.S. Naval Research Laboratory, 1963 [2] Tremblay, O.; Dessaint, L.-A.; Dekkiche, A.-I., "A
+ * Generic Battery Model for the Dynamic Simulation of Hybrid Electric Vehicles," Ecole de
+ * Technologie Superieure, Universite du Quebec, 2007 [3]
+ * http://www.panasonic.com/industrial/includes/pdf/Panasonic_LiIon_CGR18650DA.pdf
  *
  */
 class LiIonEnergySource : public EnergySource
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return The object TypeId.
-   */
-  static TypeId GetTypeId (void);
-  LiIonEnergySource ();
-  virtual ~LiIonEnergySource ();
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return The object TypeId.
+     */
+    static TypeId GetTypeId();
+    LiIonEnergySource();
+    ~LiIonEnergySource() override;
 
-  /**
-   * \return Initial energy stored in energy source, in Joules.
-   *
-   * Implements GetInitialEnergy.
-   */
-  virtual double GetInitialEnergy (void) const;
+    /**
+     * \return Initial energy stored in energy source, in Joules.
+     *
+     * Implements GetInitialEnergy.
+     */
+    double GetInitialEnergy() const override;
 
-  /**
-   * \param initialEnergyJ Initial energy, in Joules
-   *
-   * Implements SetInitialEnergy. Note that initial energy is assumed to be set
-   * before simulation starts and is set only once per simulation.
-   */
-  void SetInitialEnergy (double initialEnergyJ);
+    /**
+     * \param initialEnergyJ Initial energy, in Joules
+     *
+     * Implements SetInitialEnergy. Note that initial energy is assumed to be set
+     * before simulation starts and is set only once per simulation.
+     */
+    void SetInitialEnergy(double initialEnergyJ);
 
-  /**
-   * \returns Supply voltage at the energy source.
-   *
-   * Implements GetSupplyVoltage.
-   */
-  virtual double GetSupplyVoltage (void) const;
+    /**
+     * \returns Supply voltage at the energy source.
+     *
+     * Implements GetSupplyVoltage.
+     */
+    double GetSupplyVoltage() const override;
 
-  /**
-   * \param supplyVoltageV Initial Supply voltage at the energy source, in Volts.
-   *
-   * Sets the initial supply voltage of the energy source.
-   * To be called only once.
-   */
-  void SetInitialSupplyVoltage (double supplyVoltageV);
+    /**
+     * \param supplyVoltageV Initial Supply voltage at the energy source, in Volts.
+     *
+     * Sets the initial supply voltage of the energy source.
+     * To be called only once.
+     */
+    void SetInitialSupplyVoltage(double supplyVoltageV);
 
-  /**
-   * \return Remaining energy in energy source, in Joules
-   *
-   * Implements GetRemainingEnergy.
-   */
-  virtual double GetRemainingEnergy (void);
+    /**
+     * \return Remaining energy in energy source, in Joules
+     *
+     * Implements GetRemainingEnergy.
+     */
+    double GetRemainingEnergy() override;
 
-  /**
-   * \returns Energy fraction.
-   *
-   * Implements GetEnergyFraction.
-   */
-  virtual double GetEnergyFraction (void);
+    /**
+     * \returns Energy fraction.
+     *
+     * Implements GetEnergyFraction.
+     */
+    double GetEnergyFraction() override;
 
-  /**
-   * \param energyJ Amount of energy (in Joules) to decrease from energy source.
-   *
-   * Implements DecreaseRemainingEnergy.
-   */
-  virtual void DecreaseRemainingEnergy (double energyJ);
+    /**
+     * \param energyJ Amount of energy (in Joules) to decrease from energy source.
+     *
+     * Implements DecreaseRemainingEnergy.
+     */
+    virtual void DecreaseRemainingEnergy(double energyJ);
 
-  /**
-   * \param energyJ Amount of energy (in Joules) to increase from energy source.
-   *
-   * Implements IncreaseRemainingEnergy.
-   */
-  virtual void IncreaseRemainingEnergy (double energyJ);
+    /**
+     * \param energyJ Amount of energy (in Joules) to increase from energy source.
+     *
+     * Implements IncreaseRemainingEnergy.
+     */
+    virtual void IncreaseRemainingEnergy(double energyJ);
 
-  /**
-   * Implements UpdateEnergySource.
-   */
-  virtual void UpdateEnergySource (void);
+    /**
+     * Implements UpdateEnergySource.
+     */
+    void UpdateEnergySource() override;
 
-  /**
-   * \param interval Energy update interval.
-   *
-   * This function sets the interval between each energy update.
-   */
-  void SetEnergyUpdateInterval (Time interval);
+    /**
+     * \param interval Energy update interval.
+     *
+     * This function sets the interval between each energy update.
+     */
+    void SetEnergyUpdateInterval(Time interval);
 
-  /**
-   * \returns The interval between each energy update.
-   */
-  Time GetEnergyUpdateInterval (void) const;
-private:
-  void DoInitialize (void);
-  void DoDispose (void);
+    /**
+     * \returns The interval between each energy update.
+     */
+    Time GetEnergyUpdateInterval() const;
 
-  /**
-   * Handles the remaining energy going to zero event. This function notifies
-   * all the energy models aggregated to the node about the energy being
-   * depleted. Each energy model is then responsible for its own handler.
-   */
-  void HandleEnergyDrainedEvent (void);
+  private:
+    void DoInitialize() override;
+    void DoDispose() override;
 
-  /**
-   * Calculates remaining energy. This function uses the total current from all
-   * device models to calculate the amount of energy to decrease. The energy to
-   * decrease is given by:
-   *    energy to decrease = total current * supply voltage * time duration
-   * This function subtracts the calculated energy to decrease from remaining
-   * energy.
-   */
-  void CalculateRemainingEnergy (void);
+    /**
+     * Handles the remaining energy going to zero event. This function notifies
+     * all the energy models aggregated to the node about the energy being
+     * depleted. Each energy model is then responsible for its own handler.
+     */
+    void HandleEnergyDrainedEvent();
 
-  /**
-   *  \param current the actual discharge current value.
-   *  \return the cell voltage
-   *
-   *  Get the cell voltage in function of the discharge current.
-   *  It consider different discharge curves for different discharge currents
-   *  and the remaining energy of the cell.
-   */
-  double GetVoltage (double current) const;
+    /**
+     * Calculates remaining energy. This function uses the total current from all
+     * device models to calculate the amount of energy to decrease. The energy to
+     * decrease is given by:
+     *    energy to decrease = total current * supply voltage * time duration
+     * This function subtracts the calculated energy to decrease from remaining
+     * energy.
+     */
+    void CalculateRemainingEnergy();
 
-private:
-  double m_initialEnergyJ;                //!< initial energy, in Joules
-  TracedValue<double> m_remainingEnergyJ; //!< remaining energy, in Joules
-  double m_drainedCapacity;               //!< capacity drained from the cell, in Ah
-  double m_supplyVoltageV;                //!< actual voltage of the cell
-  double m_lowBatteryTh;                  //!< low battery threshold, as a fraction of the initial energy
-  EventId m_energyUpdateEvent;            //!< energy update event
-  Time m_lastUpdateTime;                  //!< last update time
-  Time m_energyUpdateInterval;            //!< energy update interval
-  double m_eFull;                         //!< initial voltage of the cell, in Volts
-  double m_eNom;                          //!< nominal voltage of the cell, in Volts
-  double m_eExp;                          //!< cell voltage at the end of the exponential zone, in Volts
-  double m_internalResistance;            //!< internal resistance of the cell, in Ohms
-  double m_qRated;                        //!< rated capacity of the cell, in Ah
-  double m_qNom;                          //!< cell capacity at the end of the nominal zone, in Ah
-  double m_qExp;                          //!< capacity value at the end of the exponential zone, in Ah
-  double m_typCurrent;                    //!< typical discharge current used to fit the curves
-  double m_minVoltTh;                     //!< minimum threshold voltage to consider the battery depleted
+    /**
+     * Get the cell voltage in function of the discharge current.
+     * It consider different discharge curves for different discharge currents
+     * and the remaining energy of the cell.
+     *
+     * \param current the actual discharge current value.
+     * \return the cell voltage
+     */
+    double GetVoltage(double current) const;
+
+  private:
+    double m_initialEnergyJ;                //!< initial energy, in Joules
+    TracedValue<double> m_remainingEnergyJ; //!< remaining energy, in Joules
+    double m_drainedCapacity;               //!< capacity drained from the cell, in Ah
+    double m_supplyVoltageV;                //!< actual voltage of the cell
+    double m_lowBatteryTh;       //!< low battery threshold, as a fraction of the initial energy
+    EventId m_energyUpdateEvent; //!< energy update event
+    Time m_lastUpdateTime;       //!< last update time
+    Time m_energyUpdateInterval; //!< energy update interval
+    double m_eFull;              //!< initial voltage of the cell, in Volts
+    double m_eNom;               //!< nominal voltage of the cell, in Volts
+    double m_eExp;               //!< cell voltage at the end of the exponential zone, in Volts
+    double m_internalResistance; //!< internal resistance of the cell, in Ohms
+    double m_qRated;             //!< rated capacity of the cell, in Ah
+    double m_qNom;               //!< cell capacity at the end of the nominal zone, in Ah
+    double m_qExp;               //!< capacity value at the end of the exponential zone, in Ah
+    double m_typCurrent;         //!< typical discharge current used to fit the curves
+    double m_minVoltTh;          //!< minimum threshold voltage to consider the battery depleted
 };
 
 } // namespace ns3

@@ -70,13 +70,13 @@ You may want to take this opportunity to explore the |ns3| wiki
 a bit, or the main web site at https://www.nsnam.org, since there is a
 wealth of information there.
 
-As of the most recent |ns3| release (ns-3.36.1), the following tools
+As of the most recent |ns3| release (ns-3.38), the following tools
 are needed to get started with |ns3|:
 
 ============  ===========================================================
 Prerequisite  Package/version
 ============  ===========================================================
-C++ compiler  ``clang++`` or ``g++`` (g++ version 8 or greater)
+C++ compiler  ``clang++`` or ``g++`` (g++ version 9 or greater)
 Python        ``python3`` version >=3.6
 CMake         ``cmake`` version >=3.10
 Build system  ``make``, ``ninja``, ``xcodebuild`` (XCode)
@@ -124,22 +124,21 @@ get a copy of a release by typing the following into your Linux shell
   $ cd
   $ mkdir workspace
   $ cd workspace
-  $ wget https://www.nsnam.org/release/ns-allinone-3.36.1.tar.bz2
-  $ tar xjf ns-allinone-3.36.1.tar.bz2
+  $ wget https://www.nsnam.org/release/ns-allinone-3.38.tar.bz2
+  $ tar xjf ns-allinone-3.38.tar.bz2
 
 Notice the use above of the ``wget`` utility, which is a command-line
 tool to fetch objects from the web; if you do not have this installed,
 you can use a browser for this step.
 
 Following these steps, if you change into the directory
-``ns-allinone-3.36.1``, you should see a number of files and directories
+``ns-allinone-3.38``, you should see a number of files and directories
 
 .. sourcecode:: text
 
-  $ cd ns-allinone-3.36.1
+  $ cd ns-allinone-3.38
   $ ls
-  bake      constants.py   ns-3.36.1                          README.md
-  build.py  netanim-3.108  pybindgen-0.22.1                   util.py
+  bake  build.py  constants.py  netanim-3.109 ns-3.38  README.md  util.py
 
 You are now ready to build the base |ns3| distribution and may skip ahead
 to the section on building |ns3|.
@@ -189,7 +188,7 @@ release number:
 
 .. sourcecode:: console
 
-  $ python3 download.py -n ns-3.36.1
+  $ python3 download.py -n ns-3.38
 
 After this step, the additional repositories of |ns3|, bake, pybindgen,
 and netanim will be downloaded to the ``ns-3-allinone`` directory.
@@ -200,7 +199,7 @@ Downloading ns-3 Using Bake
 The above two techniques (source archive, or ns-3-allinone repository
 via Git) are useful to get the most basic installation of |ns3| with a
 few addons (pybindgen for generating Python bindings, and netanim
-for network animiations).  The third repository provided by default in
+for network animations).  The third repository provided by default in
 ns-3-allinone is called ``bake``.
 
 Bake is a tool for coordinated software building from multiple repositories,
@@ -258,16 +257,15 @@ distribution of your choice.
 
 There are a few configuration targets available:
 
-1.  ``ns-3.36.1``:  the module corresponding to the release; it will download
-    components similar to the release tarball.
+1.  ``ns-3.38``:  the code corresponding to the release
 2.  ``ns-3-dev``:  a similar module but using the development code tree
-3.  ``ns-allinone-3.36.1``:  the module that includes other optional features
+3.  ``ns-allinone-3.38``:  the module that includes other optional features
     such as bake build system, netanim animator, and pybindgen
 4.  ``ns-3-allinone``:  similar to the released version of the allinone
     module, but for development code.
 
 The current development snapshot (unreleased) of |ns3| may be found
-at https://gitlab.com/nsnam/ns-3-dev.git.  The
+and cloned from https://gitlab.com/nsnam/ns-3-dev.git.  The
 developers attempt to keep these repositories in consistent, working states but
 they are in a development area with unreleased code present, so you may want
 to consider staying with an official release if you do not need newly-
@@ -278,7 +276,7 @@ code either by inspection of the repository list or by going to the
 `"ns-3 Releases"
 <https://www.nsnam.org/releases>`_
 web page and clicking on the latest release link.  We'll proceed in
-this tutorial example with ``ns-3.36.1``.
+this tutorial example with ``ns-3.38``.
 
 We are now going to use the bake tool to pull down the various pieces of
 |ns3| you will be using.  First, we'll say a word about running bake.
@@ -294,8 +292,9 @@ environment variables:
 .. sourcecode:: console
 
   $ export BAKE_HOME=`pwd`
-  $ export PATH=$PATH:$BAKE_HOME:$BAKE_HOME/build/bin
-  $ export PYTHONPATH=$PYTHONPATH:$BAKE_HOME:$BAKE_HOME/build/lib
+  $ export PATH=$PATH:$BAKE_HOME/build/bin
+  $ export PYTHONPATH=$BAKE_HOME/build/lib
+  $ export LD_LIBRARY_PATH=$BAKE_HOME/build/lib
 
 This will put the bake.py program into the shell's path, and will allow
 other programs to find executables and libraries created by bake.  Although
@@ -306,7 +305,7 @@ Step into the workspace directory and type the following into your shell:
 
 .. sourcecode:: console
 
-  $ ./bake.py configure -e ns-3.36.1
+  $ ./bake.py configure -e ns-allinone-3.38
 
 Next, we'll ask bake to check whether we have enough tools to download
 various components.  Type:
@@ -321,7 +320,6 @@ You should see something like the following:
 
   > Python - OK
   > GNU C++ compiler - OK
-  > Mercurial - OK
   > Git - OK
   > Tar tool - OK
   > Unzip tool - OK
@@ -330,11 +328,9 @@ You should see something like the following:
   > patch tool - OK
   > Path searched for tools: /usr/local/sbin /usr/local/bin /usr/sbin /usr/bin /sbin /bin ...
 
-In particular, download tools such as Git and Mercurial
-are our principal concerns at this point, since they allow us to fetch
-the code.  Please install missing tools at this stage, in the usual
+Please install missing tools at this stage, in the usual
 way for your system (if you are able to), or contact your system
-administrator as needed to install these tools.  You can also
+administrator as needed to install these tools.
 
 Next, try to download the software:
 
@@ -346,23 +342,20 @@ should yield something like:
 
 .. sourcecode:: text
 
-  >> Searching for system dependency setuptools - OK
-  >> Searching for system dependency libgoocanvas2 - OK
-  >> Searching for system dependency gi-cairo - OK
-  >> Searching for system dependency pygobject - OK
-  >> Searching for system dependency pygraphviz - OK
-  >> Searching for system dependency python-dev - OK
-  >> Searching for system dependency qt - OK
-  >> Searching for system dependency g++ - OK
-  >> Searching for system dependency cxxfilt - OK
-  >> Searching for system dependency setuptools - OK
+  >> Searching for system dependency libxml2-dev - OK
   >> Searching for system dependency gi-cairo - OK
   >> Searching for system dependency gir-bindings - OK
   >> Searching for system dependency pygobject - OK
+  >> Searching for system dependency pygraphviz - OK
+  >> Searching for system dependency python3-dev - OK
+  >> Searching for system dependency qt - OK
+  >> Searching for system dependency g++ - OK
   >> Searching for system dependency cmake - OK
-  >> Downloading netanim-3.108 - OK
-  >> Downloading pybindgen-0.22.1 (target directory:pybindgen) - OK
-  >> Downloading ns-3.36.1 (target directory:ns-3.36.1) - OK
+  >> Downloading netanim-3.109 - OK
+  >> Downloading click-ns-3.38 - OK
+  >> Downloading BRITE - OK
+  >> Downloading openflow-dev - OK
+  >> Downloading ns-3.38 (target directory:ns-3.38) - OK
 
 The above suggests that three sources have been downloaded.  Check the
 ``source`` directory now and type ``ls``; one should see:
@@ -371,7 +364,7 @@ The above suggests that three sources have been downloaded.  Check the
 
   $ cd source
   $ ls
-  netanim-3.108  ns-3.36.1 pybindgen
+  BRITE  click-ns-3.37  netanim-3.109  ns-3.38  openflow-dev
 
 You are now ready to build the |ns3| distribution.
 
@@ -401,7 +394,7 @@ native |ns3| build system, CMake, to be introduced later in this tutorial.
 
 If you downloaded
 using a tarball you should have a directory called something like
-``ns-allinone-3.36.1`` under your ``~/workspace`` directory.
+``ns-allinone-3.38`` under your ``~/workspace`` directory.
 Type the following:
 
 .. sourcecode:: console
@@ -417,8 +410,7 @@ are not necessary for your work, if you wish.
 
 You will see lots of compiler output messages displayed as the build
 script builds the various pieces you downloaded.  First, the script will
-attempt to build the netanim animator, then the pybindgen bindings generator,
-and finally |ns3|.
+attempt to build the netanim animator, and then |ns3|.
 
 Building with bake
 ++++++++++++++++++
@@ -434,25 +426,11 @@ and you should see something like:
 
 .. sourcecode:: text
 
-  >> Building pybindgen-0.22.1 - OK
-  >> Building netanim-3.108 - OK
-  >> Building ns-3.36.1 - OK
+  >> Building netanim-3.109 - OK
+  >> Building ns-3.38 - OK
 
 There may be failures to build all components, but the build will proceed
-anyway if the component is optional.  For example, a recent portability issue
-has been that castxml may not build via the bake build tool on all
-platforms; in this case, the line will show something like::
-
-  >> Building castxml - Problem
-  > Problem: Optional dependency, module "castxml" failed
-    This may reduce the  functionality of the final build.
-    However, bake will continue since "castxml" is not an essential dependency.
-    For more information call bake with -v or -vvv, for full verbose mode.
-
-However, castxml is only needed if one wants to generate updated Python
-bindings, and most users do not need to do so (or to do so until they are
-more involved with ns-3 changes), so such warnings might be safely ignored
-for now.
+anyway if the component is optional.
 
 If there happens to be a failure, please have a look at what the following
 command tells you; it may give a hint as to a missing dependency:
@@ -757,7 +735,7 @@ that a compiler warning will cause the build to fail.
 
 For instance, ns-3.28 was released prior to Fedora 28, which included
 a new major version of gcc (gcc-8).  Building ns-3.28 or older releases
-on Fedora 28, when Gtk2+ is installed, will result in an error such as::
+on Fedora 28, when GTK+2 is installed, will result in an error such as::
 
   /usr/include/gtk-2.0/gtk/gtkfilechooserbutton.h:59:8: error: unnecessary parentheses in declaration of ‘__gtk_reserved1’ [-Werror=parentheses]
    void (*__gtk_reserved1);
@@ -844,9 +822,9 @@ use the indicated Code Wrapper macro:
 
 .. sourcecode:: cpp
 
-  NS_BUILD_DEBUG (std::cout << "Part of an output line..." << std::flush; timer.Start ());
-  DoLongInvolvedComputation ();
-  NS_BUILD_DEBUG (timer.Stop (); std::cout << "Done: " << timer << std::endl;)
+  NS_BUILD_DEBUG(std::cout << "Part of an output line..." << std::flush; timer.Start());
+  DoLongInvolvedComputation();
+  NS_BUILD_DEBUG(timer.Stop(); std::cout << "Done: " << timer << std::endl;)
 
 By default ns3 puts the build artifacts in the ``build`` directory.
 You can specify a different output directory with the ``--out``
@@ -955,6 +933,44 @@ current libraries from the ``build`` directory, but some users may find
 it useful if their use case involves working with programs outside
 of the |ns3| directory.
 
+Clean
+=====
+
+Cleaning refers to the removal of artifacts (e.g. files) generated or edited
+by the build process.  There are different levels of cleaning possible:
+
++----------+-------------------+--------------------------------------------------------------------------------+
+| Scope    | Command           | Description                                                                    |
++==========+===================+================================================================================+
+| clean    | `./ns3 clean`     | Remove artifacts generated by the CMake configuration and the build            |
++----------+-------------------+--------------------------------------------------------------------------------+
+| distclean| `./ns3 distclean` | Remove artifacts from the configuration, build, documentation, test and Python |
++----------+-------------------+--------------------------------------------------------------------------------+
+| ccache   | `ccache -C`       | Remove all compiled artifacts from the ccache                                  |
++----------+-------------------+--------------------------------------------------------------------------------+
+
+`clean` can be used if the focus is on reconfiguring the way that ns-3 is
+presently being compiled.  `distclean` can be used if the focus is
+on restoring the ns-3 directory to an original state.
+
+The ccache lies outside of the ns-3 directory (typically in a hidden
+directory at `~/.cache/ccache`) and is shared across projects.
+Users should be aware that cleaning the ccache will cause cache misses
+on other build directories outside of the current working directory.
+Cleaning this cache periodically may be helpful to reclaim disk space.
+Cleaning the ccache is completely separate from cleaning any files
+within the ns-3 directory.
+
+Because clean operations involve removing files, the option conservatively
+refuses to remove files if one of the deleted files or directories lies
+outside of the current working directory.  Users may wish to precede the
+actual clean with a `--dry-run`, when in doubt about what the clean
+command will do, because a dry run will print the warning if one exists.
+For example::
+
+  ./ns3 clean --dry-run
+  ./ns3 clean
+
 One ns3
 =======
 
@@ -989,7 +1005,7 @@ confusing to newcomers, and when done poorly it leads to subtle build
 errors.  The solutions above are the way to go.
 
 Building with CMake
-+++++++++++++++++++++++
++++++++++++++++++++
 
 The ns3 wrapper script calls CMake directly, mapping Waf-like options
 to the verbose settings used by CMake. Calling ``./ns3`` will execute
@@ -1064,13 +1080,41 @@ Corresponds to:
 Note: the command above would fail if ``./ns3 build`` was not executed first,
 since the examples won't be built by the test-runner target.
 
+On Windows, the Msys2/MinGW64/bin directory path must be on the PATH environment variable,
+otherwise the DLL's required by the C++ runtime will not be found, resulting in crashes
+without any explicit reasoning.
+
+Note: The ns-3 script adds only the ns-3 lib directory path to the PATH,
+ensuring the ns-3 DLLs will be found by running programs. If you are using CMake directly or
+an IDE, make sure to also include the path to ns-3-dev/build/lib in the PATH variable.
+
+.. _setx : https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/setx/
+
+If you are using one of Windows's terminals (CMD, PowerShell or Terminal), you can use the `setx`_
+command to change environment variables permanently or `set` to set them temporarily for that shell:
+
+.. sourcecode:: console
+
+  C:\\Windows\\system32>echo %PATH%
+  C:\\Windows\\system32;C:\\Windows;D:\\tools\\msys64\\mingw64\\bin;
+
+  C:\\Windows\\system32>setx PATH "%PATH%;D:\\tools\\msys64\\usr\\bin;" /m
+
+  C:\\Windows\\system32>echo %PATH%
+  C:\\Windows\\system32;C:\\Windows;D:\\tools\\msys64\\mingw64\\bin;
+  D:\\tools\\msys64\\usr\\bin;
+
+Note: running on an administrator terminal will change the system PATH,
+while the user terminal will change the user PATH, unless the `/m` flag is added.
+
+
 Building with IDEs
 ++++++++++++++++++
 
 With CMake, IDE integration is much easier. We list the steps on how to use ns-3 with a few IDEs.
 
-Microsoft Visual Code
-=====================
+Microsoft Visual Studio Code
+============================
 
 Start by downloading `VS Code <https://code.visualstudio.com/>`_.
 
@@ -1078,38 +1122,38 @@ Then install it and then install the CMake and C++ plugins.
 
 This can be done accessing the extensions' menu button on the left.
 
-.. figure:: figures/vscode/install_cmake_tools.png
+.. figure:: ../figures/vscode/install_cmake_tools.png
 
-.. figure:: figures/vscode/install_cpp_tools.png
+.. figure:: ../figures/vscode/install_cpp_tools.png
 
 It will take a while, but it will locate the available toolchains for you to use.
 
 After that, open the ns-3-dev folder. It should run CMake automatically and preconfigure it.
 
-.. figure:: figures/vscode/open_project.png
+.. figure:: ../figures/vscode/open_project.png
 
 After this happens, you can choose ns-3 features by opening the CMake cache and toggling them on or off.
 
-.. figure:: figures/vscode/open_cmake_cache.png
+.. figure:: ../figures/vscode/open_cmake_cache.png
 
-.. figure:: figures/vscode/configure_ns3.png
+.. figure:: ../figures/vscode/configure_ns3.png
 
 Just as an example, here is how to enable examples
 
-.. figure:: figures/vscode/enable_examples_and_save_to_reload_cache.png
+.. figure:: ../figures/vscode/enable_examples_and_save_to_reload_cache.png
 
 After saving the cache, CMake will run, refreshing the cache. Then VsCode will update its
 list of targets on the left side of the screen in the CMake menu.
 
 After selecting a target on the left side menu, there are options to build, run or debug it.
 
-.. figure:: figures/vscode/select_target_build_and_debug.png
+.. figure:: ../figures/vscode/select_target_build_and_debug.png
 
 Any of them will automatically build the selected target.
 If you choose run or debug, the executable targets will be executed.
 You can open the source files you want, put some breakpoints and then click debug to visually debug programs.
 
-.. figure:: figures/vscode/debugging.png
+.. figure:: ../figures/vscode/debugging.png
 
 JetBrains CLion
 ===============
@@ -1120,30 +1164,30 @@ Start by downloading `CLion <https://www.jetbrains.com/clion/>`_.
 The following image contains the toolchain configuration window for
 CLion running on Windows (only WSLv2 is currently supported).
 
-.. figure:: figures/clion/toolchains.png
+.. figure:: ../figures/clion/toolchains.png
 
 CLion uses Makefiles for your platform as the default generator.
 Here you can choose a better generator like `ninja` by setting the cmake options flag to `-G Ninja`.
 You can also set options to enable examples (`-DNS3_EXAMPLES=ON`) and tests (`-DNS3_TESTS=ON`).
 
-.. figure:: figures/clion/cmake_configuration.png
+.. figure:: ../figures/clion/cmake_configuration.png
 
 To refresh the CMake cache, triggering the discovery of new targets (libraries, executables and/or modules),
 you can either configure to re-run CMake automatically after editing CMake files (pretty slow and easily
 triggered) or reload it manually. The following image shows how to trigger the CMake cache refresh.
 
-.. figure:: figures/clion/reload_cache.png
+.. figure:: ../figures/clion/reload_cache.png
 
 After configuring the project, the available targets are listed in a drop-down list on the top right corner.
 Select the target you want and then click the hammer symbol to build, as shown in the image below.
 
-.. figure:: figures/clion/build_targets.png
+.. figure:: ../figures/clion/build_targets.png
 
 If you have selected and executable target, you can click either the play button to execute the program;
 the bug to debug the program; the play button with a chip, to run Valgrind and analyze memory usage,
 leaks and so on.
 
-.. figure:: figures/clion/run_target.png
+.. figure:: ../figures/clion/run_target.png
 
 Code::Blocks
 ============
@@ -1168,30 +1212,30 @@ This is a Code::Blocks project file that can be opened by the IDE.
 
 When you first open the IDE, you will be greeted by a window asking you to select the compiler you want.
 
-.. figure:: figures/codeblocks/compiler_detection.png
+.. figure:: ../figures/codeblocks/compiler_detection.png
 
 After that you will get into the landing page where you can open the project.
 
-.. figure:: figures/codeblocks/landing.png
+.. figure:: ../figures/codeblocks/landing.png
 
 Loading it will take a while.
 
-.. figure:: figures/codeblocks/open_project.png
+.. figure:: ../figures/codeblocks/open_project.png
 
 After that we can select a target in the top menu (where it says "all") and click to build, run or debug.
 We can also set breakpoints on the source code.
 
-.. figure:: figures/codeblocks/breakpoint_and_debug.png
+.. figure:: ../figures/codeblocks/breakpoint_and_debug.png
 
 After clicking to build, the build commands of the underlying build system will be printed in the tab at the bottom.
 If you clicked to debug, the program will start automatically and stop at the first breakpoint.
 
-.. figure:: figures/codeblocks/build_finished_breakpoint_waiting.png
+.. figure:: ../figures/codeblocks/build_finished_breakpoint_waiting.png
 
 You can inspect memory and the current stack enabling those views in Debug->Debugging Windows->Watches and Call Stack.
 Using the debugging buttons, you can advance line by line, continue until the next breakpoint.
 
-.. figure:: figures/codeblocks/debug_watches.png
+.. figure:: ../figures/codeblocks/debug_watches.png
 
 Note: as Code::Blocks doesn't natively support CMake projects, it doesn't refresh the CMake cache, which means you
 will need to close the project, run the ``./ns3`` command to refresh the CMake caches after adding/removing
@@ -1204,7 +1248,7 @@ Start by installing `XCode <https://developer.apple.com/xcode/>`_.
 Then open it for the first time and accept the license.
 Then open Xcode->Preferences->Locations and select the command-line tools location.
 
-.. figure:: figures/xcode/select_command_line.png
+.. figure:: ../figures/xcode/select_command_line.png
 
 XCode does not support CMake project natively, but we can use the corresponding CMake
 generator to generate a project in order to use it. The generator name depends on the operating
@@ -1225,27 +1269,27 @@ There will be a NS3.xcodeproj file inside the cache folder used during configura
 Loading the project will take a while, and you will be greeted with the following prompt.
 Select to automatically create the schemes.
 
-.. figure:: figures/xcode/create_schemes.png
+.. figure:: ../figures/xcode/create_schemes.png
 
 After that we can select a target in the top menu and click to run, which will build and run
 (if executable, or debug if build with debugging symbols).
 
-.. figure:: figures/xcode/target_dropdown.png
+.. figure:: ../figures/xcode/target_dropdown.png
 
 After clicking to build, the build will start and progress is shown in the top bar.
 
-.. figure:: figures/xcode/select_target_and_build.png
+.. figure:: ../figures/xcode/select_target_and_build.png
 
 Before debugging starts, Xcode will request for permissions to attach to the process
 (as an attacker could pretend to be a debugging tool and steal data from other processes).
 
-.. figure:: figures/xcode/debug_permission_to_attach.png
+.. figure:: ../figures/xcode/debug_permission_to_attach.png
 
 After attaching, we are greeted with profiling information and call stack on the left panel,
 source code, breakpoint and warnings on the central panel. At the bottom there are the memory
 watches panel in the left and the output panel on the right, which is also used to read the command line.
 
-.. figure:: figures/xcode/profiling_stack_watches_output.png
+.. figure:: ../figures/xcode/profiling_stack_watches_output.png
 
 
 Note: as XCode doesn't natively support CMake projects, it doesn't refresh the CMake cache, which means you
@@ -1620,4 +1664,3 @@ The resulting text file can then be saved with any corresponding
   then
       echo "$gitDiff" >> version.txt
   fi
-

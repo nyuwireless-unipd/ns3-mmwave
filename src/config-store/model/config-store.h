@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2009 INRIA
  *
@@ -21,10 +20,12 @@
 #ifndef CONFIG_STORE_H
 #define CONFIG_STORE_H
 
-#include "ns3/object-base.h"
 #include "file-config.h"
 
-namespace ns3 {
+#include "ns3/object-base.h"
+
+namespace ns3
+{
 
 /**
  * \defgroup configstore Configuration Store/Load
@@ -58,72 +59,75 @@ namespace ns3 {
  */
 class ConfigStore : public ObjectBase
 {
-public:
-/**
- * \enum Mode for ConfigStore operation
- * \brief store / load mode
- */
-  enum Mode {
-    LOAD,
-    SAVE,
-    NONE
-  };
-/**
- * \enum FileFormat for ConfigStore operation
- * \brief file format
- */
-  /// store format
-  enum FileFormat {
-    XML,
-    RAW_TEXT
-  };
+  public:
+    /**
+     * \enum Mode for ConfigStore operation
+     * \brief store / load mode
+     */
+    enum Mode
+    {
+        LOAD,
+        SAVE,
+        NONE
+    };
 
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
-  virtual TypeId GetInstanceTypeId (void) const;
+    /**
+     * \enum FileFormat for ConfigStore operation
+     * \brief file format
+     */
+    /// store format
+    enum FileFormat
+    {
+        XML,
+        RAW_TEXT
+    };
 
-  ConfigStore ();
-  ~ConfigStore ();
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
+    TypeId GetInstanceTypeId() const override;
 
-  /**
-   * Set the mode of operation
-   * \param mode mode of operation
-   */
-  void SetMode (enum Mode mode);
-  /**
-   * Set the file format
-   * \param format the file format
-   */
-  void SetFileFormat (enum FileFormat format);
-  /**
-   * Set the filename
-   * \param filename the file name
-   */
-  void SetFilename (std::string filename);
-  /**
-   * Set if to save deprecated attributes
-   * \param saveDeprecated the deprecated attributes save policy
-   */
-  void SetSaveDeprecated (bool saveDeprecated);
+    ConfigStore();
+    ~ConfigStore() override;
 
-  /**
-   * Configure the default values
-   */
-  void ConfigureDefaults (void);
-  /**
-   * Configure the attribute values
-   */
-  void ConfigureAttributes (void);
+    /**
+     * Set the mode of operation
+     * \param mode mode of operation
+     */
+    void SetMode(Mode mode);
+    /**
+     * Set the file format
+     * \param format the file format
+     */
+    void SetFileFormat(FileFormat format);
+    /**
+     * Set the filename
+     * \param filename the file name
+     */
+    void SetFilename(std::string filename);
+    /**
+     * Set if to save deprecated attributes
+     * \param saveDeprecated the deprecated attributes save policy
+     */
+    void SetSaveDeprecated(bool saveDeprecated);
 
-private:
-  enum Mode m_mode; ///< store mode
-  enum FileFormat m_fileFormat; ///< store format
-  bool m_saveDeprecated; ///< save deprecated attributes
-  std::string m_filename; ///< store file name
-  FileConfig *m_file; ///< configuration file
+    /**
+     * Configure the default values
+     */
+    void ConfigureDefaults();
+    /**
+     * Configure the attribute values
+     */
+    void ConfigureAttributes();
+
+  private:
+    Mode m_mode;             ///< store mode
+    FileFormat m_fileFormat; ///< store format
+    bool m_saveDeprecated;   ///< save deprecated attributes
+    std::string m_filename;  ///< store file name
+    FileConfig* m_file;      ///< configuration file
 };
 
 /**
@@ -133,7 +137,7 @@ private:
  * \param [in] mode The configStore mode.
  * \returns The reference to the output stream.
  */
-std::ostream & operator << (std::ostream & os, ConfigStore::Mode & mode);
+std::ostream& operator<<(std::ostream& os, ConfigStore::Mode& mode);
 /**
  * \brief Stream insertion operator.
  *
@@ -141,8 +145,8 @@ std::ostream & operator << (std::ostream & os, ConfigStore::Mode & mode);
  * \param [in] format The configStore file format.
  * \returns The reference to the output stream.
  */
-std::ostream & operator << (std::ostream & os, ConfigStore::FileFormat & format);
+std::ostream& operator<<(std::ostream& os, ConfigStore::FileFormat& format);
 
-}  // namespace ns3
+} // namespace ns3
 
 #endif /* CONFIG_STORE_H */

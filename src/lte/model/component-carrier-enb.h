@@ -18,21 +18,22 @@
  * Author: Danilo Abrignani <danilo.abrignani@unibo.it>
  */
 
-
 #ifndef COMPONENT_CARRIER_ENB_H
 #define COMPONENT_CARRIER_ENB_H
 
 #include "component-carrier.h"
-#include <ns3/object.h>
-#include <ns3/packet.h>
-#include <ns3/nstime.h>
+
 #include "ns3/lte-phy.h"
 #include <ns3/lte-enb-phy.h>
+#include <ns3/nstime.h>
+#include <ns3/object.h>
+#include <ns3/packet.h>
 #include <ns3/pointer.h>
+
 //#include <ns3/lte-enb-mac.h>
 
-
-namespace ns3 {
+namespace ns3
+{
 
 class LteEnbMac;
 class FfMacScheduler;
@@ -47,90 +48,85 @@ class LteFfrAlgorithm;
  */
 class ComponentCarrierEnb : public ComponentCarrier
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId(void);
 
-  ComponentCarrierEnb ();
+    ComponentCarrierEnb();
 
-  virtual ~ComponentCarrierEnb (void);
-  virtual void DoDispose (void);
+    virtual ~ComponentCarrierEnb(void);
+    virtual void DoDispose(void);
 
-  /**
-   * Get cell identifier
-   * \return cell identifier
-   */
-  uint16_t GetCellId ();
+    /**
+     * Get cell identifier
+     * \return cell identifier
+     */
+    uint16_t GetCellId();
 
-  /**
-   * \return a pointer to the physical layer.
-   */
-  Ptr<LteEnbPhy> GetPhy (void);
+    /**
+     * \return a pointer to the physical layer.
+     */
+    Ptr<LteEnbPhy> GetPhy(void);
 
-  /**
-   * \return a pointer to the MAC layer.
-   */
-  Ptr<LteEnbMac> GetMac (void);
+    /**
+     * \return a pointer to the MAC layer.
+     */
+    Ptr<LteEnbMac> GetMac(void);
 
-  /**
-   * \return a pointer to the Ffr Algorithm.
-   */
-  Ptr<LteFfrAlgorithm> GetFfrAlgorithm ();
+    /**
+     * \return a pointer to the Ffr Algorithm.
+     */
+    Ptr<LteFfrAlgorithm> GetFfrAlgorithm();
 
-  /**
-   * \return a pointer to the Mac Scheduler.
-   */
-  Ptr<FfMacScheduler> GetFfMacScheduler ();
+    /**
+     * \return a pointer to the Mac Scheduler.
+     */
+    Ptr<FfMacScheduler> GetFfMacScheduler();
 
-  /**
-   * Set physical cell identifier
-   * \param cellId cell identifier
-   */
-  void SetCellId (uint16_t cellId);
+    /**
+     * Set physical cell identifier
+     * \param cellId cell identifier
+     */
+    void SetCellId(uint16_t cellId);
 
-  /**
-   * Set the LteEnbPhy
-   * \param s a pointer to the LteEnbPhy
-   */
-  void SetPhy (Ptr<LteEnbPhy> s);
-  /**
-   * Set the LteEnbMac
-   * \param s a pointer to the LteEnbMac
-   */
-  void SetMac (Ptr<LteEnbMac> s);
+    /**
+     * Set the LteEnbPhy
+     * \param s a pointer to the LteEnbPhy
+     */
+    void SetPhy(Ptr<LteEnbPhy> s);
+    /**
+     * Set the LteEnbMac
+     * \param s a pointer to the LteEnbMac
+     */
+    void SetMac(Ptr<LteEnbMac> s);
 
-  /**
-   * Set the FfMacScheduler Algorithm
-   * \param s a pointer to the FfMacScheduler
-   */
-  void SetFfMacScheduler (Ptr<FfMacScheduler> s);
+    /**
+     * Set the FfMacScheduler Algorithm
+     * \param s a pointer to the FfMacScheduler
+     */
+    void SetFfMacScheduler(Ptr<FfMacScheduler> s);
 
-  /**
-   * Set the LteFfrAlgorithm
-   * \param s a pointer to the LteFfrAlgorithm
-   */
-  void SetFfrAlgorithm (Ptr<LteFfrAlgorithm> s);
-  
-protected:
+    /**
+     * Set the LteFfrAlgorithm
+     * \param s a pointer to the LteFfrAlgorithm
+     */
+    void SetFfrAlgorithm(Ptr<LteFfrAlgorithm> s);
 
-  virtual void DoInitialize (void);
+  protected:
+    virtual void DoInitialize(void);
 
-private:
-
-  uint16_t m_cellId; ///< Cell identifier
-  Ptr<LteEnbPhy> m_phy; ///< the Phy instance of this eNodeB component carrier
-  Ptr<LteEnbMac> m_mac; ///< the MAC instance of this eNodeB component carrier
-  Ptr<FfMacScheduler> m_scheduler; ///< the scheduler instance of this eNodeB component carrier
-  Ptr<LteFfrAlgorithm> m_ffrAlgorithm; ///< the FFR algorithm instance of this eNodeB component carrier
- 
-
+  private:
+    uint16_t m_cellId;               ///< Cell identifier
+    Ptr<LteEnbPhy> m_phy;            ///< the Phy instance of this eNodeB component carrier
+    Ptr<LteEnbMac> m_mac;            ///< the MAC instance of this eNodeB component carrier
+    Ptr<FfMacScheduler> m_scheduler; ///< the scheduler instance of this eNodeB component carrier
+    Ptr<LteFfrAlgorithm>
+        m_ffrAlgorithm; ///< the FFR algorithm instance of this eNodeB component carrier
 };
 
 } // namespace ns3
-
-
 
 #endif /* COMPONENT_CARRIER_H */

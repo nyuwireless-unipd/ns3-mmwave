@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2009 CTTC
  *
@@ -21,18 +20,13 @@
 #ifndef FREQS_300KHZ_300GHZ_LOG_H
 #define FREQS_300KHZ_300GHZ_LOG_H
 
-
 #include <ns3/spectrum-value.h>
 
-namespace ns3 {
-
+namespace ns3
+{
 
 extern Ptr<SpectrumModel> SpectrumModel300Khz300GhzLog;
 
-
 }
-
-
-
 
 #endif /*  FREQS_300KHZ_300GHZ_LOG_H */

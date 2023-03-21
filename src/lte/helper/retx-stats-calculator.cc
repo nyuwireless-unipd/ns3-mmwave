@@ -22,80 +22,90 @@
  */
 
 #include "retx-stats-calculator.h"
-#include "ns3/string.h"
+
 #include "ns3/nstime.h"
+#include "ns3/string.h"
 #include <ns3/log.h>
-#include <vector>
+
 #include <algorithm>
+#include <vector>
 
-namespace ns3 {
-
-NS_LOG_COMPONENT_DEFINE ("RetxStatsCalculator");
-
-NS_OBJECT_ENSURE_REGISTERED ( RetxStatsCalculator);
-
-RetxStatsCalculator::RetxStatsCalculator ()
+namespace ns3
 {
-  NS_LOG_FUNCTION (this);
+
+NS_LOG_COMPONENT_DEFINE("RetxStatsCalculator");
+
+NS_OBJECT_ENSURE_REGISTERED(RetxStatsCalculator);
+
+RetxStatsCalculator::RetxStatsCalculator()
+{
+    NS_LOG_FUNCTION(this);
 }
 
-
-RetxStatsCalculator::~RetxStatsCalculator ()
+RetxStatsCalculator::~RetxStatsCalculator()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 TypeId
-RetxStatsCalculator::GetTypeId (void)
+RetxStatsCalculator::GetTypeId(void)
 {
-  static TypeId tid =
-    TypeId ("ns3::RetxStatsCalculator")
-    .SetParent<Object> ().AddConstructor<RetxStatsCalculator> ()
-    .SetGroupName("Lte")
-    .AddAttribute ("DlRlcRetxFilename",
-                   "Name of the file where the downlink retx results will be saved.",
-                   StringValue ("DlRlcRetx.txt"),
-                   MakeStringAccessor (&RetxStatsCalculator::m_retxDlFilename),
-                   MakeStringChecker ())
-    .AddAttribute ("UlRlcRetxFilename",
-                   "Name of the file where the uplink retx results will be saved.",
-                   StringValue ("UlRlcRetx.txt"),
-                   MakeStringAccessor (&RetxStatsCalculator::m_retxUlFilename),
-                   MakeStringChecker ())
-    ;
-  return tid;
+    static TypeId tid =
+        TypeId("ns3::RetxStatsCalculator")
+            .SetParent<Object>()
+            .AddConstructor<RetxStatsCalculator>()
+            .SetGroupName("Lte")
+            .AddAttribute("DlRlcRetxFilename",
+                          "Name of the file where the downlink retx results will be saved.",
+                          StringValue("DlRlcRetx.txt"),
+                          MakeStringAccessor(&RetxStatsCalculator::m_retxDlFilename),
+                          MakeStringChecker())
+            .AddAttribute("UlRlcRetxFilename",
+                          "Name of the file where the uplink retx results will be saved.",
+                          StringValue("UlRlcRetx.txt"),
+                          MakeStringAccessor(&RetxStatsCalculator::m_retxUlFilename),
+                          MakeStringChecker());
+    return tid;
 }
 
 void
-RetxStatsCalculator::DoDispose ()
+RetxStatsCalculator::DoDispose()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 void
-RetxStatsCalculator::RegisterRetxDl(uint64_t imsi, uint16_t cellId, 
-  uint16_t rnti, uint8_t lcid, uint32_t packetSize, uint32_t numRetx)
+RetxStatsCalculator::RegisterRetxDl(uint64_t imsi,
+                                    uint16_t cellId,
+                                    uint16_t rnti,
+                                    uint8_t lcid,
+                                    uint32_t packetSize,
+                                    uint32_t numRetx)
 {
-  if(!m_retxDlFile.is_open())
-  {
-      m_retxDlFile.open(m_retxDlFilename.c_str());
-      NS_LOG_LOGIC("File opened");
+    if (!m_retxDlFile.is_open())
+    {
+        m_retxDlFile.open(m_retxDlFilename.c_str());
+        NS_LOG_LOGIC("File opened");
     }
-  m_retxDlFile << Simulator::Now().GetSeconds() << " " << cellId << " " << imsi << " "
-    << rnti << " " << (uint16_t) lcid << " " << packetSize << " " << numRetx << std::endl;
+    m_retxDlFile << Simulator::Now().GetSeconds() << " " << cellId << " " << imsi << " " << rnti
+                 << " " << (uint16_t)lcid << " " << packetSize << " " << numRetx << std::endl;
 }
 
 void
-RetxStatsCalculator::RegisterRetxUl(uint64_t imsi, uint16_t cellId, 
-  uint16_t rnti, uint8_t lcid, uint32_t packetSize, uint32_t numRetx)
+RetxStatsCalculator::RegisterRetxUl(uint64_t imsi,
+                                    uint16_t cellId,
+                                    uint16_t rnti,
+                                    uint8_t lcid,
+                                    uint32_t packetSize,
+                                    uint32_t numRetx)
 {
-  if(!m_retxUlFile.is_open())
-  {
-      m_retxUlFile.open(m_retxUlFilename.c_str());
-      NS_LOG_LOGIC("File opened");
+    if (!m_retxUlFile.is_open())
+    {
+        m_retxUlFile.open(m_retxUlFilename.c_str());
+        NS_LOG_LOGIC("File opened");
     }
-  m_retxUlFile << Simulator::Now().GetSeconds() << " " << cellId << " " << imsi << " "
-    << rnti << " " << (uint16_t) lcid << " " << packetSize << " " << numRetx << std::endl;
+    m_retxUlFile << Simulator::Now().GetSeconds() << " " << cellId << " " << imsi << " " << rnti
+                 << " " << (uint16_t)lcid << " " << packetSize << " " << numRetx << std::endl;
 }
 
-}
+} // namespace ns3

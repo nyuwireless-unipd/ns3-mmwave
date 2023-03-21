@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2009 CTTC
  *
@@ -19,36 +18,34 @@
  */
 
 #include "spectrum-phy.h"
-#include <ns3/net-device.h>
-#include <ns3/mobility-model.h>
-#include <ns3/spectrum-value.h>
-#include <ns3/spectrum-channel.h>
+
 #include <ns3/log.h>
+#include <ns3/mobility-model.h>
+#include <ns3/net-device.h>
+#include <ns3/spectrum-channel.h>
+#include <ns3/spectrum-value.h>
 
-namespace ns3 {
+namespace ns3
+{
 
-NS_LOG_COMPONENT_DEFINE ("SpectrumPhy");
+NS_LOG_COMPONENT_DEFINE("SpectrumPhy");
 
-NS_OBJECT_ENSURE_REGISTERED (SpectrumPhy);
-
+NS_OBJECT_ENSURE_REGISTERED(SpectrumPhy);
 
 TypeId
-SpectrumPhy::GetTypeId (void)
+SpectrumPhy::GetTypeId()
 {
-  static TypeId tid = TypeId ("ns3::SpectrumPhy")
-    .SetParent<Object> ()
-    .SetGroupName ("Spectrum")
-  ;
-  return tid;
+    static TypeId tid = TypeId("ns3::SpectrumPhy").SetParent<Object>().SetGroupName("Spectrum");
+    return tid;
 }
 
-SpectrumPhy::SpectrumPhy ()
+SpectrumPhy::SpectrumPhy()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
-SpectrumPhy::~SpectrumPhy ()
+SpectrumPhy::~SpectrumPhy()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
-} // namespace
+} // namespace ns3

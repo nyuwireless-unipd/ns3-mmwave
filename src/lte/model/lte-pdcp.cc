@@ -18,223 +18,221 @@
  * Author: Manuel Requena <manuel.requena@cttc.es>
  */
 
-#include "ns3/log.h"
-#include "ns3/simulator.h"
-
 #include "ns3/lte-pdcp.h"
+
+#include "ns3/log.h"
 #include "ns3/lte-pdcp-header.h"
 #include "ns3/lte-pdcp-sap.h"
 #include "ns3/lte-pdcp-tag.h"
+#include "ns3/simulator.h"
 
-namespace ns3 {
+namespace ns3
+{
 
-NS_LOG_COMPONENT_DEFINE ("LtePdcp");
+NS_LOG_COMPONENT_DEFINE("LtePdcp");
 
 /// LtePdcpSpecificLteRlcSapUser class
 class LtePdcpSpecificLteRlcSapUser : public LteRlcSapUser
 {
-public:
-  /**
-   * Constructor
-   *
-   * \param pdcp PDCP
-   */
-  LtePdcpSpecificLteRlcSapUser (LtePdcp* pdcp);
+  public:
+    /**
+     * Constructor
+     *
+     * \param pdcp PDCP
+     */
+    LtePdcpSpecificLteRlcSapUser(LtePdcp* pdcp);
 
-  // Interface provided to lower RLC entity (implemented from LteRlcSapUser)
-  virtual void ReceivePdcpPdu (Ptr<Packet> p);
+    // Interface provided to lower RLC entity (implemented from LteRlcSapUser)
+    virtual void ReceivePdcpPdu(Ptr<Packet> p);
 
-private:
-  LtePdcpSpecificLteRlcSapUser ();
-  LtePdcp* m_pdcp; ///< the PDCP
+  private:
+    LtePdcpSpecificLteRlcSapUser();
+    LtePdcp* m_pdcp; ///< the PDCP
 };
 
-LtePdcpSpecificLteRlcSapUser::LtePdcpSpecificLteRlcSapUser (LtePdcp* pdcp)
-  : m_pdcp (pdcp)
+LtePdcpSpecificLteRlcSapUser::LtePdcpSpecificLteRlcSapUser(LtePdcp* pdcp)
+    : m_pdcp(pdcp)
 {
 }
 
-LtePdcpSpecificLteRlcSapUser::LtePdcpSpecificLteRlcSapUser ()
+LtePdcpSpecificLteRlcSapUser::LtePdcpSpecificLteRlcSapUser()
 {
 }
 
 void
-LtePdcpSpecificLteRlcSapUser::ReceivePdcpPdu (Ptr<Packet> p)
+LtePdcpSpecificLteRlcSapUser::ReceivePdcpPdu(Ptr<Packet> p)
 {
-  m_pdcp->DoReceivePdu (p);
+    m_pdcp->DoReceivePdu(p);
 }
 
 ///////////////////////////////////////
 
-NS_OBJECT_ENSURE_REGISTERED (LtePdcp);
+NS_OBJECT_ENSURE_REGISTERED(LtePdcp);
 
-LtePdcp::LtePdcp ()
-  : m_pdcpSapUser (0),
-    m_rlcSapProvider (0),
-    m_rnti (0),
-    m_lcid (0),
-    m_txSequenceNumber (0),
-    m_rxSequenceNumber (0)
+LtePdcp::LtePdcp()
+    : m_pdcpSapUser(0),
+      m_rlcSapProvider(0),
+      m_rnti(0),
+      m_lcid(0),
+      m_txSequenceNumber(0),
+      m_rxSequenceNumber(0)
 {
-  NS_LOG_FUNCTION (this);
-  m_pdcpSapProvider = new LtePdcpSpecificLtePdcpSapProvider<LtePdcp> (this);
-  m_rlcSapUser = new LtePdcpSpecificLteRlcSapUser (this);
+    NS_LOG_FUNCTION(this);
+    m_pdcpSapProvider = new LtePdcpSpecificLtePdcpSapProvider<LtePdcp>(this);
+    m_rlcSapUser = new LtePdcpSpecificLteRlcSapUser(this);
 }
 
-LtePdcp::~LtePdcp ()
+LtePdcp::~LtePdcp()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 TypeId
-LtePdcp::GetTypeId (void)
+LtePdcp::GetTypeId(void)
 {
-  static TypeId tid = TypeId ("ns3::LtePdcp")
-    .SetParent<Object> ()
-    .SetGroupName("Lte")
-    .AddTraceSource ("TxPDU",
-                     "PDU transmission notified to the RLC.",
-                     MakeTraceSourceAccessor (&LtePdcp::m_txPdu),
-                     "ns3::LtePdcp::PduTxTracedCallback")
-    .AddTraceSource ("RxPDU",
-                     "PDU received.",
-                     MakeTraceSourceAccessor (&LtePdcp::m_rxPdu),
-                     "ns3::LtePdcp::PduRxTracedCallback")
-    ;
-  return tid;
+    static TypeId tid = TypeId("ns3::LtePdcp")
+                            .SetParent<Object>()
+                            .SetGroupName("Lte")
+                            .AddTraceSource("TxPDU",
+                                            "PDU transmission notified to the RLC.",
+                                            MakeTraceSourceAccessor(&LtePdcp::m_txPdu),
+                                            "ns3::LtePdcp::PduTxTracedCallback")
+                            .AddTraceSource("RxPDU",
+                                            "PDU received.",
+                                            MakeTraceSourceAccessor(&LtePdcp::m_rxPdu),
+                                            "ns3::LtePdcp::PduRxTracedCallback");
+    return tid;
 }
 
 void
-LtePdcp::DoDispose ()
+LtePdcp::DoDispose()
 {
-  NS_LOG_FUNCTION (this);
-  delete (m_pdcpSapProvider);
-  delete (m_rlcSapUser);
-}
-
-
-void
-LtePdcp::SetRnti (uint16_t rnti)
-{
-  NS_LOG_FUNCTION (this << (uint32_t) rnti);
-  m_rnti = rnti;
+    NS_LOG_FUNCTION(this);
+    delete (m_pdcpSapProvider);
+    delete (m_rlcSapUser);
 }
 
 void
-LtePdcp::SetLcId (uint8_t lcId)
+LtePdcp::SetRnti(uint16_t rnti)
 {
-  NS_LOG_FUNCTION (this << (uint32_t) lcId);
-  m_lcid = lcId;
+    NS_LOG_FUNCTION(this << (uint32_t)rnti);
+    m_rnti = rnti;
 }
 
 void
-LtePdcp::SetLtePdcpSapUser (LtePdcpSapUser * s)
+LtePdcp::SetLcId(uint8_t lcId)
 {
-  NS_LOG_FUNCTION (this << s);
-  m_pdcpSapUser = s;
+    NS_LOG_FUNCTION(this << (uint32_t)lcId);
+    m_lcid = lcId;
+}
+
+void
+LtePdcp::SetLtePdcpSapUser(LtePdcpSapUser* s)
+{
+    NS_LOG_FUNCTION(this << s);
+    m_pdcpSapUser = s;
 }
 
 LtePdcpSapProvider*
-LtePdcp::GetLtePdcpSapProvider ()
+LtePdcp::GetLtePdcpSapProvider()
 {
-  NS_LOG_FUNCTION (this);
-  return m_pdcpSapProvider;
+    NS_LOG_FUNCTION(this);
+    return m_pdcpSapProvider;
 }
 
 void
-LtePdcp::SetLteRlcSapProvider (LteRlcSapProvider * s)
+LtePdcp::SetLteRlcSapProvider(LteRlcSapProvider* s)
 {
-  NS_LOG_FUNCTION (this << s);
-  m_rlcSapProvider = s;
+    NS_LOG_FUNCTION(this << s);
+    m_rlcSapProvider = s;
 }
 
 LteRlcSapUser*
-LtePdcp::GetLteRlcSapUser ()
+LtePdcp::GetLteRlcSapUser()
 {
-  NS_LOG_FUNCTION (this);
-  return m_rlcSapUser;
+    NS_LOG_FUNCTION(this);
+    return m_rlcSapUser;
 }
 
 LtePdcp::Status
-LtePdcp::GetStatus ()
+LtePdcp::GetStatus()
 {
-  Status s;
-  s.txSn = m_txSequenceNumber;
-  s.rxSn = m_rxSequenceNumber;
-  return s;
+    Status s;
+    s.txSn = m_txSequenceNumber;
+    s.rxSn = m_rxSequenceNumber;
+    return s;
 }
 
 void
-LtePdcp::SetStatus (Status s)
+LtePdcp::SetStatus(Status s)
 {
-  m_txSequenceNumber = s.txSn;
-  m_rxSequenceNumber = s.rxSn;
+    m_txSequenceNumber = s.txSn;
+    m_rxSequenceNumber = s.rxSn;
 }
 
 ////////////////////////////////////////
 
 void
-LtePdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
+LtePdcp::DoTransmitPdcpSdu(Ptr<Packet> p)
 {
-  NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
+    NS_LOG_FUNCTION(this << m_rnti << (uint32_t)m_lcid << p->GetSize());
 
-  LtePdcpHeader pdcpHeader;
-  pdcpHeader.SetSequenceNumber (m_txSequenceNumber);
+    LtePdcpHeader pdcpHeader;
+    pdcpHeader.SetSequenceNumber(m_txSequenceNumber);
 
-  m_txSequenceNumber++;
-  if (m_txSequenceNumber > m_maxPdcpSn)
+    m_txSequenceNumber++;
+    if (m_txSequenceNumber > m_maxPdcpSn)
     {
-      m_txSequenceNumber = 0;
+        m_txSequenceNumber = 0;
     }
 
-  pdcpHeader.SetDcBit (LtePdcpHeader::DATA_PDU);
+    pdcpHeader.SetDcBit(LtePdcpHeader::DATA_PDU);
 
-  NS_LOG_LOGIC ("PDCP header: " << pdcpHeader);
-  p->AddHeader (pdcpHeader);
+    NS_LOG_LOGIC("PDCP header: " << pdcpHeader);
+    p->AddHeader(pdcpHeader);
 
-  // Sender timestamp
-  PdcpTag pdcpTag (Simulator::Now ());
-  p->AddByteTag (pdcpTag);
-  m_txPdu (m_rnti, m_lcid, p->GetSize ());
+    // Sender timestamp
+    PdcpTag pdcpTag(Simulator::Now());
+    p->AddByteTag(pdcpTag);
+    m_txPdu(m_rnti, m_lcid, p->GetSize());
 
-  LteRlcSapProvider::TransmitPdcpPduParameters params;
-  params.rnti = m_rnti;
-  params.lcid = m_lcid;
-  params.pdcpPdu = p;
+    LteRlcSapProvider::TransmitPdcpPduParameters params;
+    params.rnti = m_rnti;
+    params.lcid = m_lcid;
+    params.pdcpPdu = p;
 
-  m_rlcSapProvider->TransmitPdcpPdu (params);
+    m_rlcSapProvider->TransmitPdcpPdu(params);
 }
 
 void
-LtePdcp::DoReceivePdu (Ptr<Packet> p)
+LtePdcp::DoReceivePdu(Ptr<Packet> p)
 {
-  NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
+    NS_LOG_FUNCTION(this << m_rnti << (uint32_t)m_lcid << p->GetSize());
 
-  // Receiver timestamp
-  PdcpTag pdcpTag;
-  Time delay;
-  if (p->FindFirstMatchingByteTag (pdcpTag))
+    // Receiver timestamp
+    PdcpTag pdcpTag;
+    Time delay;
+    if (p->FindFirstMatchingByteTag(pdcpTag))
     {
-      delay = Simulator::Now() - pdcpTag.GetSenderTimestamp ();
+        delay = Simulator::Now() - pdcpTag.GetSenderTimestamp();
     }
-  m_rxPdu(m_rnti, m_lcid, p->GetSize (), delay.GetNanoSeconds ());
+    m_rxPdu(m_rnti, m_lcid, p->GetSize(), delay.GetNanoSeconds());
 
-  LtePdcpHeader pdcpHeader;
-  p->RemoveHeader (pdcpHeader);
-  NS_LOG_LOGIC ("PDCP header: " << pdcpHeader);
+    LtePdcpHeader pdcpHeader;
+    p->RemoveHeader(pdcpHeader);
+    NS_LOG_LOGIC("PDCP header: " << pdcpHeader);
 
-  m_rxSequenceNumber = pdcpHeader.GetSequenceNumber () + 1;
-  if (m_rxSequenceNumber > m_maxPdcpSn)
+    m_rxSequenceNumber = pdcpHeader.GetSequenceNumber() + 1;
+    if (m_rxSequenceNumber > m_maxPdcpSn)
     {
-      m_rxSequenceNumber = 0;
+        m_rxSequenceNumber = 0;
     }
 
-  LtePdcpSapUser::ReceivePdcpSduParameters params;
-  params.pdcpSdu = p;
-  params.rnti = m_rnti;
-  params.lcid = m_lcid;
-  m_pdcpSapUser->ReceivePdcpSdu (params);
+    LtePdcpSapUser::ReceivePdcpSduParameters params;
+    params.pdcpSdu = p;
+    params.rnti = m_rnti;
+    params.lcid = m_lcid;
+    m_pdcpSapUser->ReceivePdcpSdu(params);
 }
-
 
 } // namespace ns3

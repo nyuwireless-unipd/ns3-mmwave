@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /* cairo - a vector graphics library with display and print output
  *
  * Copyright © 2004 Keith Packard
@@ -26,21 +25,23 @@
  * The Initial Developer of the Original Code is Keith Packard
  *
  * Contributor(s):
- *	Keith R. Packard <keithp@keithp.com>
+ *    Keith R. Packard <keithp@keithp.com>
  *
  * Code changes for ns-3 from upstream are marked with `//PDB'
  */
 
-#include <climits>
+// NOLINTBEGIN
+// clang-format off
+
 #include "cairo-wideint-private.h"
+
+#include <climits>
 
 /**
  * \file
  * \ingroup highprec
  * Implementation of the cairo_x functions which implement high precision arithmetic.
  */
-
-// *NS_CHECK_STYLE_OFF*
 
 #if HAVE_UINT64_T
 
@@ -825,3 +826,6 @@ _cairo_int_96by64_32x64_divrem (cairo_int128_t num, cairo_int64_t den)
 	qr.quo = uqr.quo;
     return qr;
 }
+
+// clang-format on
+// NOLINTEND

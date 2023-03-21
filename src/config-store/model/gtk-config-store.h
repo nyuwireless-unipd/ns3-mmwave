@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  *  This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -20,7 +19,8 @@
 #ifndef GTK_CONFIG_STORE_H
 #define GTK_CONFIG_STORE_H
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup configstore
@@ -29,19 +29,18 @@ namespace ns3 {
  */
 class GtkConfigStore
 {
-public:
-  GtkConfigStore ();
+  public:
+    GtkConfigStore();
 
-  /**
-   * Process default values
-   */
-  void ConfigureDefaults (void);
-  /**
-   * Process attribute values
-   */
-  void ConfigureAttributes (void);
+    /**
+     * Process default values
+     */
+    void ConfigureDefaults();
+    /**
+     * Process attribute values
+     */
+    void ConfigureAttributes();
 };
-
 
 } // namespace ns3
 

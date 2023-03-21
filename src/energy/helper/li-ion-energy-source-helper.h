@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2014 Wireless Communications and Networking Group (WCNG),
  * University of Rochester, Rochester, NY, USA.
@@ -24,29 +23,30 @@
 #define LI_ION_ENERGY_SOURCE_HELPER_H_
 
 #include "energy-model-helper.h"
+
 #include "ns3/node.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup energy
  * \brief Creates a LiIonEnergySource  object.
  *
  */
-class LiIonEnergySourceHelper: public EnergySourceHelper
+class LiIonEnergySourceHelper : public EnergySourceHelper
 {
-public:
-  LiIonEnergySourceHelper ();
-  ~LiIonEnergySourceHelper ();
+  public:
+    LiIonEnergySourceHelper();
+    ~LiIonEnergySourceHelper() override;
 
-  void Set (std::string name, const AttributeValue &v);
+    void Set(std::string name, const AttributeValue& v) override;
 
-private:
-  virtual Ptr<EnergySource> DoInstall (Ptr<Node> node) const;
+  private:
+    Ptr<EnergySource> DoInstall(Ptr<Node> node) const override;
 
-private:
-  ObjectFactory m_liIonEnergySource; //!< LiIon Battery factory
-
+  private:
+    ObjectFactory m_liIonEnergySource; //!< LiIon Battery factory
 };
 
 } // namespace ns3

@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2020 Universita' degli Studi di Napoli Federico II
  *
@@ -23,10 +22,12 @@
 #ifndef WAVE_FRAME_EXCHANGE_MANAGER_H
 #define WAVE_FRAME_EXCHANGE_MANAGER_H
 
-#include "ns3/qos-frame-exchange-manager.h"
 #include "wave-net-device.h"
 
-namespace ns3 {
+#include "ns3/qos-frame-exchange-manager.h"
+
+namespace ns3
+{
 
 /**
  * \ingroup wave
@@ -46,42 +47,42 @@ namespace ns3 {
  */
 class WaveFrameExchangeManager : public QosFrameExchangeManager
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
-  WaveFrameExchangeManager ();
-  virtual ~WaveFrameExchangeManager ();
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
+    WaveFrameExchangeManager();
+    ~WaveFrameExchangeManager() override;
 
-  // Overridden from FrameExchangeManager
-  virtual bool StartTransmission (Ptr<Txop> dcf, uint16_t allowedWidth);
+    // Overridden from FrameExchangeManager
+    bool StartTransmission(Ptr<Txop> dcf, uint16_t allowedWidth) override;
 
-  /**
-   * \param device WaveNetDevice associated with WaveFrameExchangeManager
-   */
-  void SetWaveNetDevice (Ptr<WaveNetDevice> device);
+    /**
+     * \param device WaveNetDevice associated with WaveFrameExchangeManager
+     */
+    void SetWaveNetDevice(Ptr<WaveNetDevice> device);
 
-protected:
-  // Overridden from FrameExchangeManager
-  virtual void DoDispose (void);
+  protected:
+    // Overridden from FrameExchangeManager
+    void DoDispose() override;
 
-private:
-  /**
-   * Return a TXVECTOR for the DATA frame given the destination.
-   * The function consults WifiRemoteStationManager, which controls the rate
-   * to different destinations.
-   *
-   * \param item the item being asked for TXVECTOR
-   * \return TXVECTOR for the given item
-   */
-  virtual WifiTxVector GetDataTxVector (Ptr<const WifiMacQueueItem> item) const;
+  private:
+    /**
+     * Return a TXVECTOR for the DATA frame given the destination.
+     * The function consults WifiRemoteStationManager, which controls the rate
+     * to different destinations.
+     *
+     * \param item the item being asked for TXVECTOR
+     * \return TXVECTOR for the given item
+     */
+    virtual WifiTxVector GetDataTxVector(Ptr<const WifiMpdu> item) const;
 
-  Ptr<ChannelScheduler> m_scheduler;     ///< the channel scheduler
-  Ptr<ChannelCoordinator> m_coordinator; ///< the channel coordinator
+    Ptr<ChannelScheduler> m_scheduler;     ///< the channel scheduler
+    Ptr<ChannelCoordinator> m_coordinator; ///< the channel coordinator
 };
 
-} //namespace ns3
+} // namespace ns3
 
 #endif /* VHT_FRAME_EXCHANGE_MANAGER_H */

@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2018 Lawrence Livermore National Laboratory
  *
@@ -29,7 +28,8 @@
  * and ns3::DefaultTimePrinter function.
  */
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * Function signature for features requiring a time formatter,
@@ -40,14 +40,14 @@ namespace ns3 {
  *
  * \param [in,out] os The output stream to print on.
  */
-typedef void (*TimePrinter)(std::ostream &os);
+typedef void (*TimePrinter)(std::ostream& os);
 
 /**
  * Default Time printer.
  *
  * \param [in,out] os The output stream to print on.
  */
-void DefaultTimePrinter (std::ostream &os);
+void DefaultTimePrinter(std::ostream& os);
 
 } // namespace ns3
 

@@ -22,20 +22,20 @@
  *          Dual Connectivity functionalities
  */
 
+#include "ns3/lte-rlc.h"
 
 #include "ns3/log.h"
-#include "ns3/simulator.h"
-
-#include "ns3/lte-rlc.h"
 #include "ns3/lte-rlc-tag.h"
+#include "ns3/simulator.h"
 //#include "lte-mac-sap.h"
 #include "ns3/lte-rlc-sap.h"
+
 // #include "ff-mac-sched-sap.h"
 
-namespace ns3 {
+namespace ns3
+{
 
-NS_LOG_COMPONENT_DEFINE ("LteRlc");
-
+NS_LOG_COMPONENT_DEFINE("LteRlc");
 
 /// LteRlcSpecificLteMacSapUser class
 /*
@@ -43,295 +43,288 @@ class LteRlcSpecificLteMacSapUser : public LteMacSapUser
 {
 public:
 */
-  /**
-   * Constructor
-   *
-   * \param rlc the RLC
-   */
-   /*
-  LteRlcSpecificLteMacSapUser (LteRlc* rlc);
+/**
+ * Constructor
+ *
+ * \param rlc the RLC
+ */
+/*
+LteRlcSpecificLteMacSapUser (LteRlc* rlc);
 
-  // Interface implemented from LteMacSapUser
-  virtual void NotifyTxOpportunity (LteMacSapUser::TxOpportunityParameters params);
-  virtual void NotifyHarqDeliveryFailure ();
-  virtual void NotifyHarqDeliveryFailure (uint8_t harqId);
-  virtual void ReceivePdu (LteMacSapUser::ReceivePduParameters params);
+// Interface implemented from LteMacSapUser
+virtual void NotifyTxOpportunity (LteMacSapUser::TxOpportunityParameters params);
+virtual void NotifyHarqDeliveryFailure ();
+virtual void NotifyHarqDeliveryFailure (uint8_t harqId);
+virtual void ReceivePdu (LteMacSapUser::ReceivePduParameters params);
 
 private:
-  LteRlcSpecificLteMacSapUser ();
-  LteRlc* m_rlc; ///< the RLC
+LteRlcSpecificLteMacSapUser ();
+LteRlc* m_rlc; ///< the RLC
 };
 */
 
-LteRlcSpecificLteMacSapUser::LteRlcSpecificLteMacSapUser (LteRlc* rlc)
-  : m_rlc (rlc)
+LteRlcSpecificLteMacSapUser::LteRlcSpecificLteMacSapUser(LteRlc* rlc)
+    : m_rlc(rlc)
 {
 }
 
-LteRlcSpecificLteMacSapUser::LteRlcSpecificLteMacSapUser ()
+LteRlcSpecificLteMacSapUser::LteRlcSpecificLteMacSapUser()
 {
-}
-
-void
-LteRlcSpecificLteMacSapUser::NotifyTxOpportunity (TxOpportunityParameters params)
-{
-  m_rlc->DoNotifyTxOpportunity (params);
 }
 
 void
-LteRlcSpecificLteMacSapUser::NotifyHarqDeliveryFailure ()
+LteRlcSpecificLteMacSapUser::NotifyTxOpportunity(TxOpportunityParameters params)
 {
-  m_rlc->DoNotifyHarqDeliveryFailure ();
+    m_rlc->DoNotifyTxOpportunity(params);
 }
 
 void
-LteRlcSpecificLteMacSapUser::NotifyHarqDeliveryFailure (uint8_t harqId)
+LteRlcSpecificLteMacSapUser::NotifyHarqDeliveryFailure()
 {
-  m_rlc->DoNotifyHarqDeliveryFailure (harqId);
+    m_rlc->DoNotifyHarqDeliveryFailure();
 }
 
 void
-LteRlcSpecificLteMacSapUser::ReceivePdu (LteMacSapUser::ReceivePduParameters params)
+LteRlcSpecificLteMacSapUser::NotifyHarqDeliveryFailure(uint8_t harqId)
 {
-  m_rlc->DoReceivePdu (params);
+    m_rlc->DoNotifyHarqDeliveryFailure(harqId);
 }
+
+void
+LteRlcSpecificLteMacSapUser::ReceivePdu(LteMacSapUser::ReceivePduParameters params)
+{
+    m_rlc->DoReceivePdu(params);
+}
+
 ///////////////////////////////////////
 
-NS_OBJECT_ENSURE_REGISTERED (LteRlc);
+NS_OBJECT_ENSURE_REGISTERED(LteRlc);
 
-LteRlc::LteRlc ()
-  : m_rlcSapUser (0),
-    m_macSapProvider (0),
-    m_rnti (0),
-    m_lcid (0),
-    isMc(false) // TODO refactor this!!
+LteRlc::LteRlc()
+    : m_rlcSapUser(0),
+      m_macSapProvider(0),
+      m_rnti(0),
+      m_lcid(0),
+      isMc(false) // TODO refactor this!!
 {
-  NS_LOG_FUNCTION (this);
-  m_rlcSapProvider = new LteRlcSpecificLteRlcSapProvider<LteRlc> (this);
-  m_epcX2RlcUser = new EpcX2RlcSpecificUser<LteRlc> (this);
-  m_macSapUser = new LteRlcSpecificLteMacSapUser (this);
+    NS_LOG_FUNCTION(this);
+    m_rlcSapProvider = new LteRlcSpecificLteRlcSapProvider<LteRlc>(this);
+    m_epcX2RlcUser = new EpcX2RlcSpecificUser<LteRlc>(this);
+    m_macSapUser = new LteRlcSpecificLteMacSapUser(this);
 }
 
-LteRlc::~LteRlc ()
+LteRlc::~LteRlc()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
-TypeId LteRlc::GetTypeId (void)
+TypeId
+LteRlc::GetTypeId(void)
 {
-  static TypeId tid = TypeId ("ns3::LteRlc")
-    .SetParent<Object> ()
-    .SetGroupName("Lte")
-    .AddTraceSource ("TxPDU",
-                     "PDU transmission notified to the MAC.",
-                     MakeTraceSourceAccessor (&LteRlc::m_txPdu),
-                     "ns3::LteRlc::NotifyTxTracedCallback")
-    .AddTraceSource ("RxPDU",
-                     "PDU received.",
-                     MakeTraceSourceAccessor (&LteRlc::m_rxPdu),
-                     "ns3::LteRlc::ReceiveTracedCallback")
-   .AddTraceSource ("TxCompletedCallback",
-                     "PDU acked.",
-                     MakeTraceSourceAccessor (&LteRlc::m_txCompletedCallback),
-                     "ns3::LteRlc::RetransmissionCountCallback")
-    ;
-  return tid;
-}
-
-void
-LteRlc::DoDispose ()
-{
-  NS_LOG_FUNCTION (this);
-  delete m_rlcSapProvider;
-  delete m_epcX2RlcUser;
-  delete m_macSapUser;
+    static TypeId tid = TypeId("ns3::LteRlc")
+                            .SetParent<Object>()
+                            .SetGroupName("Lte")
+                            .AddTraceSource("TxPDU",
+                                            "PDU transmission notified to the MAC.",
+                                            MakeTraceSourceAccessor(&LteRlc::m_txPdu),
+                                            "ns3::LteRlc::NotifyTxTracedCallback")
+                            .AddTraceSource("RxPDU",
+                                            "PDU received.",
+                                            MakeTraceSourceAccessor(&LteRlc::m_rxPdu),
+                                            "ns3::LteRlc::ReceiveTracedCallback")
+                            .AddTraceSource("TxCompletedCallback",
+                                            "PDU acked.",
+                                            MakeTraceSourceAccessor(&LteRlc::m_txCompletedCallback),
+                                            "ns3::LteRlc::RetransmissionCountCallback");
+    return tid;
 }
 
 void
-LteRlc::SetRnti (uint16_t rnti)
+LteRlc::DoDispose()
 {
-  NS_LOG_FUNCTION (this << (uint32_t) rnti);
-  m_rnti = rnti;
+    NS_LOG_FUNCTION(this);
+    delete m_rlcSapProvider;
+    delete m_epcX2RlcUser;
+    delete m_macSapUser;
 }
 
 void
-LteRlc::SetLcId (uint8_t lcId)
+LteRlc::SetRnti(uint16_t rnti)
 {
-  NS_LOG_FUNCTION (this << (uint32_t) lcId);
-  m_lcid = lcId;
+    NS_LOG_FUNCTION(this << (uint32_t)rnti);
+    m_rnti = rnti;
 }
 
 void
-LteRlc::SetLteRlcSapUser (LteRlcSapUser * s)
+LteRlc::SetLcId(uint8_t lcId)
 {
-  NS_LOG_FUNCTION (this << s);
-  m_rlcSapUser = s;
+    NS_LOG_FUNCTION(this << (uint32_t)lcId);
+    m_lcid = lcId;
+}
+
+void
+LteRlc::SetLteRlcSapUser(LteRlcSapUser* s)
+{
+    NS_LOG_FUNCTION(this << s);
+    m_rlcSapUser = s;
 }
 
 LteRlcSapProvider*
-LteRlc::GetLteRlcSapProvider ()
+LteRlc::GetLteRlcSapProvider()
 {
-  NS_LOG_FUNCTION (this);
-  return m_rlcSapProvider;
+    NS_LOG_FUNCTION(this);
+    return m_rlcSapProvider;
 }
 
 void
-LteRlc::SetLteMacSapProvider (LteMacSapProvider * s)
+LteRlc::SetLteMacSapProvider(LteMacSapProvider* s)
 {
-  NS_LOG_FUNCTION (this << s);
-  m_macSapProvider = s;
+    NS_LOG_FUNCTION(this << s);
+    m_macSapProvider = s;
 }
 
 LteMacSapUser*
-LteRlc::GetLteMacSapUser ()
+LteRlc::GetLteMacSapUser()
 {
-  NS_LOG_FUNCTION (this);
-  return m_macSapUser;
+    NS_LOG_FUNCTION(this);
+    return m_macSapUser;
 }
 
 void
-LteRlc::DoNotifyHarqDeliveryFailure (uint8_t harqId)
+LteRlc::DoNotifyHarqDeliveryFailure(uint8_t harqId)
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 void
 LteRlc::SetUeDataParams(EpcX2Sap::UeDataParams params)
 {
-  isMc = true;
-  m_ueDataParams = params;
+    isMc = true;
+    m_ueDataParams = params;
 }
 
 void
-LteRlc::SetEpcX2RlcProvider (EpcX2RlcProvider * s)
+LteRlc::SetEpcX2RlcProvider(EpcX2RlcProvider* s)
 {
-  m_epcX2RlcProvider = s;
+    m_epcX2RlcProvider = s;
 }
 
 EpcX2RlcUser*
-LteRlc::GetEpcX2RlcUser ()
+LteRlc::GetEpcX2RlcUser()
 {
-  return m_epcX2RlcUser;
+    return m_epcX2RlcUser;
 }
 
 ////////////////////////////////////////
 
-NS_OBJECT_ENSURE_REGISTERED (LteRlcSm);
+NS_OBJECT_ENSURE_REGISTERED(LteRlcSm);
 
-LteRlcSm::LteRlcSm ()
+LteRlcSm::LteRlcSm()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
-LteRlcSm::~LteRlcSm ()
+LteRlcSm::~LteRlcSm()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 TypeId
-LteRlcSm::GetTypeId (void)
+LteRlcSm::GetTypeId(void)
 {
-  static TypeId tid = TypeId ("ns3::LteRlcSm")
-    .SetParent<LteRlc> ()
-    .SetGroupName("Lte")
-    .AddConstructor<LteRlcSm> ()
-    ;
-  return tid;
+    static TypeId tid =
+        TypeId("ns3::LteRlcSm").SetParent<LteRlc>().SetGroupName("Lte").AddConstructor<LteRlcSm>();
+    return tid;
 }
 
 void
-LteRlcSm::DoInitialize ()
+LteRlcSm::DoInitialize()
 {
-  NS_LOG_FUNCTION (this);
-  ReportBufferStatus ();
+    NS_LOG_FUNCTION(this);
+    ReportBufferStatus();
 }
 
 void
-LteRlcSm::DoDispose ()
+LteRlcSm::DoDispose()
 {
-  NS_LOG_FUNCTION (this);
-  LteRlc::DoDispose ();
+    NS_LOG_FUNCTION(this);
+    LteRlc::DoDispose();
 }
 
 void
-LteRlcSm::DoTransmitPdcpPdu (Ptr<Packet> p)
+LteRlcSm::DoTransmitPdcpPdu(Ptr<Packet> p)
 {
-  NS_LOG_FUNCTION (this << p);
+    NS_LOG_FUNCTION(this << p);
 }
 
 void
-LteRlcSm::DoReceivePdu (LteMacSapUser::ReceivePduParameters rxPduParams)
+LteRlcSm::DoReceivePdu(LteMacSapUser::ReceivePduParameters rxPduParams)
 {
-  NS_LOG_FUNCTION (this << rxPduParams.p);
-  // RLC Performance evaluation
-  RlcTag rlcTag;
-  Time delay;
-  if (rxPduParams.p->FindFirstMatchingByteTag(rlcTag))
+    NS_LOG_FUNCTION(this << rxPduParams.p);
+    // RLC Performance evaluation
+    RlcTag rlcTag;
+    Time delay;
+    if (rxPduParams.p->FindFirstMatchingByteTag(rlcTag))
     {
-      delay = Simulator::Now() - rlcTag.GetSenderTimestamp ();
+        delay = Simulator::Now() - rlcTag.GetSenderTimestamp();
     }
-  NS_LOG_LOGIC (" RNTI=" << m_rnti
-                << " LCID=" << (uint32_t) m_lcid
-                << " size=" << rxPduParams.p->GetSize ()
-                << " delay=" << delay.GetNanoSeconds ());
-  m_rxPdu(m_rnti, m_lcid, rxPduParams.p->GetSize (), delay.GetNanoSeconds () );
+    NS_LOG_LOGIC(" RNTI=" << m_rnti << " LCID=" << (uint32_t)m_lcid << " size="
+                          << rxPduParams.p->GetSize() << " delay=" << delay.GetNanoSeconds());
+    m_rxPdu(m_rnti, m_lcid, rxPduParams.p->GetSize(), delay.GetNanoSeconds());
 }
 
 void
-LteRlcSm::DoNotifyTxOpportunity (LteMacSapUser::TxOpportunityParameters txOpParams)
+LteRlcSm::DoNotifyTxOpportunity(LteMacSapUser::TxOpportunityParameters txOpParams)
 {
-  NS_LOG_FUNCTION (this << txOpParams.bytes);
-  LteMacSapProvider::TransmitPduParameters params;
-  params.pdu = Create<Packet> (txOpParams.bytes);
-  params.rnti = m_rnti;
-  params.lcid = m_lcid;
-  params.layer = txOpParams.layer;
-  params.harqProcessId = txOpParams.harqId;
-  params.componentCarrierId = txOpParams.componentCarrierId;
+    NS_LOG_FUNCTION(this << txOpParams.bytes);
+    LteMacSapProvider::TransmitPduParameters params;
+    params.pdu = Create<Packet>(txOpParams.bytes);
+    params.rnti = m_rnti;
+    params.lcid = m_lcid;
+    params.layer = txOpParams.layer;
+    params.harqProcessId = txOpParams.harqId;
+    params.componentCarrierId = txOpParams.componentCarrierId;
 
-  // RLC Performance evaluation
-  RlcTag tag (Simulator::Now());
-  params.pdu->AddByteTag (tag);
-  NS_LOG_LOGIC (" RNTI=" << m_rnti
-                << " LCID=" << (uint32_t) m_lcid
-                << " size=" << txOpParams.bytes);
-  m_txPdu(m_rnti, m_lcid, txOpParams.bytes);
+    // RLC Performance evaluation
+    RlcTag tag(Simulator::Now());
+    params.pdu->AddByteTag(tag);
+    NS_LOG_LOGIC(" RNTI=" << m_rnti << " LCID=" << (uint32_t)m_lcid
+                          << " size=" << txOpParams.bytes);
+    m_txPdu(m_rnti, m_lcid, txOpParams.bytes);
 
-  m_macSapProvider->TransmitPdu (params);
-  ReportBufferStatus ();
+    m_macSapProvider->TransmitPdu(params);
+    ReportBufferStatus();
 }
 
 void
-LteRlcSm::DoNotifyHarqDeliveryFailure ()
+LteRlcSm::DoNotifyHarqDeliveryFailure()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 void
-LteRlcSm::ReportBufferStatus ()
+LteRlcSm::ReportBufferStatus()
 {
-  NS_LOG_FUNCTION (this);
-  LteMacSapProvider::ReportBufferStatusParameters p;
-  p.rnti = m_rnti;
-  p.lcid = m_lcid;
-  p.txQueueSize = 1000000;  // mmWave module: Arbitrarily changed full-buffer BSR to report 1MB available each subframe
-  p.txQueueHolDelay = 10;
-  p.retxQueueSize = 0;
-  p.retxQueueHolDelay = 0;
-  p.statusPduSize = 0;
-  p.arrivalRate = 0;
-  m_macSapProvider->ReportBufferStatus (p);
+    NS_LOG_FUNCTION(this);
+    LteMacSapProvider::ReportBufferStatusParameters p;
+    p.rnti = m_rnti;
+    p.lcid = m_lcid;
+    p.txQueueSize = 1000000; // mmWave module: Arbitrarily changed full-buffer BSR to report 1MB
+                             // available each subframe
+    p.txQueueHolDelay = 10;
+    p.retxQueueSize = 0;
+    p.retxQueueHolDelay = 0;
+    p.statusPduSize = 0;
+    p.arrivalRate = 0;
+    m_macSapProvider->ReportBufferStatus(p);
 }
 
 void
 LteRlcSm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
 {
-  NS_LOG_FUNCTION(this);
-  NS_FATAL_ERROR("Not supported");
+    NS_LOG_FUNCTION(this);
+    NS_FATAL_ERROR("Not supported");
 }
-
-
-
 
 //////////////////////////////////////////
 
@@ -350,6 +343,5 @@ LteRlcSm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
 // LteRlcAm::~LteRlcAm ()
 // {
 // }
-
 
 } // namespace ns3

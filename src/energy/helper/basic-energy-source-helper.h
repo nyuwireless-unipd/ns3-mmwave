@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2010 Network Security Lab, University of Washington, Seattle.
  *
@@ -22,9 +21,11 @@
 #define BASIC_ENERGY_SOURCE_HELPER_H
 
 #include "energy-model-helper.h"
+
 #include "ns3/node.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup energy
@@ -33,20 +34,19 @@ namespace ns3 {
  */
 class BasicEnergySourceHelper : public EnergySourceHelper
 {
-public:
-  BasicEnergySourceHelper ();
-  ~BasicEnergySourceHelper ();
+  public:
+    BasicEnergySourceHelper();
+    ~BasicEnergySourceHelper() override;
 
-  void Set (std::string name, const AttributeValue &v);
+    void Set(std::string name, const AttributeValue& v) override;
 
-private:
-  virtual Ptr<EnergySource> DoInstall (Ptr<Node> node) const;
+  private:
+    Ptr<EnergySource> DoInstall(Ptr<Node> node) const override;
 
-private:
-  ObjectFactory m_basicEnergySource; //!< Energy source factory
-
+  private:
+    ObjectFactory m_basicEnergySource; //!< Energy source factory
 };
 
 } // namespace ns3
 
-#endif  /* BASIC_ENERGY_SOURCE_HELPER_H */
+#endif /* BASIC_ENERGY_SOURCE_HELPER_H */

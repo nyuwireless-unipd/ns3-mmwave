@@ -27,15 +27,16 @@
 #ifndef EMU_EPC_HELPER_H
 #define EMU_EPC_HELPER_H
 
-#include <ns3/object.h>
-#include <ns3/ipv4-address-helper.h>
-#include <ns3/ipv6-address-helper.h>
 #include <ns3/data-rate.h>
+#include <ns3/epc-helper.h>
 #include <ns3/epc-tft.h>
 #include <ns3/eps-bearer.h>
-#include <ns3/epc-helper.h>
+#include <ns3/ipv4-address-helper.h>
+#include <ns3/ipv6-address-helper.h>
+#include <ns3/object.h>
 
-namespace ns3 {
+namespace ns3
+{
 
 class Node;
 class NetDevice;
@@ -60,150 +61,150 @@ class EpcS1apMme;
  */
 class EmuEpcHelper : public EpcHelper
 {
-public:
+  public:
+    /**
+     * Constructor
+     */
+    EmuEpcHelper();
 
-  /**
-   * Constructor
-   */
-  EmuEpcHelper ();
+    /**
+     * Destructor
+     */
+    virtual ~EmuEpcHelper();
 
-  /**
-   * Destructor
-   */
-  virtual ~EmuEpcHelper ();
+    // inherited from Object
+    /**
+     *  Register this type.
+     *  \return The object TypeId.
+     */
+    static TypeId GetTypeId(void);
+    TypeId GetInstanceTypeId() const;
+    virtual void DoInitialize();
+    virtual void DoDispose();
 
-  // inherited from Object
-  /**
-   *  Register this type.
-   *  \return The object TypeId.
-   */
-  static TypeId GetTypeId (void);
-  TypeId GetInstanceTypeId () const;
-  virtual void DoInitialize ();
-  virtual void DoDispose ();
+    // inherited from EpcHelper
+    virtual void AddEnb(Ptr<Node> enbNode, Ptr<NetDevice> lteEnbNetDevice, uint16_t cellId);
+    virtual void AddUe(Ptr<NetDevice> ueLteDevice, uint64_t imsi);
+    virtual void AddX2Interface(Ptr<Node> enbNode1, Ptr<Node> enbNode2);
+    virtual uint8_t ActivateEpsBearer(Ptr<NetDevice> ueLteDevice,
+                                      uint64_t imsi,
+                                      Ptr<EpcTft> tft,
+                                      EpsBearer bearer);
+    virtual uint8_t ActivateEpsBearer(Ptr<NetDevice> ueLteDevice,
+                                      Ptr<EpcUeNas> ueNas,
+                                      uint64_t imsi,
+                                      Ptr<EpcTft> tft,
+                                      EpsBearer bearer);
+    virtual Ptr<Node> GetPgwNode();
+    virtual Ipv4InterfaceContainer AssignUeIpv4Address(NetDeviceContainer ueDevices);
+    virtual Ipv6InterfaceContainer AssignUeIpv6Address(NetDeviceContainer ueDevices);
+    virtual Ipv4Address GetUeDefaultGatewayAddress();
+    virtual Ipv6Address GetUeDefaultGatewayAddress6();
+    virtual int64_t AssignStreams(int64_t stream) override;
 
-  // inherited from EpcHelper
-  virtual void AddEnb (Ptr<Node> enbNode, Ptr<NetDevice> lteEnbNetDevice, uint16_t cellId);
-  virtual void AddUe (Ptr<NetDevice> ueLteDevice, uint64_t imsi);
-  virtual void AddX2Interface (Ptr<Node> enbNode1, Ptr<Node> enbNode2);
-  virtual uint8_t ActivateEpsBearer (Ptr<NetDevice> ueLteDevice, uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer);
-  virtual uint8_t ActivateEpsBearer (Ptr<NetDevice> ueLteDevice, Ptr<EpcUeNas> ueNas, uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer);
-  virtual Ptr<Node> GetPgwNode ();
-  virtual Ipv4InterfaceContainer AssignUeIpv4Address (NetDeviceContainer ueDevices);
-  virtual Ipv6InterfaceContainer AssignUeIpv6Address (NetDeviceContainer ueDevices);
-  virtual Ipv4Address GetUeDefaultGatewayAddress ();
-  virtual Ipv6Address GetUeDefaultGatewayAddress6 ();
-  virtual int64_t AssignStreams (int64_t stream) override;
+  private:
+    /**
+     * helper to assign IPv4 addresses to UE devices as well as to the TUN device of the SGW/PGW
+     */
+    Ipv4AddressHelper m_uePgwAddressHelper;
 
-private:
+    /**
+     * helper to assign IPv6 addresses to UE devices as well as to the TUN device of the SGW/PGW
+     */
+    Ipv6AddressHelper m_uePgwAddressHelper6;
 
-  /**
-   * helper to assign IPv4 addresses to UE devices as well as to the TUN device of the SGW/PGW
-   */
-  Ipv4AddressHelper m_uePgwAddressHelper;
+    /**
+     * helper to assign addresses to S1-AP NetDevices
+     */
+    Ipv4AddressHelper m_s1apIpv4AddressHelper;
 
-  /**
-   * helper to assign IPv6 addresses to UE devices as well as to the TUN device of the SGW/PGW
-   */
-  Ipv6AddressHelper m_uePgwAddressHelper6;
+    /**
+     * SGW-PGW network element
+     */
+    Ptr<Node> m_sgwPgw;
 
-  /**
-   * helper to assign addresses to S1-AP NetDevices
-   */
-  Ipv4AddressHelper m_s1apIpv4AddressHelper;
+    /**
+     * SGW-PGW application
+     */
+    Ptr<EpcSgwPgwApplication> m_sgwPgwApp;
 
+    /**
+     * TUN device containing IPv4 address and  implementing tunneling of user data over GTP-U/UDP/IP
+     */
+    Ptr<VirtualNetDevice> m_tunDevice;
 
-  /**
-   * SGW-PGW network element
-   */
-  Ptr<Node> m_sgwPgw;
+    /**
+     * MME network element
+     */
+    Ptr<Node> m_mmeNode;
 
-  /**
-   * SGW-PGW application
-   */
-  Ptr<EpcSgwPgwApplication> m_sgwPgwApp;
+    /**
+     * MME application
+     */
+    Ptr<EpcMmeApplication> m_mmeApp;
 
-  /**
-   * TUN device containing IPv4 address and  implementing tunneling of user data over GTP-U/UDP/IP
-   */
-  Ptr<VirtualNetDevice> m_tunDevice;
+    /**
+     * helper to assign addresses to S1-U NetDevices
+     */
+    Ipv4AddressHelper m_epcIpv4AddressHelper;
 
-  /**
-   * MME network element
-   */
-  Ptr<Node> m_mmeNode;
+    /**
+     * UDP port where the GTP-U Socket is bound, fixed by the standard as 2152
+     */
+    uint16_t m_gtpuUdpPort;
 
-  /**
-   * MME application
-   */
-  Ptr<EpcMmeApplication> m_mmeApp;
+    /**
+     * The data rate to be used for the next S1-AP link to be created
+     */
+    DataRate m_s1apLinkDataRate;
 
-  /**
-   * helper to assign addresses to S1-U NetDevices
-   */
-  Ipv4AddressHelper m_epcIpv4AddressHelper;
+    /**
+     * The delay to be used for the next S1-AP link to be created
+     */
+    Time m_s1apLinkDelay;
 
-  /**
-   * UDP port where the GTP-U Socket is bound, fixed by the standard as 2152
-   */
-  uint16_t m_gtpuUdpPort;
+    /**
+     * The MTU of the next S1-AP link to be created.
+     */
+    uint16_t m_s1apLinkMtu;
 
-  /**
-   * The data rate to be used for the next S1-AP link to be created
-   */
-  DataRate m_s1apLinkDataRate;
+    /**
+     * UDP port where the UDP Socket is bound, fixed by the standard as
+     * 36412 (it should be sctp, but it is not supported in ns-3)
+     */
+    uint16_t m_s1apUdpPort;
 
-  /**
-   * The delay to be used for the next S1-AP link to be created
-   */
-  Time     m_s1apLinkDelay;
+    /**
+     * Map storing for each IMSI the corresponding eNB NetDevice
+     *
+     */
+    std::map<uint64_t, Ptr<NetDevice>> m_imsiEnbDeviceMap;
 
-  /**
-   * The MTU of the next S1-AP link to be created.
-   */
-  uint16_t m_s1apLinkMtu;
+    /**
+     * Container for Ipv4Interfaces of the SGW/PGW
+     */
+    Ipv4InterfaceContainer m_sgwIpIfaces;
 
-  /**
-   * UDP port where the UDP Socket is bound, fixed by the standard as
-   * 36412 (it should be sctp, but it is not supported in ns-3)
-   */
-  uint16_t m_s1apUdpPort;
+    /**
+     * The name of the device used for the S1-U interface of the SGW
+     */
+    std::string m_sgwDeviceName;
 
-  /**
-   * Map storing for each IMSI the corresponding eNB NetDevice
-   *
-   */
-  std::map<uint64_t, Ptr<NetDevice> > m_imsiEnbDeviceMap;
+    /**
+     * The name of the device used for the S1-U interface of the eNB
+     */
+    std::string m_enbDeviceName;
 
-  /**
-   * Container for Ipv4Interfaces of the SGW/PGW
-   */
-  Ipv4InterfaceContainer m_sgwIpIfaces;
+    /**
+     * MAC address used for the SGW
+     */
+    std::string m_sgwMacAddress;
 
-  /**
-   * The name of the device used for the S1-U interface of the SGW
-   */
-  std::string m_sgwDeviceName;
-
-  /**
-   * The name of the device used for the S1-U interface of the eNB
-   */
-  std::string m_enbDeviceName;
-
-  /**
-   * MAC address used for the SGW
-   */
-  std::string m_sgwMacAddress;
-
-  /**
-   * First 5 bytes of the Enb MAC address base
-   */
-  std::string m_enbMacAddressBase;
-
+    /**
+     * First 5 bytes of the Enb MAC address base
+     */
+    std::string m_enbMacAddressBase;
 };
-
-
-
 
 } // namespace ns3
 

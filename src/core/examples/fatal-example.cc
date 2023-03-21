@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2020 Lawrence Livermore National Laboratory
  *
@@ -18,8 +17,8 @@
  * Author: Peter D. Barnes, Jr. <pdbarnes@llnl.gov>
  */
 
-#include "ns3/fatal-error.h"
 #include "ns3/assert.h"
+#include "ns3/fatal-error.h"
 #include "ns3/simulator.h"
 
 #include <iostream>
@@ -40,11 +39,10 @@ using namespace ns3;
  * \brief Triggers a fatal error without message, deferring termination.
  */
 void
-FatalNoMsg (void)
+FatalNoMsg()
 {
-  std::cerr << "\nEvent triggered fatal error without message, and continuing:"
-	    << std::endl;
-  NS_FATAL_ERROR_NO_MSG_CONT ();
+    std::cerr << "\nEvent triggered fatal error without message, and continuing:" << std::endl;
+    NS_FATAL_ERROR_NO_MSG_CONT();
 }
 
 /**
@@ -52,11 +50,10 @@ FatalNoMsg (void)
  * \brief Triggers a fatal error with an error message, deferring termination.
  */
 void
-FatalCont (void)
+FatalCont()
 {
-  std::cerr << "\nEvent triggered fatal error, with custom message, and continuing:"
-	    << std::endl;
-  NS_FATAL_ERROR_CONT ("fatal error, but continuing");
+    std::cerr << "\nEvent triggered fatal error, with custom message, and continuing:" << std::endl;
+    NS_FATAL_ERROR_CONT("fatal error, but continuing");
 }
 
 /**
@@ -64,35 +61,33 @@ FatalCont (void)
  * \brief Triggers a fatal error with message, and terminating.
  */
 void
-Fatal (void)
+Fatal()
 {
-  std::cerr << "\nEvent triggered fatal error, with message, and terminating:"
-	    << std::endl;
-  NS_FATAL_ERROR ("fatal error, terminating");
+    std::cerr << "\nEvent triggered fatal error, with message, and terminating:" << std::endl;
+    NS_FATAL_ERROR("fatal error, terminating");
 }
 
 int
-main (int argc, char ** argv)
+main(int argc, char** argv)
 {
-  // First schedule some events
-  Simulator::Schedule (Seconds (1), FatalNoMsg);
-  Simulator::Schedule (Seconds (2), FatalCont);
-  Simulator::Schedule (Seconds (3), Fatal);
+    // First schedule some events
+    Simulator::Schedule(Seconds(1), FatalNoMsg);
+    Simulator::Schedule(Seconds(2), FatalCont);
+    Simulator::Schedule(Seconds(3), Fatal);
 
+    // Show some errors outside of simulation time
+    std::cerr << "\nFatal error with custom message, and continuing:" << std::endl;
+    NS_FATAL_ERROR_CONT("fatal error, but continuing");
 
-  // Show some errors outside of simulation time
-  std::cerr << "\nFatal error with custom message, and continuing:" << std::endl;
-  NS_FATAL_ERROR_CONT ("fatal error, but continuing");
+    std::cerr << "\nFatal error without message, and continuing:" << std::endl;
+    NS_FATAL_ERROR_NO_MSG_CONT();
 
-  std::cerr << "\nFatal error without message, and continuing:" << std::endl;
-  NS_FATAL_ERROR_NO_MSG_CONT ();
+    // Now run the simulator
+    Simulator::Run();
 
-  // Now run the simulator
-  Simulator::Run ();
+    // Should not get here
+    NS_FATAL_ERROR("fatal error, terminating");
+    NS_ASSERT_MSG(false, "Should not get here.");
 
-  // Should not get here
-  NS_FATAL_ERROR ("fatal error, terminating");
-  NS_ASSERT_MSG (false, "Should not get here.");
-
-  return 0;
+    return 0;
 }

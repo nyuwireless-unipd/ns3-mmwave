@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2009 IITP RAS
  *
@@ -18,11 +17,11 @@
  * Authors: Kirill Andreev <andreev@iitp.ru>
  */
 
-#include "ns3/test.h"
-#include "ns3/nstime.h"
-#include "ns3/node-container.h"
 #include "ns3/ipv4-interface-container.h"
+#include "ns3/node-container.h"
+#include "ns3/nstime.h"
 #include "ns3/pcap-file.h"
+#include "ns3/test.h"
 
 using namespace ns3;
 
@@ -33,7 +32,6 @@ using namespace ns3;
 
 /**
  * \ingroup flame-test
- * \ingroup tests
  *
  * \brief FLAME protocol regression test of three stations:
  * \verbatim
@@ -64,59 +62,58 @@ using namespace ns3;
  */
 class FlameRegressionTest : public TestCase
 {
-public:
-  FlameRegressionTest ();
-  virtual ~FlameRegressionTest();
+  public:
+    FlameRegressionTest();
+    ~FlameRegressionTest() override;
 
-  virtual void DoRun ();
-  /// Check results function
-  void CheckResults ();
+    void DoRun() override;
+    /// Check results function
+    void CheckResults();
 
-private:
-  /// \internal It is important to have pointers here
-  NodeContainer * m_nodes;
-  /// Simulation time
-  Time m_time;
-  /// Needed to install applications
-  Ipv4InterfaceContainer m_interfaces;
+  private:
+    /// \internal It is important to have pointers here
+    NodeContainer* m_nodes;
+    /// Simulation time
+    Time m_time;
+    /// Needed to install applications
+    Ipv4InterfaceContainer m_interfaces;
 
-  /// Create nodes function
-  void CreateNodes ();
-  /// Create devices function
-  void CreateDevices ();
-  /// Install application function
-  void InstallApplications ();
+    /// Create nodes function
+    void CreateNodes();
+    /// Create devices function
+    void CreateDevices();
+    /// Install application function
+    void InstallApplications();
 
-  /// Server-side socket
-  Ptr<Socket> m_serverSocket;
-  /// Client-side socket
-  Ptr<Socket> m_clientSocket;
+    /// Server-side socket
+    Ptr<Socket> m_serverSocket;
+    /// Client-side socket
+    Ptr<Socket> m_clientSocket;
 
-  /// sent packets counter
-  uint32_t m_sentPktsCounter;
+    /// sent packets counter
+    uint32_t m_sentPktsCounter;
 
-  /**
-   * Send data
-   * \param socket the sending socket
-   */
-  void SendData (Ptr<Socket> socket);
+    /**
+     * Send data
+     * \param socket the sending socket
+     */
+    void SendData(Ptr<Socket> socket);
 
-  /**
-   * \brief Handle a packet reception.
-   *
-   * This function is called by lower layers.
-   *
-   * \param socket the socket the packet was received to.
-   */
-  void HandleReadServer (Ptr<Socket> socket);
+    /**
+     * \brief Handle a packet reception.
+     *
+     * This function is called by lower layers.
+     *
+     * \param socket the socket the packet was received to.
+     */
+    void HandleReadServer(Ptr<Socket> socket);
 
-  /**
-   * \brief Handle a packet reception.
-   *
-   * This function is called by lower layers.
-   *
-   * \param socket the socket the packet was received to.
-   */
-  void HandleReadClient (Ptr<Socket> socket);
+    /**
+     * \brief Handle a packet reception.
+     *
+     * This function is called by lower layers.
+     *
+     * \param socket the socket the packet was received to.
+     */
+    void HandleReadClient(Ptr<Socket> socket);
 };
-

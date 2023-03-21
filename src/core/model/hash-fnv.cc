@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2012 Lawrence Livermore National Laboratory
  *
@@ -30,11 +29,12 @@
  * In addition comment blocks have been converted to Doxygen format.
  */
 
-#include <sys/types.h>
-#include <stdlib.h>
+#include "hash-fnv.h"
 
 #include "log.h"
-#include "hash-fnv.h"
+
+#include <stdlib.h>
+#include <sys/types.h>
 
 /**
  * \file
@@ -42,17 +42,20 @@
  * \brief ns3::Hash::Function::Fnv1a implementation.
  */
 
+namespace ns3
+{
 
-namespace ns3 {
+NS_LOG_COMPONENT_DEFINE("Hash-Fnv");
 
-NS_LOG_COMPONENT_DEFINE ("Hash-Fnv");
+namespace Hash
+{
 
-namespace Hash {
-
-namespace Function {
+namespace Function
+{
 
 /** FNV hash implementation details. */
-namespace Fnv1aImplementation {
+namespace Fnv1aImplementation
+{
 
 /*************************************************
  **  class FnvHashImplementation
@@ -64,12 +67,15 @@ namespace Fnv1aImplementation {
  */
 /**@{*/
 
-extern "C" {
+extern "C"
+{
+    // NOLINTBEGIN
+    // clang-format off
 
 // Changes from FNV distribution are marked with `//PDB'
 //
 
-/* Begin fnv.h -------------- *NS_CHECK_STYLE_OFF* ----> */
+/* Begin fnv.h ----------------------------------------> */
 
 /*
  * fnv - Fowler/Noll/Vo- hash code
@@ -292,9 +298,9 @@ enum fnv_type {
 
 #endif /* __FNV_H__ */
 
-/* End fnv.h ---------------- *NS_CHECK_STYLE_ON* -----> */
+/* End fnv.h ------------------------------------------> */
 
-/* Begin hash_32a.c --------- *NS_CHECK_STYLE_OFF* ----> */
+/* Begin hash_32a.c -----------------------------------> */
 
 /*
  * hash_32 - 32 bit Fowler/Noll/Vo FNV-1a hash code
@@ -439,9 +445,9 @@ fnv_32a_str(char *str, Fnv32_t hval)
     return hval;
 }
 
-/* End hash_32a.c ----------- *NS_CHECK_STYLE_ON* -----> */
+/* End hash_32a.c -------------------------------------> */
 
-/* Begin hash_64a.c --------- *NS_CHECK_STYLE_OFF* ----> */
+/* Begin hash_64a.c -----------------------------------> */
 
 /*
  * hash_64 - 64 bit Fowler/Noll/Vo-0 FNV-1a hash code
@@ -735,47 +741,47 @@ fnv_64a_str(char *str, Fnv64_t hval)
     return hval;
 }
 
-/* End hash_64a.c ----------- *NS_CHECK_STYLE_ON* -----> */
+/* End hash_64a.c -------------------------------------> */
 
-}  /* extern "C" */
+    // clang-format on
+    // NOLINTEND
+
+} /* extern "C" */
 
 //-----------------------------------------------------------------------------
 
-/**@}*/  // \defgroup hash_fnv
+/**@}*/ // \defgroup hash_fnv
 
-}  // namespace Fnv1aImplementation
+} // namespace Fnv1aImplementation
 
-
-Fnv1a::Fnv1a ()
+Fnv1a::Fnv1a()
 {
-  clear ();
+    clear();
 }
 
 uint32_t
-Fnv1a::GetHash32  (const char * buffer, const std::size_t size)
+Fnv1a::GetHash32(const char* buffer, const std::size_t size)
 {
-  m_hash32 =
-    Fnv1aImplementation::fnv_32a_buf ((void *)buffer, size, m_hash32);
-  return m_hash32;
+    m_hash32 = Fnv1aImplementation::fnv_32a_buf((void*)buffer, size, m_hash32);
+    return m_hash32;
 }
 
 uint64_t
-Fnv1a::GetHash64  (const char * buffer, const std::size_t size)
+Fnv1a::GetHash64(const char* buffer, const std::size_t size)
 {
-  m_hash64 =
-    Fnv1aImplementation::fnv_64a_buf ((void *)buffer, size, m_hash64);
-  return m_hash64;
+    m_hash64 = Fnv1aImplementation::fnv_64a_buf((void*)buffer, size, m_hash64);
+    return m_hash64;
 }
 
 void
-Fnv1a::clear (void)
+Fnv1a::clear()
 {
-  m_hash32 = FNV1_32A_INIT;
-  m_hash64 = FNV1A_64_INIT;
+    m_hash32 = FNV1_32A_INIT;
+    m_hash64 = FNV1A_64_INIT;
 }
 
-}  // namespace Function
+} // namespace Function
 
-}  // namespace Hash
+} // namespace Hash
 
-}  // namespace ns3
+} // namespace ns3

@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2009 CTTC
  *
@@ -21,14 +20,12 @@
 #ifndef FRIIS_SPECTRUM_PROPAGATION_LOSS_H
 #define FRIIS_SPECTRUM_PROPAGATION_LOSS_H
 
-
 #include <ns3/spectrum-propagation-loss-model.h>
 
-
-namespace ns3 {
+namespace ns3
+{
 
 class MobilityModel;
-
 
 /**
  * \ingroup spectrum
@@ -44,39 +41,31 @@ class MobilityModel;
  */
 class FriisSpectrumPropagationLossModel : public SpectrumPropagationLossModel
 {
+  public:
+    FriisSpectrumPropagationLossModel();
+    ~FriisSpectrumPropagationLossModel() override;
 
-public:
-  FriisSpectrumPropagationLossModel ();
-  ~FriisSpectrumPropagationLossModel ();
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId ();
+    Ptr<SpectrumValue> DoCalcRxPowerSpectralDensity(Ptr<const SpectrumSignalParameters> params,
+                                                    Ptr<const MobilityModel> a,
+                                                    Ptr<const MobilityModel> b) const override;
 
-
-  virtual Ptr<SpectrumValue> DoCalcRxPowerSpectralDensity (Ptr<const SpectrumSignalParameters> params,
-                                                           Ptr<const MobilityModel> a,
-                                                           Ptr<const MobilityModel> b) const;
-
-
-  /**
-   * Return the propagation loss L according to a simplified version of Friis'
-   * formula in which antenna gains are unitary
-   *
-   * @param f frequency in Hz
-   * @param d distance in m
-   *
-   * @return if Prx < Ptx then return Prx; else return Ptx
-   */
-  double CalculateLoss (double f, double d) const;
+    /**
+     * Return the propagation loss L according to a simplified version of Friis'
+     * formula in which antenna gains are unitary
+     *
+     * @param f frequency in Hz
+     * @param d distance in m
+     *
+     * @return if Prx < Ptx then return Prx; else return Ptx
+     */
+    double CalculateLoss(double f, double d) const;
 };
-
-
-
-
-
 
 } // namespace ns3
 

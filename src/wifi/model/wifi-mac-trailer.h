@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2006 INRIA
  *
@@ -23,10 +22,11 @@
 
 #include "ns3/trailer.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
- * The length in octects of the IEEE 802.11 MAC FCS field
+ * The length in octets of the IEEE 802.11 MAC FCS field
  */
 static const uint16_t WIFI_MAC_FCS_LENGTH = 4;
 
@@ -37,22 +37,22 @@ static const uint16_t WIFI_MAC_FCS_LENGTH = 4;
  */
 class WifiMacTrailer : public Trailer
 {
-public:
-  WifiMacTrailer ();
-  virtual ~WifiMacTrailer ();
+  public:
+    WifiMacTrailer();
+    ~WifiMacTrailer() override;
 
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
-  TypeId GetInstanceTypeId (void) const;
-  void Print (std::ostream &os) const;
-  uint32_t GetSerializedSize (void) const;
-  void Serialize (Buffer::Iterator start) const;
-  uint32_t Deserialize (Buffer::Iterator start);
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
+    TypeId GetInstanceTypeId() const override;
+    void Print(std::ostream& os) const override;
+    uint32_t GetSerializedSize() const override;
+    void Serialize(Buffer::Iterator start) const override;
+    uint32_t Deserialize(Buffer::Iterator start) override;
 };
 
-} //namespace ns3
+} // namespace ns3
 
 #endif /* WIFI_MAC_TRAILER_H */

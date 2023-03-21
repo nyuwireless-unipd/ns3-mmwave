@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2016 ResiliNets, ITTC, University of Kansas
  *
@@ -32,7 +31,8 @@
 
 #include "tcp-congestion-ops.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 class TcpSocketState;
 
@@ -63,54 +63,52 @@ class TcpSocketState;
 
 class TcpScalable : public TcpNewReno
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  /**
-   * Create an unbound tcp socket.
-   */
-  TcpScalable (void);
+    /**
+     * Create an unbound tcp socket.
+     */
+    TcpScalable();
 
-  /**
-   * \brief Copy constructor
-   * \param sock the object to copy
-   */
-  TcpScalable (const TcpScalable& sock);
-  virtual ~TcpScalable (void);
+    /**
+     * \brief Copy constructor
+     * \param sock the object to copy
+     */
+    TcpScalable(const TcpScalable& sock);
+    ~TcpScalable() override;
 
-  virtual std::string GetName () const;
+    std::string GetName() const override;
 
-  /**
-   * \brief Get slow start threshold following Scalable principle (Equation 2)
-   *
-   * \param tcb internal congestion state
-   * \param bytesInFlight bytes in flight
-   *
-   * \return the slow start threshold value
-   */
-  virtual uint32_t GetSsThresh (Ptr<const TcpSocketState> tcb,
-                                uint32_t bytesInFlight);
+    /**
+     * \brief Get slow start threshold following Scalable principle (Equation 2)
+     *
+     * \param tcb internal congestion state
+     * \param bytesInFlight bytes in flight
+     *
+     * \return the slow start threshold value
+     */
+    uint32_t GetSsThresh(Ptr<const TcpSocketState> tcb, uint32_t bytesInFlight) override;
 
-  virtual Ptr<TcpCongestionOps> Fork ();
+    Ptr<TcpCongestionOps> Fork() override;
 
-protected:
-  /**
-   * \brief Congestion avoidance of TcpScalable (Equation 1)
-   *
-   * \param tcb internal congestion state
-   * \param segmentsAcked count of segments acked
-   */
-  virtual void CongestionAvoidance (Ptr<TcpSocketState> tcb,
-                                    uint32_t segmentsAcked);
+  protected:
+    /**
+     * \brief Congestion avoidance of TcpScalable (Equation 1)
+     *
+     * \param tcb internal congestion state
+     * \param segmentsAcked count of segments acked
+     */
+    void CongestionAvoidance(Ptr<TcpSocketState> tcb, uint32_t segmentsAcked) override;
 
-private:
-  uint32_t m_ackCnt;               //!< Number of received ACK
-  uint32_t m_aiFactor;             //!< Additive increase factor
-  double m_mdFactor;               //!< Multiplicative decrease factor
+  private:
+    uint32_t m_ackCnt;   //!< Number of received ACK
+    uint32_t m_aiFactor; //!< Additive increase factor
+    double m_mdFactor;   //!< Multiplicative decrease factor
 };
 
 } // namespace ns3

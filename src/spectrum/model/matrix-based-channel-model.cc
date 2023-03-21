@@ -1,4 +1,3 @@
-/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2020 SIGNET Lab, Department of Information Engineering,
  * University of Padova
@@ -21,10 +20,11 @@
 
 #include "matrix-based-channel-model.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 MatrixBasedChannelModel::~MatrixBasedChannelModel()
 {
 }
 
-}
+} // namespace ns3

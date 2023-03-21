@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2009 INRIA
  *
@@ -21,12 +20,17 @@
 #ifndef XML_CONFIG_STORE_H
 #define XML_CONFIG_STORE_H
 
-#include <string>
-#include <libxml/xmlwriter.h>
-#include <libxml/xmlreader.h>
 #include "file-config.h"
 
-namespace ns3 {
+#include <string>
+
+// These are in #include <libxml/xmlwriter.h>,
+// here we just need a forward declaration.
+typedef struct _xmlTextWriter xmlTextWriter;
+typedef xmlTextWriter* xmlTextWriterPtr;
+
+namespace ns3
+{
 
 /**
  * \ingroup configstore
@@ -35,16 +39,17 @@ namespace ns3 {
  */
 class XmlConfigSave : public FileConfig
 {
-public:
-  XmlConfigSave ();
-  virtual ~XmlConfigSave ();
+  public:
+    XmlConfigSave();
+    ~XmlConfigSave() override;
 
-  virtual void SetFilename (std::string filename);
-  virtual void Default (void);
-  virtual void Global (void);
-  virtual void Attributes (void);
-private:
-  xmlTextWriterPtr m_writer; ///< XML writer
+    void SetFilename(std::string filename) override;
+    void Default() override;
+    void Global() override;
+    void Attributes() override;
+
+  private:
+    xmlTextWriterPtr m_writer; ///< XML writer
 };
 
 /**
@@ -53,16 +58,17 @@ private:
  */
 class XmlConfigLoad : public FileConfig
 {
-public:
-  XmlConfigLoad ();
-  virtual ~XmlConfigLoad ();
+  public:
+    XmlConfigLoad();
+    ~XmlConfigLoad() override;
 
-  virtual void SetFilename (std::string filename);
-  virtual void Default (void);
-  virtual void Global (void);
-  virtual void Attributes (void);
-private:
-  std::string m_filename; ///< the file name
+    void SetFilename(std::string filename) override;
+    void Default() override;
+    void Global() override;
+    void Attributes() override;
+
+  private:
+    std::string m_filename; ///< the file name
 };
 
 } // namespace ns3

@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2011 Mathieu Lacage
  *
@@ -21,6 +20,7 @@
 #define ATTRIBUTE_CONSTRUCTION_LIST_H
 
 #include "attribute.h"
+
 #include <list>
 
 /**
@@ -29,7 +29,8 @@
  * ns3::AttributeConstructionList declaration.
  */
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup object
@@ -38,51 +39,49 @@ namespace ns3 {
  */
 class AttributeConstructionList
 {
-public:
-  /** A single Attribute triple */
-  struct Item
-  {
-    /** Checker used to validate serialized values. */
-    Ptr<const AttributeChecker> checker;
-    /** The value of the Attribute. */
-    Ptr<AttributeValue> value;
-    /** The name of the Attribute. */
-    std::string name;
-  };
-  /** Iterator type. */
-  typedef std::list<struct Item>::const_iterator CIterator;
+  public:
+    /** A single Attribute triple */
+    struct Item
+    {
+        /** Checker used to validate serialized values. */
+        Ptr<const AttributeChecker> checker;
+        /** The value of the Attribute. */
+        Ptr<AttributeValue> value;
+        /** The name of the Attribute. */
+        std::string name;
+    };
+    /** Iterator type. */
+    typedef std::list<struct Item>::const_iterator CIterator;
 
-  /** Constructor */
-  AttributeConstructionList ();
+    /** Constructor */
+    AttributeConstructionList();
 
-  /**
-   * Add an Attribute to the list.
-   *
-   * \param [in] name The Attribute name.
-   * \param [in] checker The checker to use for this Attribute.
-   * \param [in] value The AttributeValue to add.
-   */
-  void Add (std::string name, Ptr<const AttributeChecker> checker,
-            Ptr<AttributeValue> value);
+    /**
+     * Add an Attribute to the list.
+     *
+     * \param [in] name The Attribute name.
+     * \param [in] checker The checker to use for this Attribute.
+     * \param [in] value The AttributeValue to add.
+     */
+    void Add(std::string name, Ptr<const AttributeChecker> checker, Ptr<AttributeValue> value);
 
-  /**
-   * Find an Attribute in the list from its AttributeChecker.
-   *
-   * \param [in] checker The AttributeChecker to find.  Typically this is the
-   *             AttributeChecker from TypeId::AttributeInformation.
-   * \returns The AttributeValue.
-   */
-  Ptr<AttributeValue> Find (Ptr<const AttributeChecker> checker) const;
+    /**
+     * Find an Attribute in the list from its AttributeChecker.
+     *
+     * \param [in] checker The AttributeChecker to find.  Typically this is the
+     *             AttributeChecker from TypeId::AttributeInformation.
+     * \returns The AttributeValue.
+     */
+    Ptr<AttributeValue> Find(Ptr<const AttributeChecker> checker) const;
 
-  /** \returns The first item in the list */
-  CIterator Begin (void) const;
-  /** \returns The end of the list (iterator to one past the last). */
-  CIterator End (void) const;
+    /** \returns The first item in the list */
+    CIterator Begin() const;
+    /** \returns The end of the list (iterator to one past the last). */
+    CIterator End() const;
 
-private:
-
-  /** The list of Items */
-  std::list<struct Item> m_list;
+  private:
+    /** The list of Items */
+    std::list<struct Item> m_list;
 };
 
 } // namespace ns3

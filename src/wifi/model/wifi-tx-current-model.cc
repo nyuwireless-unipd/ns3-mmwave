@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2014 Universita' degli Studi di Napoli "Federico II"
  *
@@ -18,25 +17,25 @@
  * Author: Stefano Avallone <stefano.avallone@unina.it>
  */
 
-#include "ns3/log.h"
-#include "ns3/double.h"
 #include "wifi-tx-current-model.h"
+
 #include "wifi-utils.h"
 
-namespace ns3 {
+#include "ns3/double.h"
+#include "ns3/log.h"
 
-NS_LOG_COMPONENT_DEFINE ("WifiTxCurrentModel");
+namespace ns3
+{
 
-NS_OBJECT_ENSURE_REGISTERED (WifiTxCurrentModel);
+NS_LOG_COMPONENT_DEFINE("WifiTxCurrentModel");
+
+NS_OBJECT_ENSURE_REGISTERED(WifiTxCurrentModel);
 
 TypeId
-WifiTxCurrentModel::GetTypeId (void)
+WifiTxCurrentModel::GetTypeId()
 {
-  static TypeId tid = TypeId ("ns3::WifiTxCurrentModel")
-    .SetParent<Object> ()
-    .SetGroupName ("Wifi")
-  ;
-  return tid;
+    static TypeId tid = TypeId("ns3::WifiTxCurrentModel").SetParent<Object>().SetGroupName("Wifi");
+    return tid;
 }
 
 WifiTxCurrentModel::WifiTxCurrentModel()
@@ -47,46 +46,49 @@ WifiTxCurrentModel::~WifiTxCurrentModel()
 {
 }
 
-NS_OBJECT_ENSURE_REGISTERED (LinearWifiTxCurrentModel);
+NS_OBJECT_ENSURE_REGISTERED(LinearWifiTxCurrentModel);
 
 TypeId
-LinearWifiTxCurrentModel::GetTypeId (void)
+LinearWifiTxCurrentModel::GetTypeId()
 {
-  static TypeId tid = TypeId ("ns3::LinearWifiTxCurrentModel")
-    .SetParent<WifiTxCurrentModel> ()
-    .SetGroupName ("Wifi")
-    .AddConstructor<LinearWifiTxCurrentModel> ()
-    .AddAttribute ("Eta", "The efficiency of the power amplifier.",
-                   DoubleValue (0.10),
-                   MakeDoubleAccessor (&LinearWifiTxCurrentModel::m_eta),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("Voltage", "The supply voltage (in Volts).",
-                   DoubleValue (3.0),
-                   MakeDoubleAccessor (&LinearWifiTxCurrentModel::m_voltage),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("IdleCurrent", "The current in the IDLE state (in Ampere).",
-                   DoubleValue (0.273333),
-                   MakeDoubleAccessor (&LinearWifiTxCurrentModel::m_idleCurrent),
-                   MakeDoubleChecker<double> ())
-  ;
-  return tid;
+    static TypeId tid =
+        TypeId("ns3::LinearWifiTxCurrentModel")
+            .SetParent<WifiTxCurrentModel>()
+            .SetGroupName("Wifi")
+            .AddConstructor<LinearWifiTxCurrentModel>()
+            .AddAttribute("Eta",
+                          "The efficiency of the power amplifier.",
+                          DoubleValue(0.10),
+                          MakeDoubleAccessor(&LinearWifiTxCurrentModel::m_eta),
+                          MakeDoubleChecker<double>())
+            .AddAttribute("Voltage",
+                          "The supply voltage (in Volts).",
+                          DoubleValue(3.0),
+                          MakeDoubleAccessor(&LinearWifiTxCurrentModel::m_voltage),
+                          MakeDoubleChecker<double>())
+            .AddAttribute("IdleCurrent",
+                          "The current in the IDLE state (in Ampere).",
+                          DoubleValue(0.273333),
+                          MakeDoubleAccessor(&LinearWifiTxCurrentModel::m_idleCurrent),
+                          MakeDoubleChecker<double>());
+    return tid;
 }
 
-LinearWifiTxCurrentModel::LinearWifiTxCurrentModel ()
+LinearWifiTxCurrentModel::LinearWifiTxCurrentModel()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 LinearWifiTxCurrentModel::~LinearWifiTxCurrentModel()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 double
-LinearWifiTxCurrentModel::CalcTxCurrent (double txPowerDbm) const
+LinearWifiTxCurrentModel::CalcTxCurrent(double txPowerDbm) const
 {
-  NS_LOG_FUNCTION (this << txPowerDbm);
-  return DbmToW (txPowerDbm) / (m_voltage * m_eta) + m_idleCurrent;
+    NS_LOG_FUNCTION(this << txPowerDbm);
+    return DbmToW(txPowerDbm) / (m_voltage * m_eta) + m_idleCurrent;
 }
 
 } // namespace ns3

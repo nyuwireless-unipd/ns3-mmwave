@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2011 Bucknell University
  *
@@ -28,7 +27,8 @@
 #include "ns3/probe.h"
 #include "ns3/traced-value.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup probes
@@ -42,62 +42,62 @@ namespace ns3 {
  */
 class Uinteger16Probe : public Probe
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId ();
-  Uinteger16Probe ();
-  virtual ~Uinteger16Probe ();
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
+    Uinteger16Probe();
+    ~Uinteger16Probe() override;
 
-  /**
-   * \return the most recent value
-   */
-  uint16_t GetValue (void) const;
+    /**
+     * \return the most recent value
+     */
+    uint16_t GetValue() const;
 
-  /**
-   * \param value set the traced uint16_t to a new value
-   */
-  void SetValue (uint16_t value);
+    /**
+     * \param value set the traced uint16_t to a new value
+     */
+    void SetValue(uint16_t value);
 
-  /**
-   * \brief Set a probe value by its name in the Config system
-   *
-   * \param path Config path to access the probe
-   * \param value set the traced uint16_t to a new value
-   */
-  static void SetValueByPath (std::string path, uint16_t value);
+    /**
+     * \brief Set a probe value by its name in the Config system
+     *
+     * \param path Config path to access the probe
+     * \param value set the traced uint16_t to a new value
+     */
+    static void SetValueByPath(std::string path, uint16_t value);
 
-  /**
-   * \brief connect to a trace source attribute provided by a given object
-   *
-   * \param traceSource the name of the attribute TraceSource to connect to
-   * \param obj ns3::Object to connect to
-   * \return true if the trace source was successfully connected
-   */
-  virtual bool ConnectByObject (std::string traceSource, Ptr<Object> obj);
+    /**
+     * \brief connect to a trace source attribute provided by a given object
+     *
+     * \param traceSource the name of the attribute TraceSource to connect to
+     * \param obj ns3::Object to connect to
+     * \return true if the trace source was successfully connected
+     */
+    bool ConnectByObject(std::string traceSource, Ptr<Object> obj) override;
 
-  /**
-   * \brief connect to a trace source provided by a config path
-   *
-   * \param path Config path to bind to
-   *
-   * Note, if an invalid path is provided, the probe will not be connected
-   * to anything.
-   */
-  virtual void ConnectByPath (std::string path);
+    /**
+     * \brief connect to a trace source provided by a config path
+     *
+     * \param path Config path to bind to
+     *
+     * Note, if an invalid path is provided, the probe will not be connected
+     * to anything.
+     */
+    void ConnectByPath(std::string path) override;
 
-private:
-  /**
-   * \brief Method to connect to an underlying ns3::TraceSource of type uint16_t
-   *
-   * \param oldData previous value of the uint16_t
-   * \param newData new value of the uint16_t
-   */
-  void TraceSink (uint16_t oldData, uint16_t newData);
+  private:
+    /**
+     * \brief Method to connect to an underlying ns3::TraceSource of type uint16_t
+     *
+     * \param oldData previous value of the uint16_t
+     * \param newData new value of the uint16_t
+     */
+    void TraceSink(uint16_t oldData, uint16_t newData);
 
-  TracedValue<uint16_t> m_output; //!< Output trace source.
+    TracedValue<uint16_t> m_output; //!< Output trace source.
 };
 
 } // namespace ns3

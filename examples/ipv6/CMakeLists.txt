@@ -2,18 +2,18 @@ build_example(
   NAME fragmentation-ipv6
   SOURCE_FILES fragmentation-ipv6.cc
   LIBRARIES_TO_LINK
+    ${libapplications}
     ${libcsma}
     ${libinternet}
-    ${libinternet-apps}
 )
 
 build_example(
   NAME fragmentation-ipv6-two-MTU
   SOURCE_FILES fragmentation-ipv6-two-MTU.cc
   LIBRARIES_TO_LINK
+    ${libapplications}
     ${libcsma}
     ${libinternet}
-    ${libinternet-apps}
 )
 
 build_example(
@@ -35,8 +35,8 @@ build_example(
 )
 
 build_example(
-  NAME ping6
-  SOURCE_FILES ping6.cc
+  NAME ping6-example
+  SOURCE_FILES ping6-example.cc
   LIBRARIES_TO_LINK
     ${libcsma}
     ${libinternet}
@@ -44,8 +44,8 @@ build_example(
 )
 
 build_example(
-  NAME radvd
-  SOURCE_FILES radvd.cc
+  NAME radvd-one-prefix
+  SOURCE_FILES radvd-one-prefix.cc
   LIBRARIES_TO_LINK
     ${libcsma}
     ${libinternet}
@@ -74,17 +74,17 @@ build_example(
   LIBRARIES_TO_LINK
     ${liblr-wpan}
     ${libinternet}
+    ${libinternet-apps}
     ${libsixlowpan}
     ${libmobility}
-    ${libinternet-apps}
 )
 
 build_example(
   NAME fragmentation-ipv6-PMTU
   SOURCE_FILES fragmentation-ipv6-PMTU.cc
   LIBRARIES_TO_LINK
+    ${libapplications}
     ${libcsma}
     ${libinternet}
-    ${libinternet-apps}
     ${libpoint-to-point}
 )

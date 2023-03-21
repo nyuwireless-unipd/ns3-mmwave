@@ -27,8 +27,8 @@
 #include <ns3/lte-rrc-sap.h>
 #include <ns3/nstime.h>
 
-namespace ns3 {
-
+namespace ns3
+{
 
 /**
  * \brief Implementation of the strongest cell handover algorithm, based on RSRP
@@ -64,66 +64,64 @@ namespace ns3 {
  */
 class A3RsrpHandoverAlgorithm : public LteHandoverAlgorithm
 {
-public:
-  /// Creates a strongest cell handover algorithm instance.
-  A3RsrpHandoverAlgorithm ();
+  public:
+    /// Creates a strongest cell handover algorithm instance.
+    A3RsrpHandoverAlgorithm();
 
-  virtual ~A3RsrpHandoverAlgorithm ();
+    virtual ~A3RsrpHandoverAlgorithm();
 
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId ();
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  // inherited from LteHandoverAlgorithm
-  virtual void SetLteHandoverManagementSapUser (LteHandoverManagementSapUser* s);
-  virtual LteHandoverManagementSapProvider* GetLteHandoverManagementSapProvider ();
+    // inherited from LteHandoverAlgorithm
+    virtual void SetLteHandoverManagementSapUser(LteHandoverManagementSapUser* s);
+    virtual LteHandoverManagementSapProvider* GetLteHandoverManagementSapProvider();
 
-  /// let the forwarder class access the protected and private members
-  friend class MemberLteHandoverManagementSapProvider<A3RsrpHandoverAlgorithm>;
+    /// let the forwarder class access the protected and private members
+    friend class MemberLteHandoverManagementSapProvider<A3RsrpHandoverAlgorithm>;
 
-protected:
-  // inherited from Object
-  virtual void DoInitialize ();
-  virtual void DoDispose ();
+  protected:
+    // inherited from Object
+    virtual void DoInitialize();
+    virtual void DoDispose();
 
-  // inherited from LteHandoverAlgorithm as a Handover Management SAP implementation
-  void DoReportUeMeas (uint16_t rnti, LteRrcSap::MeasResults measResults);
+    // inherited from LteHandoverAlgorithm as a Handover Management SAP implementation
+    void DoReportUeMeas(uint16_t rnti, LteRrcSap::MeasResults measResults);
 
-private:
-  /**
-   * Determines if a neighbour cell is a valid destination for handover.
-   * Currently always return true.
-   *
-   * \param cellId The cell ID of the neighbour cell.
-   * \return True if the cell is a valid destination for handover.
-   */
-  bool IsValidNeighbour (uint16_t cellId);
+  private:
+    /**
+     * Determines if a neighbour cell is a valid destination for handover.
+     * Currently always return true.
+     *
+     * \param cellId The cell ID of the neighbour cell.
+     * \return True if the cell is a valid destination for handover.
+     */
+    bool IsValidNeighbour(uint16_t cellId);
 
-  /// The expected measurement identity for A3 measurements.
-  uint8_t m_measId;
+    /// The expected measurement identity for A3 measurements.
+    uint8_t m_measId;
 
-  /**
-   * The `Hysteresis` attribute. Handover margin (hysteresis) in dB (rounded to
-   * the nearest multiple of 0.5 dB).
-   */
-  double m_hysteresisDb;
-  /**
-   * The `TimeToTrigger` attribute. Time during which neighbour cell's RSRP
-   * must continuously higher than serving cell's RSRP "
-   */
-  Time m_timeToTrigger;
+    /**
+     * The `Hysteresis` attribute. Handover margin (hysteresis) in dB (rounded to
+     * the nearest multiple of 0.5 dB).
+     */
+    double m_hysteresisDb;
+    /**
+     * The `TimeToTrigger` attribute. Time during which neighbour cell's RSRP
+     * must continuously higher than serving cell's RSRP "
+     */
+    Time m_timeToTrigger;
 
-  /// Interface to the eNodeB RRC instance.
-  LteHandoverManagementSapUser* m_handoverManagementSapUser;
-  /// Receive API calls from the eNodeB RRC instance.
-  LteHandoverManagementSapProvider* m_handoverManagementSapProvider;
+    /// Interface to the eNodeB RRC instance.
+    LteHandoverManagementSapUser* m_handoverManagementSapUser;
+    /// Receive API calls from the eNodeB RRC instance.
+    LteHandoverManagementSapProvider* m_handoverManagementSapProvider;
 
 }; // end of class A3RsrpHandoverAlgorithm
 
-
 } // end of namespace ns3
-
 
 #endif /* A3_RSRP_HANDOVER_ALGORITHM_H */

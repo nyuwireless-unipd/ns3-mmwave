@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2006 INRIA
  *
@@ -20,62 +19,63 @@
 
 #include "status-code.h"
 
-namespace ns3 {
+namespace ns3
+{
 
-StatusCode::StatusCode ()
+StatusCode::StatusCode()
 {
 }
 
 void
-StatusCode::SetSuccess (void)
+StatusCode::SetSuccess()
 {
-  m_code = 0;
+    m_code = 0;
 }
 
 void
-StatusCode::SetFailure (void)
+StatusCode::SetFailure()
 {
-  m_code = 1;
+    m_code = 1;
 }
 
 bool
-StatusCode::IsSuccess (void) const
+StatusCode::IsSuccess() const
 {
-  return (m_code == 0);
+    return (m_code == 0);
 }
 
 uint32_t
-StatusCode::GetSerializedSize (void) const
+StatusCode::GetSerializedSize() const
 {
-  return 2;
+    return 2;
 }
 
 Buffer::Iterator
-StatusCode::Serialize (Buffer::Iterator start) const
+StatusCode::Serialize(Buffer::Iterator start) const
 {
-  start.WriteHtolsbU16 (m_code);
-  return start;
+    start.WriteHtolsbU16(m_code);
+    return start;
 }
 
 Buffer::Iterator
-StatusCode::Deserialize (Buffer::Iterator start)
+StatusCode::Deserialize(Buffer::Iterator start)
 {
-  m_code = start.ReadLsbtohU16 ();
-  return start;
+    m_code = start.ReadLsbtohU16();
+    return start;
 }
 
-std::ostream &
-operator << (std::ostream &os, const StatusCode &code)
+std::ostream&
+operator<<(std::ostream& os, const StatusCode& code)
 {
-  if (code.IsSuccess ())
+    if (code.IsSuccess())
     {
-      os << "success";
+        os << "success";
     }
-  else
+    else
     {
-      os << "failure";
+        os << "failure";
     }
-  return os;
+    return os;
 }
 
-} //namespace ns3
+} // namespace ns3

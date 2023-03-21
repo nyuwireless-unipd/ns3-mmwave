@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c)
  *
@@ -19,110 +18,117 @@
  * S. da Fonseca - wimaxgroup@lrc.ic.unicamp.br
  */
 
-#include <stdint.h>
 #include "ul-job.h"
 
-namespace ns3 {
+#include <stdint.h>
 
-UlJob::UlJob (void) : m_deadline (Seconds (0)), m_size (0)
+namespace ns3
+{
+
+UlJob::UlJob()
+    : m_deadline(Seconds(0)),
+      m_size(0)
 {
 }
 
-UlJob::~UlJob (void)
+UlJob::~UlJob()
 {
 }
 
 SSRecord*
-UlJob::GetSsRecord (void)
+UlJob::GetSsRecord()
 {
-  return m_ssRecord;
-}
-void
-UlJob::SetSsRecord (SSRecord* ssRecord)
-{
-  m_ssRecord = ssRecord;
-}
-
-enum
-ServiceFlow::SchedulingType UlJob::GetSchedulingType (void)
-{
-  return m_schedulingType;
+    return m_ssRecord;
 }
 
 void
-UlJob::SetSchedulingType (ServiceFlow::SchedulingType schedulingType)
+UlJob::SetSsRecord(SSRecord* ssRecord)
 {
-  m_schedulingType = schedulingType;
+    m_ssRecord = ssRecord;
+}
+
+enum ServiceFlow::SchedulingType
+UlJob::GetSchedulingType()
+{
+    return m_schedulingType;
+}
+
+void
+UlJob::SetSchedulingType(ServiceFlow::SchedulingType schedulingType)
+{
+    m_schedulingType = schedulingType;
 }
 
 ReqType
-UlJob::GetType (void)
+UlJob::GetType()
 {
-  return m_type;
+    return m_type;
 }
 
 void
-UlJob::SetType (ReqType type)
+UlJob::SetType(ReqType type)
 {
-  m_type = type;
+    m_type = type;
 }
 
-ServiceFlow *
-UlJob::GetServiceFlow (void)
+ServiceFlow*
+UlJob::GetServiceFlow()
 {
-  return m_serviceFlow;
+    return m_serviceFlow;
 }
 
 void
-UlJob::SetServiceFlow (ServiceFlow *serviceFlow)
+UlJob::SetServiceFlow(ServiceFlow* serviceFlow)
 {
-  m_serviceFlow = serviceFlow;
+    m_serviceFlow = serviceFlow;
 }
 
 Time
-UlJob::GetReleaseTime (void)
+UlJob::GetReleaseTime()
 {
-  return m_releaseTime;
+    return m_releaseTime;
 }
 
 void
-UlJob::SetReleaseTime (Time releaseTime)
+UlJob::SetReleaseTime(Time releaseTime)
 {
-  m_releaseTime = releaseTime;
-}
-
-Time
-UlJob::GetPeriod (void)
-{
-  return m_period;
-}
-void
-UlJob::SetPeriod (Time period)
-{
-  m_period = period;
+    m_releaseTime = releaseTime;
 }
 
 Time
-UlJob::GetDeadline (void)
+UlJob::GetPeriod()
 {
-  return m_deadline;
+    return m_period;
 }
+
 void
-UlJob::SetDeadline (Time deadline)
+UlJob::SetPeriod(Time period)
 {
-  m_deadline = deadline;
+    m_period = period;
+}
+
+Time
+UlJob::GetDeadline()
+{
+    return m_deadline;
+}
+
+void
+UlJob::SetDeadline(Time deadline)
+{
+    m_deadline = deadline;
 }
 
 uint32_t
-UlJob::GetSize (void)
+UlJob::GetSize() const
 {
-  return m_size;
+    return m_size;
 }
 
 void
-UlJob::SetSize (uint32_t size)
+UlJob::SetSize(uint32_t size)
 {
-  m_size = size;
+    m_size = size;
 }
 
 /**
@@ -131,43 +137,45 @@ UlJob::SetSize (uint32_t size)
  * \param b second ULJob
  * \returns true if equal
  */
-bool operator == (const UlJob &a, const UlJob &b)
+bool
+operator==(const UlJob& a, const UlJob& b)
 {
-  UlJob A = a;
-  UlJob B = b;
+    UlJob A = a;
+    UlJob B = b;
 
-  if ((A.GetServiceFlow () == B.GetServiceFlow ()) && (A.GetSsRecord () == B.GetSsRecord ()))
+    if ((A.GetServiceFlow() == B.GetServiceFlow()) && (A.GetSsRecord() == B.GetSsRecord()))
     {
-      return true;
+        return true;
     }
-  return false;
+    return false;
 }
 
-PriorityUlJob::PriorityUlJob (void)
+PriorityUlJob::PriorityUlJob()
 {
 }
 
 int
-PriorityUlJob::GetPriority (void)
+PriorityUlJob::GetPriority() const
 {
-  return m_priority;
+    return m_priority;
 }
 
 void
-PriorityUlJob::SetPriority (int priority)
+PriorityUlJob::SetPriority(int priority)
 {
-  m_priority = priority;
+    m_priority = priority;
 }
 
 Ptr<UlJob>
-PriorityUlJob::GetUlJob (void)
+PriorityUlJob::GetUlJob()
 {
-  return m_job;
+    return m_job;
 }
+
 void
-PriorityUlJob::SetUlJob (Ptr<UlJob> job)
+PriorityUlJob::SetUlJob(Ptr<UlJob> job)
 {
-  m_job = job;
+    m_job = job;
 }
 
 } // namespace ns3

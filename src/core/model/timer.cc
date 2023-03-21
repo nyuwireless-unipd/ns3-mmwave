@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2007 INRIA
  *
@@ -18,9 +17,10 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 #include "timer.h"
-#include "simulator.h"
-#include "simulation-singleton.h"
+
 #include "log.h"
+#include "simulation-singleton.h"
+#include "simulator.h"
 
 /**
  * \file
@@ -28,177 +28,183 @@
  * ns3::Timer implementation.
  */
 
-namespace ns3 {
-
-NS_LOG_COMPONENT_DEFINE ("Timer");
-
-Timer::Timer ()
-  : m_flags (CHECK_ON_DESTROY),
-    m_delay (FemtoSeconds (0)),
-    m_event (),
-    m_impl (0)
+namespace ns3
 {
-  NS_LOG_FUNCTION (this);
+
+NS_LOG_COMPONENT_DEFINE("Timer");
+
+Timer::Timer()
+    : m_flags(CHECK_ON_DESTROY),
+      m_delay(FemtoSeconds(0)),
+      m_event(),
+      m_impl(nullptr)
+{
+    NS_LOG_FUNCTION(this);
 }
 
-Timer::Timer (enum DestroyPolicy destroyPolicy)
-  : m_flags (destroyPolicy),
-    m_delay (FemtoSeconds (0)),
-    m_event (),
-    m_impl (0)
+Timer::Timer(DestroyPolicy destroyPolicy)
+    : m_flags(destroyPolicy),
+      m_delay(FemtoSeconds(0)),
+      m_event(),
+      m_impl(nullptr)
 {
-  NS_LOG_FUNCTION (this << destroyPolicy);
+    NS_LOG_FUNCTION(this << destroyPolicy);
 }
 
-Timer::~Timer ()
+Timer::~Timer()
 {
-  NS_LOG_FUNCTION (this);
-  if (m_flags & CHECK_ON_DESTROY)
+    NS_LOG_FUNCTION(this);
+    if (m_flags & CHECK_ON_DESTROY)
     {
-      if (m_event.IsRunning ())
+        if (m_event.IsRunning())
         {
-          NS_FATAL_ERROR ("Event is still running while destroying.");
+            NS_FATAL_ERROR("Event is still running while destroying.");
         }
     }
-  else if (m_flags & CANCEL_ON_DESTROY)
+    else if (m_flags & CANCEL_ON_DESTROY)
     {
-      m_event.Cancel ();
+        m_event.Cancel();
     }
-  else if (m_flags & REMOVE_ON_DESTROY)
+    else if (m_flags & REMOVE_ON_DESTROY)
     {
-      m_event.Remove ();
+        m_event.Remove();
     }
-  delete m_impl;
+    delete m_impl;
 }
 
 void
-Timer::SetDelay (const Time &time)
+Timer::SetDelay(const Time& time)
 {
-  NS_LOG_FUNCTION (this << time);
-  m_delay = time;
+    NS_LOG_FUNCTION(this << time);
+    m_delay = time;
 }
+
 Time
-Timer::GetDelay (void) const
+Timer::GetDelay() const
 {
-  NS_LOG_FUNCTION (this);
-  return m_delay;
+    NS_LOG_FUNCTION(this);
+    return m_delay;
 }
+
 Time
-Timer::GetDelayLeft (void) const
+Timer::GetDelayLeft() const
 {
-  NS_LOG_FUNCTION (this);
-  switch (GetState ())
+    NS_LOG_FUNCTION(this);
+    switch (GetState())
     {
     case Timer::RUNNING:
-      return Simulator::GetDelayLeft (m_event);
-      break;
+        return Simulator::GetDelayLeft(m_event);
+        break;
     case Timer::EXPIRED:
-      return TimeStep (0);
-      break;
+        return TimeStep(0);
+        break;
     case Timer::SUSPENDED:
-      return m_delayLeft;
-      break;
+        return m_delayLeft;
+        break;
     default:
-      NS_ASSERT (false);
-      return TimeStep (0);
-      break;
+        NS_ASSERT(false);
+        return TimeStep(0);
+        break;
     }
 }
 
 void
-Timer::Cancel (void)
+Timer::Cancel()
 {
-  NS_LOG_FUNCTION (this);
-  m_event.Cancel ();
+    NS_LOG_FUNCTION(this);
+    m_event.Cancel();
 }
+
 void
-Timer::Remove (void)
+Timer::Remove()
 {
-  NS_LOG_FUNCTION (this);
-  m_event.Remove ();
+    NS_LOG_FUNCTION(this);
+    m_event.Remove();
 }
+
 bool
-Timer::IsExpired (void) const
+Timer::IsExpired() const
 {
-  NS_LOG_FUNCTION (this);
-  return !IsSuspended () && m_event.IsExpired ();
+    NS_LOG_FUNCTION(this);
+    return !IsSuspended() && m_event.IsExpired();
 }
+
 bool
-Timer::IsRunning (void) const
+Timer::IsRunning() const
 {
-  NS_LOG_FUNCTION (this);
-  return !IsSuspended () && m_event.IsRunning ();
+    NS_LOG_FUNCTION(this);
+    return !IsSuspended() && m_event.IsRunning();
 }
+
 bool
-Timer::IsSuspended (void) const
+Timer::IsSuspended() const
 {
-  NS_LOG_FUNCTION (this);
-  return (m_flags & TIMER_SUSPENDED) == TIMER_SUSPENDED;
+    NS_LOG_FUNCTION(this);
+    return (m_flags & TIMER_SUSPENDED) == TIMER_SUSPENDED;
 }
+
 enum Timer::State
-Timer::GetState (void) const
+Timer::GetState() const
 {
-  NS_LOG_FUNCTION (this);
-  if (IsRunning ())
+    NS_LOG_FUNCTION(this);
+    if (IsRunning())
     {
-      return Timer::RUNNING;
+        return Timer::RUNNING;
     }
-  else if (IsExpired ())
+    else if (IsExpired())
     {
-      return Timer::EXPIRED;
+        return Timer::EXPIRED;
     }
-  else
+    else
     {
-      NS_ASSERT (IsSuspended ());
-      return Timer::SUSPENDED;
+        NS_ASSERT(IsSuspended());
+        return Timer::SUSPENDED;
     }
 }
 
 void
-Timer::Schedule (void)
+Timer::Schedule()
 {
-  NS_LOG_FUNCTION (this);
-  Schedule (m_delay);
+    NS_LOG_FUNCTION(this);
+    Schedule(m_delay);
 }
 
 void
-Timer::Schedule (Time delay)
+Timer::Schedule(Time delay)
 {
-  NS_LOG_FUNCTION (this << delay);
-  NS_ASSERT (m_impl != 0);
-  if (m_event.IsRunning ())
+    NS_LOG_FUNCTION(this << delay);
+    NS_ASSERT(m_impl != nullptr);
+    if (m_event.IsRunning())
     {
-      NS_FATAL_ERROR ("Event is still running while re-scheduling.");
+        NS_FATAL_ERROR("Event is still running while re-scheduling.");
     }
-  m_event = m_impl->Schedule (delay);
+    m_event = m_impl->Schedule(delay);
 }
 
 void
-Timer::Suspend (void)
+Timer::Suspend()
 {
-  NS_LOG_FUNCTION (this);
-  NS_ASSERT (IsRunning ());
-  m_delayLeft = Simulator::GetDelayLeft (m_event);
-  if (m_flags & CANCEL_ON_DESTROY)
+    NS_LOG_FUNCTION(this);
+    NS_ASSERT(IsRunning());
+    m_delayLeft = Simulator::GetDelayLeft(m_event);
+    if (m_flags & CANCEL_ON_DESTROY)
     {
-      m_event.Cancel ();
+        m_event.Cancel();
     }
-  else if (m_flags & REMOVE_ON_DESTROY)
+    else if (m_flags & REMOVE_ON_DESTROY)
     {
-      m_event.Remove ();
+        m_event.Remove();
     }
-  m_flags |= TIMER_SUSPENDED;
+    m_flags |= TIMER_SUSPENDED;
 }
 
 void
-Timer::Resume (void)
+Timer::Resume()
 {
-  NS_LOG_FUNCTION (this);
-  NS_ASSERT (m_flags & TIMER_SUSPENDED);
-  m_event = m_impl->Schedule (m_delayLeft);
-  m_flags &= ~TIMER_SUSPENDED;
+    NS_LOG_FUNCTION(this);
+    NS_ASSERT(m_flags & TIMER_SUSPENDED);
+    m_event = m_impl->Schedule(m_delayLeft);
+    m_flags &= ~TIMER_SUSPENDED;
 }
-
 
 } // namespace ns3
-

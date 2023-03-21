@@ -6,19 +6,20 @@
   before_script:
     - pacman-key --init
     - pacman -Syu --noconfirm
-      base-devel ninja cmake python ccache gsl gtk3 boost
-      doxygen graphviz imagemagick texlive-core texlive-bin texlive-latexextra python-sphinx
-    # dia is self-hosted
-    - pacman --noconfirm -U https://www.nsnam.org/wp-content/uploads/2022/dia-0.97.3-9-x86_64.pkg.tar.zst
+      base-devel ninja cmake python ccache gsl gtk3 boost openmpi openssh
+      graphviz imagemagick texlive-core texlive-bin texlive-latexextra python-sphinx
+      doxygen
+    # dia is archived
+    - pacman --noconfirm -U https://archive.archlinux.org/packages/d/dia/dia-0.97.3-9-x86_64.pkg.tar.zst
     # no policy is a good policy.
     - mv /etc/ImageMagick-7/policy.xml /etc/ImageMagick-7/policy.xml.bak
-#    - sed -i "s/EPS,PDF,//g" /etc/ImageMagick-7/policy.xml
-#    - sed -i "s/none/read\ |\ write/g" /etc/ImageMagick-7/policy.xml
+    # - sed -i "s/EPS,PDF,//g" /etc/ImageMagick-7/policy.xml
+    # - sed -i "s/none/read\ |\ write/g" /etc/ImageMagick-7/policy.xml
   image: archlinux
   timeout: 2h
-#  artifacts:
-#    paths:
-#      - public
+  # artifacts:
+  #   paths:
+  #     - public
 
 doxygen:
   extends: .doc
@@ -26,35 +27,31 @@ doxygen:
     - mkdir -p $CCACHE_BASEDIR_VALUE
     - export CCACHE_BASEDIR=${PWD}
     - export CCACHE_DIR=${PWD}/$CCACHE_BASEDIR_VALUE
-    - CXX=$COMPILER ./ns3 configure --enable-examples --enable-tests --enable-asserts -d default
+    # debug build is the fastest, and we do not need to actually execute anything, just the examples for introspection.
+    - export MPI_CI=1
+    - CXX=$COMPILER ./ns3 configure -d debug -GNinja --enable-examples --enable-tests --enable-asserts --enable-mpi
     - ./ns3 build
     - ./ns3 build assemble-introspected-command-line
-#    - mkdir -p public/doxygen
-# The following four lines were needed when ns-3 had warnings, and
-# it was necessary to have a filter to check only the files tocuhed by a MR.
-#    - git remote add ns-3-origin https://gitlab.com/nsnam/ns-3-dev.git || true
-#    - git fetch ns-3-origin
-#    - export CHANGED_FILES=$(git diff --name-only ns-3-origin/master --diff-filter=d | tr '\n' ' ' | sed 's/ $//g;s/ /\\\|/g')
-#    - doc/doxygen.warnings.report.sh -f "$CHANGED_FILES"
+    # - mkdir -p public/doxygen
+    # The following four lines were needed when ns-3 had warnings, and
+    # it was necessary to have a filter to check only the files touched by a MR.
+    # - git remote add ns-3-origin https://gitlab.com/nsnam/ns-3-dev.git || true
+    # - git fetch ns-3-origin
+    # - export CHANGED_FILES=$(git diff --name-only ns-3-origin/master --diff-filter=d | tr '\n' ' ' | sed 's/ $//g;s/ /\\\|/g')
+    # - doc/doxygen.warnings.report.sh -f "$CHANGED_FILES"
     - doc/doxygen.warnings.report.sh
-# Just need to check doc/introspected-command-line.h and doc/introspected-doxygen.h
-    - python3 utils/trim-trailing-whitespace.py --check doc/introspected-doxygen.h
-    - python3 utils/trim-trailing-whitespace.py --check doc/introspected-command-line.h
-#    - doxygen doc/doxygen.conf
-#    - mv doc/html/ public/doxygen
+    # Just need to check doc/introspected-command-line.h and doc/introspected-doxygen.h
+    - python3 utils/check-style-clang-format.py --no-formatting --no-tabs doc/introspected-doxygen.h
+    - python3 utils/check-style-clang-format.py --no-formatting --no-tabs doc/introspected-command-line.h
+    - ./ns3 clean
+    # - doxygen doc/doxygen.conf
+    # - mv doc/html/ public/doxygen
   cache:
-    # Use separate key for each (debug/default/optimized) jobs because
-    # they run in parallel and will otherwise overwrite each other
-    # cache when they upload the cache archive at the end of the job,
-    # resulting in only the cache for the last finished configuration
-    # being stored.
-    #
-    # Do not distinguish between branches though to avoid
-    # recompilation of all the files when a new branch is created.
-    key: "ccache-$CI_JOB_NAME"
+    # Reuse the ccache from the per-commit-gcc-debug job
+    key: "ccache-per-commit-gcc-debug"
     paths:
       - $CCACHE_BASEDIR_VALUE/
-    when: 'always'
+    policy: pull
   variables:
     CCACHE_BASEDIR_VALUE: ns-3-ccache-storage
     COMPILER: g++
@@ -62,42 +59,66 @@ doxygen:
     paths:
       - doc/doxygen.warnings.log
     when: always
-#  tags:
-#    - nsnam
-#    - linux
+  # tags:
+  #   - nsnam
+  #   - linux
 
 manual:
   extends: .doc
   script:
-#    - mkdir -p public/manual
+    # - mkdir -p public/manual
     - cd doc/manual
     - make html
     - make latexpdf
-#    - mv build/html ../../public/manual
-#    - mv build/latex/ns-3-manual.pdf ../../public/
-  only:
-    - master
+    # - mv build/html ../../public/manual
+    # - mv build/latex/ns-3-manual.pdf ../../public/
+  # only:
+  #   - master
 
 tutorial:
   extends: .doc
   script:
-#    - mkdir -p public/manual
+    # - mkdir -p public/manual
     - cd doc/tutorial
     - make html
     - make latexpdf
-#    - mv build/html ../../public/manual
-#    - mv build/latex/ns-3-tutorial.pdf ../../public/
-  only:
-    - master
+    # - mv build/html ../../public/manual
+    # - mv build/latex/ns-3-tutorial.pdf ../../public/
+  # only:
+  #   - master
 
 models:
   extends: .doc
   script:
-#    - mkdir -p public/models
+    # - mkdir -p public/models
     - cd doc/models
     - make html
     - make latexpdf
-#    - mv build/html ../../public/models
-#    - mv build/latex/ns-3-model-library.pdf ../../public
-  only:
-    - master
+    # - mv build/html ../../public/models
+    # - mv build/latex/ns-3-model-library.pdf ../../public
+  # only:
+  #   - master
+
+contributing:
+  extends: .doc
+  script:
+    # - mkdir -p public/contributing
+    - cd doc/contributing
+    - make html
+    - make latexpdf
+    # - mv build/html ../../public/manual
+    # - mv build/latex/ns-3-manual.pdf ../../public/
+  # only:
+  #   - master
+
+installation:
+  extends: .doc
+  script:
+    # - mkdir -p public/installation
+    - cd doc/installation
+    - make html
+    - make latexpdf
+    # - mv build/html ../../public/manual
+    # - mv build/latex/ns-3-manual.pdf ../../public/
+  # only:
+  #   - master

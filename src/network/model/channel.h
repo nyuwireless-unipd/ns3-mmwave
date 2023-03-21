@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -17,12 +16,14 @@
 #ifndef NS3_CHANNEL_H
 #define NS3_CHANNEL_H
 
-#include <string>
-#include <stdint.h>
 #include "ns3/object.h"
 #include "ns3/ptr.h"
 
-namespace ns3 {
+#include <stdint.h>
+#include <string>
+
+namespace ns3
+{
 
 class NetDevice;
 
@@ -42,40 +43,40 @@ class NetDevice;
  */
 class Channel : public Object
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  Channel ();
-  virtual ~Channel ();
+    Channel();
+    ~Channel() override;
 
-  /**
-   * \returns the unique id of this channel
-   *
-   * This unique id happens to be also the index of the Channel into
-   * the ChannelList.
-   */
-  uint32_t GetId (void) const;
+    /**
+     * \returns the unique id of this channel
+     *
+     * This unique id happens to be also the index of the Channel into
+     * the ChannelList.
+     */
+    uint32_t GetId() const;
 
-  /**
-   * \returns the number of NetDevices connected to this Channel.
-   *
-   * This method must be implemented by subclasses.
-   */
-  virtual std::size_t GetNDevices (void) const = 0;
-  /**
-   * \param i index of NetDevice to retrieve
-   * \returns one of the NetDevices connected to this channel.
-   *
-   * This method must be implemented by subclasses.
-   */
-  virtual Ptr<NetDevice> GetDevice (std::size_t i) const = 0;
+    /**
+     * \returns the number of NetDevices connected to this Channel.
+     *
+     * This method must be implemented by subclasses.
+     */
+    virtual std::size_t GetNDevices() const = 0;
+    /**
+     * \param i index of NetDevice to retrieve
+     * \returns one of the NetDevices connected to this channel.
+     *
+     * This method must be implemented by subclasses.
+     */
+    virtual Ptr<NetDevice> GetDevice(std::size_t i) const = 0;
 
-private:
-  uint32_t m_id; //!< Channel id for this channel
+  private:
+    uint32_t m_id; //!< Channel id for this channel
 };
 
 } // namespace ns3

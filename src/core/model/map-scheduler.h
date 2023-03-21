@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2006 INRIA
  *
@@ -22,8 +21,9 @@
 #define MAP_SCHEDULER_H
 
 #include "scheduler.h"
-#include <stdint.h>
+
 #include <map>
+#include <stdint.h>
 #include <utility>
 
 /**
@@ -32,7 +32,8 @@
  * ns3::MapScheduler declaration.
  */
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup scheduler
@@ -61,35 +62,35 @@ namespace ns3 {
  */
 class MapScheduler : public Scheduler
 {
-public:
-  /**
-   *  Register this type.
-   *  \return The object TypeId.
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     *  Register this type.
+     *  \return The object TypeId.
+     */
+    static TypeId GetTypeId();
 
-  /** Constructor. */
-  MapScheduler ();
-  /** Destructor. */
-  virtual ~MapScheduler ();
+    /** Constructor. */
+    MapScheduler();
+    /** Destructor. */
+    ~MapScheduler() override;
 
-  // Inherited
-  virtual void Insert (const Scheduler::Event &ev);
-  virtual bool IsEmpty (void) const;
-  virtual Scheduler::Event PeekNext (void) const;
-  virtual Scheduler::Event RemoveNext (void);
-  virtual void Remove (const Scheduler::Event &ev);
+    // Inherited
+    void Insert(const Scheduler::Event& ev) override;
+    bool IsEmpty() const override;
+    Scheduler::Event PeekNext() const override;
+    Scheduler::Event RemoveNext() override;
+    void Remove(const Scheduler::Event& ev) override;
 
-private:
-  /** Event list type: a Map from EventKey to EventImpl. */
-  typedef std::map<Scheduler::EventKey, EventImpl*> EventMap;
-  /** EventMap iterator. */
-  typedef std::map<Scheduler::EventKey, EventImpl*>::iterator EventMapI;
-  /** EventMap const iterator. */
-  typedef std::map<Scheduler::EventKey, EventImpl*>::const_iterator EventMapCI;
+  private:
+    /** Event list type: a Map from EventKey to EventImpl. */
+    typedef std::map<Scheduler::EventKey, EventImpl*> EventMap;
+    /** EventMap iterator. */
+    typedef std::map<Scheduler::EventKey, EventImpl*>::iterator EventMapI;
+    /** EventMap const iterator. */
+    typedef std::map<Scheduler::EventKey, EventImpl*>::const_iterator EventMapCI;
 
-  /** The event list. */
-  EventMap m_list;
+    /** The event list. */
+    EventMap m_list;
 };
 
 } // namespace ns3

@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2016 Universita' degli Studi di Napoli Federico II
  *               2016 University of Washington
@@ -21,48 +20,48 @@
  *           Pasquale Imputato <p.imputato@gmail.com>
  */
 
-#include "ns3/log.h"
-#include "ns3/enum.h"
-#include "ns3/uinteger.h"
-#include "ns3/tcp-header.h"
-#include "ns3/udp-header.h"
-#include "ipv4-queue-disc-item.h"
 #include "ipv4-packet-filter.h"
 
-namespace ns3 {
+#include "ipv4-queue-disc-item.h"
 
-NS_LOG_COMPONENT_DEFINE ("Ipv4PacketFilter");
+#include "ns3/enum.h"
+#include "ns3/log.h"
+#include "ns3/tcp-header.h"
+#include "ns3/udp-header.h"
+#include "ns3/uinteger.h"
 
-NS_OBJECT_ENSURE_REGISTERED (Ipv4PacketFilter);
+namespace ns3
+{
+
+NS_LOG_COMPONENT_DEFINE("Ipv4PacketFilter");
+
+NS_OBJECT_ENSURE_REGISTERED(Ipv4PacketFilter);
 
 TypeId
-Ipv4PacketFilter::GetTypeId (void)
+Ipv4PacketFilter::GetTypeId()
 {
-  static TypeId tid = TypeId ("ns3::Ipv4PacketFilter")
-    .SetParent<PacketFilter> ()
-    .SetGroupName ("Internet")
-  ;
-  return tid;
+    static TypeId tid =
+        TypeId("ns3::Ipv4PacketFilter").SetParent<PacketFilter>().SetGroupName("Internet");
+    return tid;
 }
 
-Ipv4PacketFilter::Ipv4PacketFilter ()
+Ipv4PacketFilter::Ipv4PacketFilter()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 Ipv4PacketFilter::~Ipv4PacketFilter()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 bool
-Ipv4PacketFilter::CheckProtocol (Ptr<QueueDiscItem> item) const
+Ipv4PacketFilter::CheckProtocol(Ptr<QueueDiscItem> item) const
 {
-  NS_LOG_FUNCTION (this << item);
-  return bool (DynamicCast<Ipv4QueueDiscItem> (item));
+    NS_LOG_FUNCTION(this << item);
+    return bool(DynamicCast<Ipv4QueueDiscItem>(item));
 }
 
 // ------------------------------------------------------------------------- //
-
 
 } // namespace ns3

@@ -1,4 +1,5 @@
 set(base_examples
+    assert-example
     command-line-example
     fatal-example
     hash-example
@@ -54,4 +55,11 @@ build_lib_example(
   SOURCE_FILES empirical-random-variable-example.cc
   LIBRARIES_TO_LINK ${libcore}
                     ${libflow-monitor}
+)
+
+build_lib_example(
+  NAME log-example
+  SOURCE_FILES log-example.cc
+  LIBRARIES_TO_LINK ${libcore}
+                    ${libnetwork}
 )

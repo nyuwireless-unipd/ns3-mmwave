@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2006,2007 INRIA
  *
@@ -27,7 +26,6 @@
  * NS_LOG and related logging macro definitions.
  */
 
-
 // These two implementation macros
 //   NS_LOG_APPEND_TIME_PREFIX_IMPL
 //   NS_LOG_APPEND_NODE_PREFIX_IMPL
@@ -42,15 +40,16 @@
  * We define this separately so we can reuse the definition
  * in NS_FATAL.
  */
-#define NS_LOG_APPEND_TIME_PREFIX_IMPL                      \
-  do {                                                      \
-    ns3::TimePrinter printer = ns3::LogGetTimePrinter ();   \
-    if (printer != 0)                                       \
-      {                                                     \
-        (*printer)(std::clog);                              \
-        std::clog << " ";                                   \
-      }                                                     \
-  } while (false)
+#define NS_LOG_APPEND_TIME_PREFIX_IMPL                                                             \
+    do                                                                                             \
+    {                                                                                              \
+        ns3::TimePrinter printer = ns3::LogGetTimePrinter();                                       \
+        if (printer != 0)                                                                          \
+        {                                                                                          \
+            (*printer)(std::clog);                                                                 \
+            std::clog << " ";                                                                      \
+        }                                                                                          \
+    } while (false)
 
 /**
  * \ingroup logging
@@ -60,18 +59,16 @@
  * We define this separately so we can reuse the definition
  * in NS_FATAL.
  */
-#define NS_LOG_APPEND_NODE_PREFIX_IMPL                      \
-  do {                                                      \
-    ns3::NodePrinter printer = ns3::LogGetNodePrinter ();   \
-    if (printer != 0)                                       \
-      {                                                     \
-        (*printer)(std::clog);                              \
-        std::clog << " ";                                   \
-      }                                                     \
-  } while (false)
-
-
-
+#define NS_LOG_APPEND_NODE_PREFIX_IMPL                                                             \
+    do                                                                                             \
+    {                                                                                              \
+        ns3::NodePrinter printer = ns3::LogGetNodePrinter();                                       \
+        if (printer != 0)                                                                          \
+        {                                                                                          \
+            (*printer)(std::clog);                                                                 \
+            std::clog << " ";                                                                      \
+        }                                                                                          \
+    } while (false)
 
 #ifdef NS3_LOG_ENABLE
 
@@ -81,10 +78,10 @@
  * \internal
  * Logging implementation macro; should not be called directly.
  */
-#define NS_LOG_APPEND_TIME_PREFIX                           \
-  if (g_log.IsEnabled (ns3::LOG_PREFIX_TIME))               \
-    {                                                       \
-      NS_LOG_APPEND_TIME_PREFIX_IMPL;                       \
+#define NS_LOG_APPEND_TIME_PREFIX                                                                  \
+    if (g_log.IsEnabled(ns3::LOG_PREFIX_TIME))                                                     \
+    {                                                                                              \
+        NS_LOG_APPEND_TIME_PREFIX_IMPL;                                                            \
     }
 
 /**
@@ -93,10 +90,10 @@
  * \internal
  * Logging implementation macro; should not be called directly.
  */
-#define NS_LOG_APPEND_NODE_PREFIX                          \
-  if (g_log.IsEnabled (ns3::LOG_PREFIX_NODE))              \
-    {                                                      \
-      NS_LOG_APPEND_NODE_PREFIX_IMPL;                      \
+#define NS_LOG_APPEND_NODE_PREFIX                                                                  \
+    if (g_log.IsEnabled(ns3::LOG_PREFIX_NODE))                                                     \
+    {                                                                                              \
+        NS_LOG_APPEND_NODE_PREFIX_IMPL;                                                            \
     }
 
 /**
@@ -105,12 +102,11 @@
  * \internal
  * Logging implementation macro; should not be called directly.
  */
-#define NS_LOG_APPEND_FUNC_PREFIX                          \
-  if (g_log.IsEnabled (ns3::LOG_PREFIX_FUNC))              \
-    {                                                      \
-      std::clog << g_log.Name () << ":"                    \
-                << __FUNCTION__ << "(): ";                 \
-    }                                                      \
+#define NS_LOG_APPEND_FUNC_PREFIX                                                                  \
+    if (g_log.IsEnabled(ns3::LOG_PREFIX_FUNC))                                                     \
+    {                                                                                              \
+        std::clog << g_log.Name() << ":" << __FUNCTION__ << "(): ";                                \
+    }
 
 /**
  * \ingroup logging
@@ -118,12 +114,11 @@
  * \internal
  * Logging implementation macro; should not be called directly.
  */
-#define NS_LOG_APPEND_LEVEL_PREFIX(level)                       \
-  if (g_log.IsEnabled (ns3::LOG_PREFIX_LEVEL))                  \
-    {                                                           \
-      std::clog << "[" << g_log.GetLevelLabel (level) << "] ";  \
-    }                                                           \
-
+#define NS_LOG_APPEND_LEVEL_PREFIX(level)                                                          \
+    if (g_log.IsEnabled(ns3::LOG_PREFIX_LEVEL))                                                    \
+    {                                                                                              \
+        std::clog << "[" << g_log.GetLevelLabel(level) << "] ";                                    \
+    }
 
 #ifndef NS_LOG_APPEND_CONTEXT
 /**
@@ -145,7 +140,6 @@
  */
 #define NS_LOG_APPEND_CONTEXT
 #endif /* NS_LOG_APPEND_CONTEXT */
-
 
 #ifndef NS_LOG_CONDITION
 /**
@@ -184,18 +178,19 @@
  * \internal
  * Logging implementation macro; should not be called directly.
  */
-#define NS_LOG(level, msg)                                      \
-  NS_LOG_CONDITION                                              \
-  do {                                                          \
-      if (g_log.IsEnabled (level))                              \
-        {                                                       \
-          NS_LOG_APPEND_TIME_PREFIX;                            \
-          NS_LOG_APPEND_NODE_PREFIX;                            \
-          NS_LOG_APPEND_CONTEXT;                                \
-          NS_LOG_APPEND_FUNC_PREFIX;                            \
-          NS_LOG_APPEND_LEVEL_PREFIX (level);                   \
-          std::clog << msg << std::endl;                        \
-        }                                                       \
+#define NS_LOG(level, msg)                                                                         \
+    NS_LOG_CONDITION                                                                               \
+    do                                                                                             \
+    {                                                                                              \
+        if (g_log.IsEnabled(level))                                                                \
+        {                                                                                          \
+            NS_LOG_APPEND_TIME_PREFIX;                                                             \
+            NS_LOG_APPEND_NODE_PREFIX;                                                             \
+            NS_LOG_APPEND_CONTEXT;                                                                 \
+            NS_LOG_APPEND_FUNC_PREFIX;                                                             \
+            NS_LOG_APPEND_LEVEL_PREFIX(level);                                                     \
+            std::clog << msg << std::endl;                                                         \
+        }                                                                                          \
     } while (false)
 
 /**
@@ -206,19 +201,18 @@
  * This should be used only in static functions; most member functions
  * should instead use NS_LOG_FUNCTION().
  */
-#define NS_LOG_FUNCTION_NOARGS()                                \
-  NS_LOG_CONDITION                                              \
-  do {                                                          \
-      if (g_log.IsEnabled (ns3::LOG_FUNCTION))                  \
-        {                                                       \
-          NS_LOG_APPEND_TIME_PREFIX;                            \
-          NS_LOG_APPEND_NODE_PREFIX;                            \
-          NS_LOG_APPEND_CONTEXT;                                \
-          std::clog << g_log.Name () << ":"                     \
-                    << __FUNCTION__ << "()" << std::endl;       \
-        }                                                       \
+#define NS_LOG_FUNCTION_NOARGS()                                                                   \
+    NS_LOG_CONDITION                                                                               \
+    do                                                                                             \
+    {                                                                                              \
+        if (g_log.IsEnabled(ns3::LOG_FUNCTION))                                                    \
+        {                                                                                          \
+            NS_LOG_APPEND_TIME_PREFIX;                                                             \
+            NS_LOG_APPEND_NODE_PREFIX;                                                             \
+            NS_LOG_APPEND_CONTEXT;                                                                 \
+            std::clog << g_log.Name() << ":" << __FUNCTION__ << "()" << std::endl;                 \
+        }                                                                                          \
     } while (false)
-
 
 /**
  * \ingroup logging
@@ -241,23 +235,20 @@
  *
  * \param [in] parameters The parameters to output.
  */
-#define NS_LOG_FUNCTION(parameters)                             \
-  NS_LOG_CONDITION                                              \
-  do                                                            \
-    {                                                           \
-      if (g_log.IsEnabled (ns3::LOG_FUNCTION))                  \
-        {                                                       \
-          NS_LOG_APPEND_TIME_PREFIX;                            \
-          NS_LOG_APPEND_NODE_PREFIX;                            \
-          NS_LOG_APPEND_CONTEXT;                                \
-          std::clog << g_log.Name () << ":"                     \
-                    << __FUNCTION__ << "(";                     \
-          ns3::ParameterLogger (std::clog) << parameters;       \
-          std::clog << ")" << std::endl;                        \
-        }                                                       \
-    }                                                           \
-  while (false)
-
+#define NS_LOG_FUNCTION(parameters)                                                                \
+    NS_LOG_CONDITION                                                                               \
+    do                                                                                             \
+    {                                                                                              \
+        if (g_log.IsEnabled(ns3::LOG_FUNCTION))                                                    \
+        {                                                                                          \
+            NS_LOG_APPEND_TIME_PREFIX;                                                             \
+            NS_LOG_APPEND_NODE_PREFIX;                                                             \
+            NS_LOG_APPEND_CONTEXT;                                                                 \
+            std::clog << g_log.Name() << ":" << __FUNCTION__ << "(";                               \
+            ns3::ParameterLogger(std::clog) << parameters;                                         \
+            std::clog << ")" << std::endl;                                                         \
+        }                                                                                          \
+    } while (false)
 
 /**
  * \ingroup logging
@@ -266,12 +257,12 @@
  *
  * \param [in] msg The message to log
  */
-#define NS_LOG_UNCOND(msg)              \
-  NS_LOG_CONDITION                      \
-  do {                                  \
-      std::clog << msg << std::endl;    \
+#define NS_LOG_UNCOND(msg)                                                                         \
+    NS_LOG_CONDITION                                                                               \
+    do                                                                                             \
+    {                                                                                              \
+        std::clog << msg << std::endl;                                                             \
     } while (false)
-
 
 #endif /* NS3_LOG_ENABLE */
 

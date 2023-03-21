@@ -1,4 +1,3 @@
-/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  *   Copyright (c) 2009 INRIA
  *   Copyright (c) 2018 Natale Patriciello <natale.patriciello@gmail.com>
@@ -23,7 +22,8 @@
 
 #include <ns3/seq-ts-header.h>
 
-namespace ns3 {
+namespace ns3
+{
 /**
  * \ingroup applications
  * \brief Header with a sequence, a timestamp, and a "size" attribute
@@ -36,39 +36,39 @@ namespace ns3 {
  */
 class SeqTsSizeHeader : public SeqTsHeader
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  /**
-   * \brief constructor
-   */
-  SeqTsSizeHeader ();
+    /**
+     * \brief constructor
+     */
+    SeqTsSizeHeader();
 
-  /**
-   * \brief Set the size information that the header will carry
-   * \param size the size
-   */
-  void SetSize (uint64_t size);
+    /**
+     * \brief Set the size information that the header will carry
+     * \param size the size
+     */
+    void SetSize(uint64_t size);
 
-  /**
-   * \brief Get the size information that the header is carrying
-   * \return the size
-   */
-  uint64_t GetSize (void) const;
+    /**
+     * \brief Get the size information that the header is carrying
+     * \return the size
+     */
+    uint64_t GetSize() const;
 
-  // Inherited
-  virtual TypeId GetInstanceTypeId (void) const override;
-  virtual void Print (std::ostream &os) const override;
-  virtual uint32_t GetSerializedSize (void) const override;
-  virtual void Serialize (Buffer::Iterator start) const override;
-  virtual uint32_t Deserialize (Buffer::Iterator start) override;
+    // Inherited
+    TypeId GetInstanceTypeId() const override;
+    void Print(std::ostream& os) const override;
+    uint32_t GetSerializedSize() const override;
+    void Serialize(Buffer::Iterator start) const override;
+    uint32_t Deserialize(Buffer::Iterator start) override;
 
-private:
-  uint64_t m_size {0}; //!< The 'size' information that the header is carrying
+  private:
+    uint64_t m_size{0}; //!< The 'size' information that the header is carrying
 };
 
 } // namespace ns3

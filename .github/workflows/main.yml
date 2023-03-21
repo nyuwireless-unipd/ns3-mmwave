@@ -24,4 +24,4 @@ jobs:
 
     # Enable only the mmwave module to speedup the test
     - name: build and run the tests
-      run: ./ns3 configure --enable-examples --enable-tests --enable-modules=mmwave && ./ns3 build && ./test.py
+      run: ./ns3 configure --enable-examples --enable-tests --enable-modules=mmwave,internet-apps && ./ns3 build && ./test.py

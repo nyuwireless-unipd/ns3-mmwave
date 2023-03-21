@@ -23,53 +23,50 @@
 
 #include "ns3/tag.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
- * Tag used to define PHY parameters 
+ * Tag used to define PHY parameters
  */
 class LtePhyTag : public Tag
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
-  virtual TypeId GetInstanceTypeId (void) const;
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId(void);
+    virtual TypeId GetInstanceTypeId(void) const;
 
-  /**
-   * Create an empty LtePhyTag
-   */
-  LtePhyTag ();
+    /**
+     * Create an empty LtePhyTag
+     */
+    LtePhyTag();
 
-  /**
-   * Create a LtePhyTag with the given RNTI and LC id
-   * \param cellId the cell ID
-   */
-  LtePhyTag (uint16_t cellId);
+    /**
+     * Create a LtePhyTag with the given RNTI and LC id
+     * \param cellId the cell ID
+     */
+    LtePhyTag(uint16_t cellId);
 
+    virtual ~LtePhyTag();
 
-  virtual ~LtePhyTag ();
+    virtual void Serialize(TagBuffer i) const;
+    virtual void Deserialize(TagBuffer i);
+    virtual uint32_t GetSerializedSize() const;
+    virtual void Print(std::ostream& os) const;
 
-  virtual void Serialize (TagBuffer i) const;
-  virtual void Deserialize (TagBuffer i);
-  virtual uint32_t GetSerializedSize () const;
-  virtual void Print (std::ostream &os) const;
+    /**
+     * Get cell ID
+     *
+     * \returns cell ID
+     */
+    uint16_t GetCellId() const;
 
-  /**
-   * Get cell ID
-   *
-   * \returns cell ID
-   */
-  uint16_t GetCellId () const;
-
-private:
-  uint16_t m_cellId; ///< the cell ID
-
+  private:
+    uint16_t m_cellId; ///< the cell ID
 };
-
-
 
 } // namespace ns3
 

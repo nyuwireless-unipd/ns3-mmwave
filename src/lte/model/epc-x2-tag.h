@@ -25,11 +25,11 @@
 #ifndef X2_TAG_H
 #define X2_TAG_H
 
-#include "ns3/packet.h"
 #include "ns3/nstime.h"
+#include "ns3/packet.h"
 
-
-namespace ns3 {
+namespace ns3
+{
 
 class Tag;
 
@@ -39,47 +39,46 @@ class Tag;
 
 class EpcX2Tag : public Tag
 {
-public:
-  static TypeId  GetTypeId (void);
-  virtual TypeId  GetInstanceTypeId (void) const;
+  public:
+    static TypeId GetTypeId(void);
+    virtual TypeId GetInstanceTypeId(void) const;
 
-  /**
-   * Create an empty X2 tag
-   */
-  EpcX2Tag ();
-  /**
-   * Create an X2 tag with the given senderTimestamp
-   */
-  EpcX2Tag (Time senderTimestamp);
+    /**
+     * Create an empty X2 tag
+     */
+    EpcX2Tag();
+    /**
+     * Create an X2 tag with the given senderTimestamp
+     */
+    EpcX2Tag(Time senderTimestamp);
 
-  virtual void  Serialize (TagBuffer i) const;
-  virtual void  Deserialize (TagBuffer i);
-  virtual uint32_t  GetSerializedSize () const;
-  virtual void Print (std::ostream &os) const;
+    virtual void Serialize(TagBuffer i) const;
+    virtual void Deserialize(TagBuffer i);
+    virtual uint32_t GetSerializedSize() const;
+    virtual void Print(std::ostream& os) const;
 
-  /**
-   * Get the instant when the X2 delivers the PDU to the MAC SAP provider
-   * @return the sender timestamp
-   */
-  Time  GetSenderTimestamp (void) const
-  {
-    return m_senderTimestamp;
-  }
+    /**
+     * Get the instant when the X2 delivers the PDU to the MAC SAP provider
+     * @return the sender timestamp
+     */
+    Time GetSenderTimestamp(void) const
+    {
+        return m_senderTimestamp;
+    }
 
-  /**
-   * Set the sender timestamp
-   * @param senderTimestamp time stamp of the instant when the X2 delivers the PDU
-   */
-  void  SetSenderTimestamp (Time senderTimestamp)
-  {
-    this->m_senderTimestamp = senderTimestamp;
-  }
+    /**
+     * Set the sender timestamp
+     * @param senderTimestamp time stamp of the instant when the X2 delivers the PDU
+     */
+    void SetSenderTimestamp(Time senderTimestamp)
+    {
+        this->m_senderTimestamp = senderTimestamp;
+    }
 
-private:
-  Time m_senderTimestamp;
-
+  private:
+    Time m_senderTimestamp;
 };
 
-} //namespace ns3
+} // namespace ns3
 
 #endif /* X2_TAG_H */

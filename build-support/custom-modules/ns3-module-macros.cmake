@@ -35,8 +35,14 @@ function(build_lib)
   # Argument parsing
   set(options IGNORE_PCH)
   set(oneValueArgs LIBNAME)
-  set(multiValueArgs SOURCE_FILES HEADER_FILES LIBRARIES_TO_LINK TEST_SOURCES
-                     DEPRECATED_HEADER_FILES MODULE_ENABLED_FEATURES
+  set(multiValueArgs
+      SOURCE_FILES
+      HEADER_FILES
+      LIBRARIES_TO_LINK
+      TEST_SOURCES
+      DEPRECATED_HEADER_FILES
+      MODULE_ENABLED_FEATURES
+      PRIVATE_HEADER_FILES
   )
   cmake_parse_arguments(
     "BLIB" "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
@@ -98,6 +104,10 @@ function(build_lib)
       )
     endif()
 
+    if(NOT FILESYSTEM_LIBRARY_IS_LINKED)
+      list(APPEND BLIB_LIBRARIES_TO_LINK -lstdc++fs)
+    endif()
+
     # Enable examples as tests suites
     if(${ENABLE_EXAMPLES} AND ${ENABLE_TESTS})
       if(NOT ${XCODE})
@@ -116,6 +126,10 @@ function(build_lib)
     PROPERTIES
       PUBLIC_HEADER
       "${BLIB_HEADER_FILES};${BLIB_DEPRECATED_HEADER_FILES};${config_headers};${CMAKE_HEADER_OUTPUT_DIRECTORY}/${BLIB_LIBNAME}-module.h"
+      PRIVATE_HEADER "${BLIB_PRIVATE_HEADER_FILES}"
+      RUNTIME_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} # set output
+                                                                 # directory for
+                                                                 # DLLs
   )
 
   if(${NS3_CLANG_TIMETRACE})
@@ -212,11 +226,35 @@ function(build_lib)
   # Write a module header that includes all headers from that module
   write_module_header("${BLIB_LIBNAME}" "${BLIB_HEADER_FILES}")
 
+  # Check if headers actually exist to prevent copying errors during
+  # installation
+  get_target_property(headers_to_check ${lib${BLIB_LIBNAME}} PUBLIC_HEADER)
+  set(missing_headers)
+  foreach(header ${headers_to_check})
+    if(NOT ((EXISTS ${header}) OR (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${header})
+           )
+    )
+      list(APPEND missing_headers ${header})
+    endif()
+  endforeach()
+  if(missing_headers)
+    message(
+      FATAL_ERROR "Missing header files for ${BLIB_LIBNAME}: ${missing_headers}"
+    )
+  endif()
+
   # Copy all header files to outputfolder/include before each build
   copy_headers_before_building_lib(
     ${BLIB_LIBNAME} ${CMAKE_HEADER_OUTPUT_DIRECTORY} "${BLIB_HEADER_FILES}"
     public
   )
+  if(BLIB_PRIVATE_HEADER_FILES)
+    copy_headers_before_building_lib(
+      ${BLIB_LIBNAME} ${CMAKE_HEADER_OUTPUT_DIRECTORY}
+      "${BLIB_PRIVATE_HEADER_FILES}" private
+    )
+  endif()
+
   if(BLIB_DEPRECATED_HEADER_FILES)
     copy_headers_before_building_lib(
       ${BLIB_LIBNAME} ${CMAKE_HEADER_OUTPUT_DIRECTORY}
@@ -224,47 +262,8 @@ function(build_lib)
     )
   endif()
 
-  # Build tests if requested
-  if(${ENABLE_TESTS})
-    list(LENGTH BLIB_TEST_SOURCES test_source_len)
-    if(${test_source_len} GREATER 0)
-      # Create BLIB_LIBNAME of output library test of module
-      set(test${BLIB_LIBNAME} lib${BLIB_LIBNAME}-test CACHE INTERNAL "")
-      set(ns3-libs-tests "${test${BLIB_LIBNAME}};${ns3-libs-tests}"
-          CACHE INTERNAL "list of test libraries"
-      )
-
-      # Create shared library containing tests of the module
-      add_library(${test${BLIB_LIBNAME}} SHARED "${BLIB_TEST_SOURCES}")
-
-      # Link test library to the module library
-      if(${NS3_MONOLIB})
-        target_link_libraries(
-          ${test${BLIB_LIBNAME}} ${LIB_AS_NEEDED_PRE} ${lib-ns3-monolib}
-          ${LIB_AS_NEEDED_POST}
-        )
-      else()
-        target_link_libraries(
-          ${test${BLIB_LIBNAME}} ${LIB_AS_NEEDED_PRE} ${lib${BLIB_LIBNAME}}
-          "${BLIB_LIBRARIES_TO_LINK}" ${LIB_AS_NEEDED_POST}
-        )
-      endif()
-      set_target_properties(
-        ${test${BLIB_LIBNAME}}
-        PROPERTIES OUTPUT_NAME
-                   ns${NS3_VER}-${BLIB_LIBNAME}-test${build_profile_suffix}
-      )
-
-      target_compile_definitions(
-        ${test${BLIB_LIBNAME}} PRIVATE NS_TEST_SOURCEDIR="${FOLDER}/test"
-      )
-      if(${PRECOMPILE_HEADERS_ENABLED} AND (NOT ${BLIB_IGNORE_PCH}))
-        target_precompile_headers(${test${BLIB_LIBNAME}} REUSE_FROM stdlib_pch)
-      endif()
-    endif()
-  endif()
-
   # Build lib examples if requested
+  set(examples_before ${ns3-execs-clean})
   foreach(example_folder example;examples)
     if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${example_folder})
       if(${ENABLE_EXAMPLES})
@@ -275,6 +274,85 @@ function(build_lib)
       scan_python_examples(${CMAKE_CURRENT_SOURCE_DIR}/${example_folder})
     endif()
   endforeach()
+  set(module_examples ${ns3-execs-clean})
+
+  # Filter only module examples
+  foreach(example ${examples_before})
+    list(REMOVE_ITEM module_examples ${example})
+  endforeach()
+  unset(examples_before)
+
+  # Check if the module tests should be built
+  set(filtered_in ON)
+  if(NS3_FILTER_MODULE_EXAMPLES_AND_TESTS)
+    set(filtered_in OFF)
+    if(${BLIB_LIBNAME} IN_LIST NS3_FILTER_MODULE_EXAMPLES_AND_TESTS)
+      set(filtered_in ON)
+    endif()
+  endif()
+
+  # Build tests if requested
+  if(${ENABLE_TESTS} AND ${filtered_in})
+    list(LENGTH BLIB_TEST_SOURCES test_source_len)
+    if(${test_source_len} GREATER 0)
+      # Create BLIB_LIBNAME of output library test of module
+      set(test${BLIB_LIBNAME} lib${BLIB_LIBNAME}-test CACHE INTERNAL "")
+
+      # Create shared library containing tests of the module on UNIX and just
+      # the object file that will be part of test-runner on Windows
+      if(WIN32)
+        set(ns3-libs-tests
+            "$<TARGET_OBJECTS:${test${BLIB_LIBNAME}}>;${ns3-libs-tests}"
+            CACHE INTERNAL "list of test libraries"
+        )
+        add_library(${test${BLIB_LIBNAME}} OBJECT "${BLIB_TEST_SOURCES}")
+      else()
+        set(ns3-libs-tests "${test${BLIB_LIBNAME}};${ns3-libs-tests}"
+            CACHE INTERNAL "list of test libraries"
+        )
+        add_library(${test${BLIB_LIBNAME}} SHARED "${BLIB_TEST_SOURCES}")
+
+        # Link test library to the module library
+        if(${NS3_MONOLIB})
+          target_link_libraries(
+            ${test${BLIB_LIBNAME}} ${LIB_AS_NEEDED_PRE} ${lib-ns3-monolib}
+            ${LIB_AS_NEEDED_POST}
+          )
+        else()
+          target_link_libraries(
+            ${test${BLIB_LIBNAME}} ${LIB_AS_NEEDED_PRE} ${lib${BLIB_LIBNAME}}
+            "${BLIB_LIBRARIES_TO_LINK}" ${LIB_AS_NEEDED_POST}
+          )
+        endif()
+        set_target_properties(
+          ${test${BLIB_LIBNAME}}
+          PROPERTIES OUTPUT_NAME
+                     ns${NS3_VER}-${BLIB_LIBNAME}-test${build_profile_suffix}
+        )
+      endif()
+      target_compile_definitions(
+        ${test${BLIB_LIBNAME}} PRIVATE NS_TEST_SOURCEDIR="${FOLDER}/test"
+      )
+      if(${PRECOMPILE_HEADERS_ENABLED} AND (NOT ${BLIB_IGNORE_PCH}))
+        target_precompile_headers(${test${BLIB_LIBNAME}} REUSE_FROM stdlib_pch)
+      endif()
+
+      # Add dependency between tests and examples used as tests
+      if(${ENABLE_EXAMPLES})
+        foreach(source_file ${BLIB_TEST_SOURCES})
+          file(READ ${source_file} source_file_contents)
+          foreach(example_as_test ${module_examples})
+            string(FIND "${source_file_contents}" "${example_as_test}"
+                        is_sub_string
+            )
+            if(NOT (${is_sub_string} EQUAL -1))
+              add_dependencies(test-runner-examples-as-tests ${example_as_test})
+            endif()
+          endforeach()
+        endforeach()
+      endif()
+    endif()
+  endif()
 
   # Handle package export
   install(
@@ -282,7 +360,9 @@ function(build_lib)
     EXPORT ns3ExportTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/
     PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/ns3"
+    PRIVATE_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/ns3"
   )
   if(${NS3_VERBOSE})
     message(STATUS "Processed ${FOLDER}")
@@ -314,37 +394,34 @@ function(build_lib_example)
   check_for_missing_libraries(
     missing_dependencies "${BLIB_EXAMPLE_LIBRARIES_TO_LINK}"
   )
-  if(NOT missing_dependencies)
-    # Create shared library with sources and headers
-    add_executable(
-      "${BLIB_EXAMPLE_NAME}" ${BLIB_EXAMPLE_SOURCE_FILES}
-                             ${BLIB_EXAMPLE_HEADER_FILES}
-    )
 
-    if(${NS3_STATIC})
-      target_link_libraries(
-        ${BLIB_EXAMPLE_NAME} ${LIB_AS_NEEDED_PRE_STATIC} ${lib-ns3-static}
-      )
-    elseif(${NS3_MONOLIB})
-      target_link_libraries(
-        ${BLIB_EXAMPLE_NAME} ${LIB_AS_NEEDED_PRE} ${lib-ns3-monolib}
-        ${LIB_AS_NEEDED_POST}
-      )
-    else()
-      target_link_libraries(
-        ${BLIB_EXAMPLE_NAME} ${LIB_AS_NEEDED_PRE} ${lib${BLIB_EXAMPLE_LIBNAME}}
-        ${BLIB_EXAMPLE_LIBRARIES_TO_LINK} ${optional_visualizer_lib}
-        ${LIB_AS_NEEDED_POST}
-      )
+  # Check if a module example should be built
+  set(filtered_in ON)
+  if(NS3_FILTER_MODULE_EXAMPLES_AND_TESTS)
+    set(filtered_in OFF)
+    if(${BLIB_LIBNAME} IN_LIST NS3_FILTER_MODULE_EXAMPLES_AND_TESTS)
+      set(filtered_in ON)
     endif()
+  endif()
 
-    if(${PRECOMPILE_HEADERS_ENABLED} AND (NOT ${BLIB_EXAMPLE_IGNORE_PCH}))
-      target_precompile_headers(${BLIB_EXAMPLE_NAME} REUSE_FROM stdlib_pch_exec)
+  if((NOT missing_dependencies) AND ${filtered_in})
+    # Convert boolean into text to forward argument
+    if(${BLIB_EXAMPLE_IGNORE_PCH})
+      set(IGNORE_PCH IGNORE_PCH)
     endif()
-
-    set_runtime_outputdirectory(
-      ${BLIB_EXAMPLE_NAME} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${FOLDER}/ ""
+    # Create executable with sources and headers
+    # cmake-format: off
+    build_exec(
+      EXECNAME ${BLIB_EXAMPLE_NAME}
+      SOURCE_FILES ${BLIB_EXAMPLE_SOURCE_FILES}
+      HEADER_FILES ${BLIB_EXAMPLE_HEADER_FILES}
+      LIBRARIES_TO_LINK
+        ${lib${BLIB_LIBNAME}} ${BLIB_EXAMPLE_LIBRARIES_TO_LINK}
+        ${optional_visualizer_lib}
+      EXECUTABLE_DIRECTORY_PATH ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${FOLDER}/
+      ${IGNORE_PCH}
     )
+    # cmake-format: on
   endif()
 endfunction()
 

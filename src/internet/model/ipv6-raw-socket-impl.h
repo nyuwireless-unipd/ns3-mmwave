@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2007-2009 Strasbourg University
  *
@@ -21,11 +20,11 @@
 #ifndef IPV6_RAW_SOCKET_IMPL_H
 #define IPV6_RAW_SOCKET_IMPL_H
 
-#include <list>
-
-#include "ns3/socket.h"
 #include "ns3/ipv6-address.h"
 #include "ns3/ipv6-header.h"
+#include "ns3/socket.h"
+
+#include <list>
 
 namespace ns3
 {
@@ -65,178 +64,178 @@ class Node;
  */
 class Ipv6RawSocketImpl : public Socket
 {
-public:
-  /**
-   * \brief Get the type ID of this class.
-   * \return type ID
-   */
-  static TypeId GetTypeId ();
+  public:
+    /**
+     * \brief Get the type ID of this class.
+     * \return type ID
+     */
+    static TypeId GetTypeId();
 
-  Ipv6RawSocketImpl ();
-  virtual ~Ipv6RawSocketImpl ();
+    Ipv6RawSocketImpl();
+    ~Ipv6RawSocketImpl() override;
 
-  /**
-   * \brief Set the node associated with this socket.
-   * \param node node to set
-   */
-  void SetNode (Ptr<Node> node);
+    /**
+     * \brief Set the node associated with this socket.
+     * \param node node to set
+     */
+    void SetNode(Ptr<Node> node);
 
-  virtual enum Socket::SocketErrno GetErrno () const;
+    enum Socket::SocketErrno GetErrno() const override;
 
-  /**
-   * \brief Get socket type (NS3_SOCK_RAW)
-   * \return socket type
-   */
-  virtual enum Socket::SocketType GetSocketType () const;
+    /**
+     * \brief Get socket type (NS3_SOCK_RAW)
+     * \return socket type
+     */
+    enum Socket::SocketType GetSocketType() const override;
 
-  virtual Ptr<Node> GetNode () const;
+    Ptr<Node> GetNode() const override;
 
-  virtual int Bind (const Address& address);
-  virtual int Bind ();
-  virtual int Bind6 ();
+    int Bind(const Address& address) override;
+    int Bind() override;
+    int Bind6() override;
 
-  virtual int GetSockName (Address& address) const;
-  virtual int GetPeerName (Address& address) const;
+    int GetSockName(Address& address) const override;
+    int GetPeerName(Address& address) const override;
 
-  virtual int Close ();
-  virtual int ShutdownSend ();
-  virtual int ShutdownRecv ();
-  virtual int Connect (const Address& address);
-  virtual int Listen ();
-  virtual uint32_t GetTxAvailable () const;
-  virtual uint32_t GetRxAvailable () const;
-  virtual int Send (Ptr<Packet> p, uint32_t flags);
-  virtual int SendTo (Ptr<Packet> p, uint32_t flags, const Address& toAddress);
-  virtual Ptr<Packet> Recv (uint32_t maxSize, uint32_t flags);
-  virtual Ptr<Packet> RecvFrom (uint32_t maxSize, uint32_t flags, Address& fromAddress);
-  virtual void Ipv6JoinGroup (Ipv6Address address, Socket::Ipv6MulticastFilterMode filterMode, std::vector<Ipv6Address> sourceAddresses);
+    int Close() override;
+    int ShutdownSend() override;
+    int ShutdownRecv() override;
+    int Connect(const Address& address) override;
+    int Listen() override;
+    uint32_t GetTxAvailable() const override;
+    uint32_t GetRxAvailable() const override;
+    int Send(Ptr<Packet> p, uint32_t flags) override;
+    int SendTo(Ptr<Packet> p, uint32_t flags, const Address& toAddress) override;
+    Ptr<Packet> Recv(uint32_t maxSize, uint32_t flags) override;
+    Ptr<Packet> RecvFrom(uint32_t maxSize, uint32_t flags, Address& fromAddress) override;
+    void Ipv6JoinGroup(Ipv6Address address,
+                       Socket::Ipv6MulticastFilterMode filterMode,
+                       std::vector<Ipv6Address> sourceAddresses) override;
 
-  /**
-   * \brief Set protocol field.
-   * \param protocol protocol to set
-   */
-  void SetProtocol (uint16_t protocol);
+    /**
+     * \brief Set protocol field.
+     * \param protocol protocol to set
+     */
+    void SetProtocol(uint16_t protocol);
 
-  /**
-   * \brief Forward up to receive method.
-   * \param p packet
-   * \param hdr IPv6 header
-   * \param device device
-   * \return true if forwarded, false otherwise
-   */
-  bool ForwardUp (Ptr<const Packet> p, Ipv6Header hdr, Ptr<NetDevice> device);
+    /**
+     * \brief Forward up to receive method.
+     * \param p packet
+     * \param hdr IPv6 header
+     * \param device device
+     * \return true if forwarded, false otherwise
+     */
+    bool ForwardUp(Ptr<const Packet> p, Ipv6Header hdr, Ptr<NetDevice> device);
 
-  virtual bool SetAllowBroadcast (bool allowBroadcast);
-  virtual bool GetAllowBroadcast () const;
+    bool SetAllowBroadcast(bool allowBroadcast) override;
+    bool GetAllowBroadcast() const override;
 
-  /**
-   * \brief Clean the ICMPv6 filter structure
-   */
-  void Icmpv6FilterSetPassAll();
+    /**
+     * \brief Clean the ICMPv6 filter structure
+     */
+    void Icmpv6FilterSetPassAll();
 
-  /**
-   * \brief Set the filter to block all the ICMPv6 types
-   */
-  void Icmpv6FilterSetBlockAll();
+    /**
+     * \brief Set the filter to block all the ICMPv6 types
+     */
+    void Icmpv6FilterSetBlockAll();
 
-  /**
-   * \brief Set the filter to pass one ICMPv6 type
-   * \param type the ICMPv6 type to pass
-   */
-  void Icmpv6FilterSetPass(uint8_t type);
+    /**
+     * \brief Set the filter to pass one ICMPv6 type
+     * \param type the ICMPv6 type to pass
+     */
+    void Icmpv6FilterSetPass(uint8_t type);
 
-  /**
-   * \brief Set the filter to block one ICMPv6 type
-   * \param type the ICMPv6 type to block
-   */
-  void Icmpv6FilterSetBlock(uint8_t type);
+    /**
+     * \brief Set the filter to block one ICMPv6 type
+     * \param type the ICMPv6 type to block
+     */
+    void Icmpv6FilterSetBlock(uint8_t type);
 
-  /**
-   * \brief Ask the filter about the status of one ICMPv6 type
-   * \param type the ICMPv6 type
-   * \return true if the ICMP type is passing through
-   */
-  bool Icmpv6FilterWillPass(uint8_t type);
+    /**
+     * \brief Ask the filter about the status of one ICMPv6 type
+     * \param type the ICMPv6 type
+     * \return true if the ICMP type is passing through
+     */
+    bool Icmpv6FilterWillPass(uint8_t type);
 
-  /**
-   * \brief Ask the filter about the status of one ICMPv6 type
-   * \param type the ICMPv6 type
-   * \return true if the ICMP type is being blocked
-   */
-  bool Icmpv6FilterWillBlock(uint8_t type);
+    /**
+     * \brief Ask the filter about the status of one ICMPv6 type
+     * \param type the ICMPv6 type
+     * \return true if the ICMP type is being blocked
+     */
+    bool Icmpv6FilterWillBlock(uint8_t type);
 
+  private:
+    /**
+     * \brief IPv6 raw data and additional information.
+     */
+    struct Data
+    {
+        Ptr<Packet> packet;    /**< Packet data */
+        Ipv6Address fromIp;    /**< Source address */
+        uint16_t fromProtocol; /**< Protocol used */
+    };
 
-private:
-  /**
-   * \brief IPv6 raw data and additional information.
-   */
-  typedef struct
-  {
-    Ptr<Packet> packet;   /**< Packet data */
-    Ipv6Address fromIp;   /**< Source address */
-    uint16_t fromProtocol;   /**< Protocol used */
-  } Data;
+    /**
+     * \brief Dispose object.
+     */
+    void DoDispose() override;
 
-  /**
-   * \brief Dispose object.
-   */
-  virtual void DoDispose ();
+    /**
+     * \brief Last error number.
+     */
+    mutable enum Socket::SocketErrno m_err;
 
-  /**
-   * \brief Last error number.
-   */
-  mutable enum Socket::SocketErrno m_err;
+    /**
+     * \brief Node.
+     */
+    Ptr<Node> m_node;
 
-  /**
-   * \brief Node.
-   */
-  Ptr<Node> m_node;
+    /**
+     * \brief Source address.
+     */
+    Ipv6Address m_src;
 
-  /**
-   * \brief Source address.
-   */
-  Ipv6Address m_src;
+    /**
+     * \brief Destination address.
+     */
+    Ipv6Address m_dst;
 
-  /**
-   * \brief Destination address.
-   */
-  Ipv6Address m_dst;
+    /**
+     * \brief Protocol.
+     */
+    uint16_t m_protocol;
 
-  /**
-   * \brief Protocol.
-   */
-  uint16_t m_protocol;
+    /**
+     * \brief Packet waiting to be processed.
+     */
+    std::list<Data> m_data;
 
-  /**
-   * \brief Packet waiting to be processed.
-   */
-  std::list<Data> m_data;
+    /**
+     * \brief Flag to shutdown send capability.
+     */
+    bool m_shutdownSend;
 
-  /**
-   * \brief Flag to shutdown send capability.
-   */
-  bool m_shutdownSend;
+    /**
+     * \brief Flag to shutdown receive capability.
+     */
+    bool m_shutdownRecv;
 
-  /**
-   * \brief Flag to shutdown receive capability.
-   */
-  bool m_shutdownRecv;
+    /**
+     * \brief Struct to hold the ICMPv6 filter
+     */
+    struct Icmpv6Filter
+    {
+        uint32_t icmpv6Filt[8]; //!< ICMPv6 filter specification
+    };
 
-  /**
-   * \brief Struct to hold the ICMPv6 filter
-   */
-  typedef struct
-  {
-    uint32_t icmpv6Filt[8]; //!< ICMPv6 filter specification
-  } Icmpv6Filter;
-
-  /**
-   * \brief ICMPv6 filter.
-   */
-  Icmpv6Filter m_icmpFilter;
+    /**
+     * \brief ICMPv6 filter.
+     */
+    Icmpv6Filter m_icmpFilter;
 };
 
 } /* namespace ns3 */
 
 #endif /* IPV6_RAW_SOCKET_IMPL_H */
-

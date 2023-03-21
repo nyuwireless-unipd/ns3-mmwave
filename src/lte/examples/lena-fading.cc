@@ -18,104 +18,112 @@
  * Author: Marco Miozzo <marco.miozzo@cttc.es>
  */
 
-
-#include "ns3/core-module.h"
-#include "ns3/network-module.h"
-#include "ns3/mobility-module.h"
-#include "ns3/lte-module.h"
 #include "ns3/config-store.h"
-#include <ns3/string.h>
-#include <fstream>
+#include "ns3/core-module.h"
+#include "ns3/lte-module.h"
+#include "ns3/mobility-module.h"
+#include "ns3/network-module.h"
 #include <ns3/buildings-helper.h>
+#include <ns3/string.h>
+
+#include <fstream>
 //#include "ns3/gtk-config-store.h"
 
 using namespace ns3;
 
-int main (int argc, char *argv[])
-{	
-  CommandLine cmd;
-  cmd.Parse (argc, argv);
-	
-  // to save a template default attribute file run it like this:
-  // ./waf --command-template="%s --ns3::ConfigStore::Filename=input-defaults.txt --ns3::ConfigStore::Mode=Save --ns3::ConfigStore::FileFormat=RawText" --run src/lte/examples/lena-first-sim
-  //
-  // to load a previously created default attribute file
-  // ./waf --command-template="%s --ns3::ConfigStore::Filename=input-defaults.txt --ns3::ConfigStore::Mode=Load --ns3::ConfigStore::FileFormat=RawText" --run src/lte/examples/lena-first-sim
+int
+main(int argc, char* argv[])
+{
+    CommandLine cmd;
+    cmd.Parse(argc, argv);
 
-  //ConfigStore inputConfig;
-  //inputConfig.ConfigureDefaults ();
+    // to save a template default attribute file run it like this:
+    // ./waf --command-template="%s --ns3::ConfigStore::Filename=input-defaults.txt
+    // --ns3::ConfigStore::Mode=Save --ns3::ConfigStore::FileFormat=RawText" --run
+    // src/lte/examples/lena-first-sim
+    //
+    // to load a previously created default attribute file
+    // ./waf --command-template="%s --ns3::ConfigStore::Filename=input-defaults.txt
+    // --ns3::ConfigStore::Mode=Load --ns3::ConfigStore::FileFormat=RawText" --run
+    // src/lte/examples/lena-first-sim
 
-  // parse again so you can override default values from the command line
-  //cmd.Parse (argc, argv);
+    // ConfigStore inputConfig;
+    // inputConfig.ConfigureDefaults ();
 
-  Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
-  // Uncomment to enable logging
-  //lteHelper->EnableLogComponents ();
-  
+    // parse again so you can override default values from the command line
+    // cmd.Parse (argc, argv);
 
-  lteHelper->SetAttribute ("FadingModel", StringValue ("ns3::TraceFadingLossModel"));
-  
-  std::ifstream ifTraceFile;
-  ifTraceFile.open ("../../src/lte/model/fading-traces/fading_trace_EPA_3kmph.fad", std::ifstream::in);
-  if (ifTraceFile.good ())
+    Ptr<LteHelper> lteHelper = CreateObject<LteHelper>();
+    // Uncomment to enable logging
+    // lteHelper->EnableLogComponents ();
+
+    lteHelper->SetAttribute("FadingModel", StringValue("ns3::TraceFadingLossModel"));
+
+    std::ifstream ifTraceFile;
+    ifTraceFile.open("../../src/lte/model/fading-traces/fading_trace_EPA_3kmph.fad",
+                     std::ifstream::in);
+    if (ifTraceFile.good())
     {
-      // script launched by test.py
-      lteHelper->SetFadingModelAttribute ("TraceFilename", StringValue ("../../src/lte/model/fading-traces/fading_trace_EPA_3kmph.fad"));
+        // script launched by test.py
+        lteHelper->SetFadingModelAttribute(
+            "TraceFilename",
+            StringValue("../../src/lte/model/fading-traces/fading_trace_EPA_3kmph.fad"));
     }
-  else
+    else
     {
-      // script launched as an example
-      lteHelper->SetFadingModelAttribute ("TraceFilename", StringValue ("src/lte/model/fading-traces/fading_trace_EPA_3kmph.fad"));
+        // script launched as an example
+        lteHelper->SetFadingModelAttribute(
+            "TraceFilename",
+            StringValue("src/lte/model/fading-traces/fading_trace_EPA_3kmph.fad"));
     }
-    
-  // these parameters have to set only in case of the trace format 
-  // differs from the standard one, that is
-  // - 10 seconds length trace
-  // - 10,000 samples
-  // - 0.5 seconds for window size
-  // - 100 RB
-  lteHelper->SetFadingModelAttribute ("TraceLength", TimeValue (Seconds (10.0)));
-  lteHelper->SetFadingModelAttribute ("SamplesNum", UintegerValue (10000));
-  lteHelper->SetFadingModelAttribute ("WindowSize", TimeValue (Seconds (0.5)));
-  lteHelper->SetFadingModelAttribute ("RbNum", UintegerValue (100));
- 
-  // Create Nodes: eNodeB and UE
-  NodeContainer enbNodes;
-  NodeContainer ueNodes;
-  enbNodes.Create (1);
-  ueNodes.Create (1);
 
-  // Install Mobility Model
-  MobilityHelper mobility;
-  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  mobility.Install (enbNodes);
-  BuildingsHelper::Install (enbNodes);
-  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  mobility.Install (ueNodes);
-  BuildingsHelper::Install (ueNodes);
+    // these parameters have to set only in case of the trace format
+    // differs from the standard one, that is
+    // - 10 seconds length trace
+    // - 10,000 samples
+    // - 0.5 seconds for window size
+    // - 100 RB
+    lteHelper->SetFadingModelAttribute("TraceLength", TimeValue(Seconds(10.0)));
+    lteHelper->SetFadingModelAttribute("SamplesNum", UintegerValue(10000));
+    lteHelper->SetFadingModelAttribute("WindowSize", TimeValue(Seconds(0.5)));
+    lteHelper->SetFadingModelAttribute("RbNum", UintegerValue(100));
 
-  // Create Devices and install them in the Nodes (eNB and UE)
-  NetDeviceContainer enbDevs;
-  NetDeviceContainer ueDevs;
-  enbDevs = lteHelper->InstallEnbDevice (enbNodes);
-  ueDevs = lteHelper->InstallUeDevice (ueNodes);
+    // Create Nodes: eNodeB and UE
+    NodeContainer enbNodes;
+    NodeContainer ueNodes;
+    enbNodes.Create(1);
+    ueNodes.Create(1);
 
-  // Attach a UE to a eNB
-  lteHelper->Attach (ueDevs, enbDevs.Get (0));
+    // Install Mobility Model
+    MobilityHelper mobility;
+    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+    mobility.Install(enbNodes);
+    BuildingsHelper::Install(enbNodes);
+    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+    mobility.Install(ueNodes);
+    BuildingsHelper::Install(ueNodes);
 
-  // Activate an EPS bearer
-  enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
-  EpsBearer bearer (q);
-  lteHelper->ActivateDataRadioBearer (ueDevs, bearer);
+    // Create Devices and install them in the Nodes (eNB and UE)
+    NetDeviceContainer enbDevs;
+    NetDeviceContainer ueDevs;
+    enbDevs = lteHelper->InstallEnbDevice(enbNodes);
+    ueDevs = lteHelper->InstallUeDevice(ueNodes);
 
+    // Attach a UE to a eNB
+    lteHelper->Attach(ueDevs, enbDevs.Get(0));
 
-  Simulator::Stop (Seconds (0.005));
+    // Activate an EPS bearer
+    enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
+    EpsBearer bearer(q);
+    lteHelper->ActivateDataRadioBearer(ueDevs, bearer);
 
-  Simulator::Run ();
+    Simulator::Stop(Seconds(0.005));
 
-  //GtkConfigStore config;
-  //config.ConfigureAttributes ();
+    Simulator::Run();
 
-  Simulator::Destroy ();
-  return 0;
+    // GtkConfigStore config;
+    // config.ConfigureAttributes ();
+
+    Simulator::Destroy();
+    return 0;
 }

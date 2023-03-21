@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2008 INRIA
  *
@@ -20,10 +19,11 @@
 #ifndef NS_DOUBLE_H
 #define NS_DOUBLE_H
 
-#include "attribute.h"
 #include "attribute-helper.h"
-#include <stdint.h>
+#include "attribute.h"
+
 #include <limits>
+#include <stdint.h>
 
 /**
  * \file
@@ -31,18 +31,19 @@
  * ns3::DoubleValue attribute value declarations and template implementations.
  */
 
-namespace ns3 {
+namespace ns3
+{
 
 //  Additional docs for class DoubleValue:
 /**
  * This class can be used to hold variables of floating point type
  * such as 'double' or 'float'. The internal format is 'double'.
  */
-ATTRIBUTE_VALUE_DEFINE_WITH_NAME (double, Double);
-ATTRIBUTE_ACCESSOR_DEFINE (Double);
+ATTRIBUTE_VALUE_DEFINE_WITH_NAME(double, Double);
+ATTRIBUTE_ACCESSOR_DEFINE(Double);
 
 template <typename T>
-Ptr<const AttributeChecker> MakeDoubleChecker (void);
+Ptr<const AttributeChecker> MakeDoubleChecker();
 
 /**
  * Make a checker with a minimum value.
@@ -54,7 +55,7 @@ Ptr<const AttributeChecker> MakeDoubleChecker (void);
  * \see AttributeChecker
  */
 template <typename T>
-Ptr<const AttributeChecker> MakeDoubleChecker (double min);
+Ptr<const AttributeChecker> MakeDoubleChecker(double min);
 
 /**
  * Make a checker with a minimum and a maximum value.
@@ -67,11 +68,9 @@ Ptr<const AttributeChecker> MakeDoubleChecker (double min);
  * \see AttributeChecker
  */
 template <typename T>
-Ptr<const AttributeChecker> MakeDoubleChecker (double min, double max);
-
+Ptr<const AttributeChecker> MakeDoubleChecker(double min, double max);
 
 } // namespace ns3
-
 
 /***************************************************************
  *  Implementation of the templates declared above.
@@ -79,36 +78,37 @@ Ptr<const AttributeChecker> MakeDoubleChecker (double min, double max);
 
 #include "type-name.h"
 
-namespace ns3 {
+namespace ns3
+{
 
-namespace internal {
+namespace internal
+{
 
-Ptr<const AttributeChecker> MakeDoubleChecker (double min, double max, std::string name);
+Ptr<const AttributeChecker> MakeDoubleChecker(double min, double max, std::string name);
 
 } // namespace internal
 
 template <typename T>
-Ptr<const AttributeChecker> MakeDoubleChecker (void)
+Ptr<const AttributeChecker>
+MakeDoubleChecker()
 {
-  return internal::MakeDoubleChecker (-std::numeric_limits<T>::max (),
-                                      std::numeric_limits<T>::max (),
-                                      TypeNameGet<T> ());
+    return internal::MakeDoubleChecker(-std::numeric_limits<T>::max(),
+                                       std::numeric_limits<T>::max(),
+                                       TypeNameGet<T>());
 }
 
 template <typename T>
-Ptr<const AttributeChecker> MakeDoubleChecker (double min)
+Ptr<const AttributeChecker>
+MakeDoubleChecker(double min)
 {
-  return internal::MakeDoubleChecker (min,
-                                      std::numeric_limits<T>::max (),
-                                      TypeNameGet<T> ());
+    return internal::MakeDoubleChecker(min, std::numeric_limits<T>::max(), TypeNameGet<T>());
 }
 
 template <typename T>
-Ptr<const AttributeChecker> MakeDoubleChecker (double min, double max)
+Ptr<const AttributeChecker>
+MakeDoubleChecker(double min, double max)
 {
-  return internal::MakeDoubleChecker (min,
-                                      max,
-                                      TypeNameGet<T> ());
+    return internal::MakeDoubleChecker(min, max, TypeNameGet<T>());
 }
 
 } // namespace ns3

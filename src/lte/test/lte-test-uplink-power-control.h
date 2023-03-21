@@ -22,9 +22,13 @@
 #ifndef LTE_TEST_UPLINK_POWER_CONTROL_H
 #define LTE_TEST_UPLINK_POWER_CONTROL_H
 
-#include "ns3/spectrum-value.h"
 #include "ns3/spectrum-test.h"
+#include "ns3/spectrum-value.h"
 #include "ns3/test.h"
+#include <ns3/nstime.h>
+#include <ns3/mobility-model.h>
+#include <ns3/lte-ue-power-control.h>
+#include "lte-ffr-simple.h"
 
 using namespace ns3;
 
@@ -36,10 +40,9 @@ using namespace ns3;
  */
 class LteUplinkPowerControlTestSuite : public TestSuite
 {
-public:
-  LteUplinkPowerControlTestSuite ();
+  public:
+    LteUplinkPowerControlTestSuite();
 };
-
 
 /**
  * \ingroup lte-test
@@ -49,78 +52,84 @@ public:
  */
 class LteUplinkPowerControlTestCase : public TestCase
 {
-public:
-  /**
-   * Constructor
-   *
-   * \param name the reference name
-   */
-  LteUplinkPowerControlTestCase (std::string name);
-  virtual ~LteUplinkPowerControlTestCase ();
+  public:
+    /**
+     * Constructor
+     *
+     * \param name the reference name
+     */
+    LteUplinkPowerControlTestCase(std::string name);
+    virtual ~LteUplinkPowerControlTestCase();
 
-  /**
-   * Teleport UE funcction
-   *
-   * \param x the X position
-   * \param y the Y position
-   * \param expectedPuschTxPower the expected PUSCH transmit power
-   * \param expectedPucchTxPower the expected PUCCH transmit power
-   * \param expectedSrsTxPower the expected SRS transmit power
-   */
-  void TeleportUe (uint32_t x, uint32_t y,
-                   double expectedPuschTxPower, double expectedPucchTxPower, double expectedSrsTxPower);
+    /**
+     * Teleport UE funcction
+     *
+     * \param x the X position
+     * \param y the Y position
+     * \param expectedPuschTxPower the expected PUSCH transmit power
+     * \param expectedPucchTxPower the expected PUCCH transmit power
+     * \param expectedSrsTxPower the expected SRS transmit power
+     */
+    void TeleportUe(uint32_t x,
+                    uint32_t y,
+                    double expectedPuschTxPower,
+                    double expectedPucchTxPower,
+                    double expectedSrsTxPower);
 
-  /**
-   * Set TPC configuration funcction
-   *
-   * \param tpc the TPC
-   * \param tpcNum the TPC number
-   * \param expectedPuschTxPower the expected PUSCH transmit power
-   * \param expectedPucchTxPower the expected PUCCH transmit power
-   * \param expectedSrsTxPower the expected SRS transmit power
-   */
-  void SetTpcConfiguration (uint32_t tpc, uint32_t tpcNum,
-                            double expectedPuschTxPower, double expectedPucchTxPower, double expectedSrsTxPower);
+    /**
+     * Set TPC configuration funcction
+     *
+     * \param tpc the TPC
+     * \param tpcNum the TPC number
+     * \param expectedPuschTxPower the expected PUSCH transmit power
+     * \param expectedPucchTxPower the expected PUCCH transmit power
+     * \param expectedSrsTxPower the expected SRS transmit power
+     */
+    void SetTpcConfiguration(uint32_t tpc,
+                             uint32_t tpcNum,
+                             double expectedPuschTxPower,
+                             double expectedPucchTxPower,
+                             double expectedSrsTxPower);
 
-  /**
-   * PUSCH transmit power trace funcction
-   *
-   * \param cellId the cell ID
-   * \param rnti the RNTI
-   * \param txPower the transmit power
-   */
-  void PuschTxPowerTrace (uint16_t cellId, uint16_t rnti, double txPower);
-  /**
-   * PUCCH transmit power trace funcction
-   *
-   * \param cellId the cell ID
-   * \param rnti the RNTI
-   * \param txPower the transmit power
-   */
-  void PucchTxPowerTrace (uint16_t cellId, uint16_t rnti, double txPower);
-  /**
-   * SRS transmit power trace funcction
-   *
-   * \param cellId the cell ID
-   * \param rnti the RNTI
-   * \param txPower the transmit power
-   */
-  void SrsTxPowerTrace (uint16_t cellId, uint16_t rnti, double txPower);
+    /**
+     * PUSCH transmit power trace funcction
+     *
+     * \param cellId the cell ID
+     * \param rnti the RNTI
+     * \param txPower the transmit power
+     */
+    void PuschTxPowerTrace(uint16_t cellId, uint16_t rnti, double txPower);
+    /**
+     * PUCCH transmit power trace funcction
+     *
+     * \param cellId the cell ID
+     * \param rnti the RNTI
+     * \param txPower the transmit power
+     */
+    void PucchTxPowerTrace(uint16_t cellId, uint16_t rnti, double txPower);
+    /**
+     * SRS transmit power trace funcction
+     *
+     * \param cellId the cell ID
+     * \param rnti the RNTI
+     * \param txPower the transmit power
+     */
+    void SrsTxPowerTrace(uint16_t cellId, uint16_t rnti, double txPower);
 
-protected:
-  virtual void DoRun (void);
+  protected:
+    virtual void DoRun(void);
 
-  Ptr<MobilityModel> m_ueMobility; ///< UE mobility model
-  Time m_teleportTime; ///< teleport time
+    Ptr<MobilityModel> m_ueMobility; ///< UE mobility model
+    Time m_teleportTime;             ///< teleport time
 
-  double m_expectedPuschTxPower; ///< expected PUSCH transmit power
-  double m_expectedPucchTxPower; ///< expected PUCCH transmit power
-  double m_expectedSrsTxPower; ///< expected SRS transmit power
+    double m_expectedPuschTxPower; ///< expected PUSCH transmit power
+    double m_expectedPucchTxPower; ///< expected PUCCH transmit power
+    double m_expectedSrsTxPower;   ///< expected SRS transmit power
 
-  Ptr<LteUePowerControl> m_ueUpc; ///< UE power control
-  bool m_accumulatedMode; ///< indicates whether accumulated mode is being used
+    Ptr<LteUePowerControl> m_ueUpc; ///< UE power control
+    bool m_accumulatedMode;         ///< indicates whether accumulated mode is being used
 
-  Ptr<LteFfrSimple> m_ffrSimple; ///< FFR simple
+    Ptr<LteFfrSimple> m_ffrSimple; ///< FFR simple
 };
 
 /**
@@ -131,17 +140,17 @@ protected:
  */
 class LteUplinkOpenLoopPowerControlTestCase : public LteUplinkPowerControlTestCase
 {
-public:
-  /**
-   * Constructor
-   *
-   * \param name the reference name
-   */
-  LteUplinkOpenLoopPowerControlTestCase (std::string name);
-  virtual ~LteUplinkOpenLoopPowerControlTestCase ();
+  public:
+    /**
+     * Constructor
+     *
+     * \param name the reference name
+     */
+    LteUplinkOpenLoopPowerControlTestCase(std::string name);
+    virtual ~LteUplinkOpenLoopPowerControlTestCase();
 
-private:
-  virtual void DoRun (void);
+  private:
+    virtual void DoRun(void);
 };
 
 /**
@@ -152,17 +161,17 @@ private:
  */
 class LteUplinkClosedLoopPowerControlAbsoluteModeTestCase : public LteUplinkPowerControlTestCase
 {
-public:
-  /**
-   * Constructor
-   *
-   * \param name the reference name
-   */
-  LteUplinkClosedLoopPowerControlAbsoluteModeTestCase (std::string name);
-  virtual ~LteUplinkClosedLoopPowerControlAbsoluteModeTestCase ();
+  public:
+    /**
+     * Constructor
+     *
+     * \param name the reference name
+     */
+    LteUplinkClosedLoopPowerControlAbsoluteModeTestCase(std::string name);
+    virtual ~LteUplinkClosedLoopPowerControlAbsoluteModeTestCase();
 
-private:
-  virtual void DoRun (void);
+  private:
+    virtual void DoRun(void);
 };
 
 /**
@@ -173,17 +182,17 @@ private:
  */
 class LteUplinkClosedLoopPowerControlAccumulatedModeTestCase : public LteUplinkPowerControlTestCase
 {
-public:
-  /**
-   * Constructor
-   *
-   * \param name the reference name
-   */
-  LteUplinkClosedLoopPowerControlAccumulatedModeTestCase (std::string name);
-  virtual ~LteUplinkClosedLoopPowerControlAccumulatedModeTestCase ();
+  public:
+    /**
+     * Constructor
+     *
+     * \param name the reference name
+     */
+    LteUplinkClosedLoopPowerControlAccumulatedModeTestCase(std::string name);
+    virtual ~LteUplinkClosedLoopPowerControlAccumulatedModeTestCase();
 
-private:
-  virtual void DoRun (void);
+  private:
+    virtual void DoRun(void);
 };
 
 #endif /* LTE_TEST_UPLINK_POWER_CONTROL_H */

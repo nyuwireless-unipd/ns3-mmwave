@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2014 Universita' degli Studi di Napoli "Federico II"
  *
@@ -23,7 +22,8 @@
 
 #include "ns3/object.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup energy
@@ -33,21 +33,21 @@ namespace ns3 {
  */
 class WifiTxCurrentModel : public Object
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  WifiTxCurrentModel ();
-  virtual ~WifiTxCurrentModel ();
+    WifiTxCurrentModel();
+    ~WifiTxCurrentModel() override;
 
-  /**
-   * \param txPowerDbm the nominal TX power in dBm
-   * \returns the transmit current (in Ampere)
-   */
-  virtual double CalcTxCurrent (double txPowerDbm) const = 0;
+    /**
+     * \param txPowerDbm the nominal TX power in dBm
+     * \returns the transmit current (in Ampere)
+     */
+    virtual double CalcTxCurrent(double txPowerDbm) const = 0;
 };
 
 /**
@@ -83,23 +83,22 @@ public:
  */
 class LinearWifiTxCurrentModel : public WifiTxCurrentModel
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  LinearWifiTxCurrentModel ();
-  virtual ~LinearWifiTxCurrentModel ();
+    LinearWifiTxCurrentModel();
+    ~LinearWifiTxCurrentModel() override;
 
-  double CalcTxCurrent (double txPowerDbm) const;
+    double CalcTxCurrent(double txPowerDbm) const override;
 
-
-private:
-  double m_eta; ///< ETA
-  double m_voltage; ///< voltage in Volts
-  double m_idleCurrent; ///< idle current in Amperes
+  private:
+    double m_eta;         ///< ETA
+    double m_voltage;     ///< voltage in Volts
+    double m_idleCurrent; ///< idle current in Amperes
 };
 
 } // namespace ns3

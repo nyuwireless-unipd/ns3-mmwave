@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2005,2006 INRIA
  *
@@ -18,27 +17,27 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 
-#include "ns3/log.h"
 #include "net-device.h"
 
-namespace ns3 {
+#include "ns3/log.h"
 
-NS_LOG_COMPONENT_DEFINE ("NetDevice");
-
-NS_OBJECT_ENSURE_REGISTERED (NetDevice);
-
-TypeId NetDevice::GetTypeId (void)
+namespace ns3
 {
-  static TypeId tid = TypeId ("ns3::NetDevice")
-    .SetParent<Object> ()
-    .SetGroupName("Network")
-  ;
-  return tid;
+
+NS_LOG_COMPONENT_DEFINE("NetDevice");
+
+NS_OBJECT_ENSURE_REGISTERED(NetDevice);
+
+TypeId
+NetDevice::GetTypeId()
+{
+    static TypeId tid = TypeId("ns3::NetDevice").SetParent<Object>().SetGroupName("Network");
+    return tid;
 }
 
-NetDevice::~NetDevice ()
+NetDevice::~NetDevice()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 } // namespace ns3

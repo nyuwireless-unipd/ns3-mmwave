@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2005 INRIA
  *
@@ -29,22 +28,8 @@
  * ns3::SystemWallClockMs declaration.
  */
 
-namespace ns3 {
-
-/**
- * \ingroup core
- * \defgroup system System Services
- *
- * System-independent interfaces to operating system services:
- * files system, threading, wall clock time.
- *
- * Services provided:
- *
- *   - File and directory paths.
- *   - Thread primitives:  threads, conditional waits, mutex, critical sections.
- *   - Asynchronous input from a file descriptor.
- *   - Wall clock time.
- */
+namespace ns3
+{
 
 /**
  * \ingroup system
@@ -52,50 +37,50 @@ namespace ns3 {
  */
 class SystemWallClockMs
 {
-public:
-  SystemWallClockMs ();
-  ~SystemWallClockMs ();
+  public:
+    SystemWallClockMs();
+    ~SystemWallClockMs();
 
-  /**
-   * Start a measure.
-   */
-  void Start (void);
-  /**
-   * \brief Stop measuring the time since Start() was called.
-   * \returns the measured elapsed wall clock time (in milliseconds) since
-   *          Start() was invoked.
-   *
-   * It is possible to start a new measurement with Start() after
-   * this method returns.
-   *
-   * Returns \c int64_t to avoid dependency on \c clock_t in ns-3 code.
-   */
-  int64_t End (void);
+    /**
+     * Start a measure.
+     */
+    void Start();
+    /**
+     * \brief Stop measuring the time since Start() was called.
+     * \returns the measured elapsed wall clock time (in milliseconds) since
+     *          Start() was invoked.
+     *
+     * It is possible to start a new measurement with Start() after
+     * this method returns.
+     *
+     * Returns \c int64_t to avoid dependency on \c clock_t in ns-3 code.
+     */
+    int64_t End();
 
-  /**
-   * \returns the measured elapsed wall clock time (in milliseconds) since
-   *          Start() was invoked.
-   *
-   * Returns \c int64_t to avoid dependency on \c clock_t in ns-3 code.
-   */
-  int64_t GetElapsedReal (void) const;
-  /**
-   * \returns the measured elapsed 'user' wall clock time (in milliseconds)
-   *          since Start() was invoked.
-   *
-   * Returns \c int64_t to avoid dependency on \c clock_t in ns-3 code.
-   */
-  int64_t GetElapsedUser (void) const;
-  /**
-   * \returns the measured elapsed 'system' wall clock time (in milliseconds)
-   *          since Start() was invoked.
-   *
-   * Returns \c int64_t to avoid dependency on \c clock_t in ns-3 code.
-   */
-  int64_t GetElapsedSystem (void) const;
+    /**
+     * \returns the measured elapsed wall clock time (in milliseconds) since
+     *          Start() was invoked.
+     *
+     * Returns \c int64_t to avoid dependency on \c clock_t in ns-3 code.
+     */
+    int64_t GetElapsedReal() const;
+    /**
+     * \returns the measured elapsed 'user' wall clock time (in milliseconds)
+     *          since Start() was invoked.
+     *
+     * Returns \c int64_t to avoid dependency on \c clock_t in ns-3 code.
+     */
+    int64_t GetElapsedUser() const;
+    /**
+     * \returns the measured elapsed 'system' wall clock time (in milliseconds)
+     *          since Start() was invoked.
+     *
+     * Returns \c int64_t to avoid dependency on \c clock_t in ns-3 code.
+     */
+    int64_t GetElapsedSystem() const;
 
-private:
-  class SystemWallClockMsPrivate *m_priv;  //!< The implementation.
+  private:
+    class SystemWallClockMsPrivate* m_priv; //!< The implementation.
 };
 
 } // namespace ns3

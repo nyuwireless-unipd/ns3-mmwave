@@ -27,15 +27,16 @@
 #ifndef POINT_TO_POINT_EPC_HELPER_H
 #define POINT_TO_POINT_EPC_HELPER_H
 
-#include <ns3/object.h>
-#include <ns3/ipv4-address-helper.h>
-#include <ns3/ipv6-address-helper.h>
 #include <ns3/data-rate.h>
+#include <ns3/epc-helper.h>
 #include <ns3/epc-tft.h>
 #include <ns3/eps-bearer.h>
-#include <ns3/epc-helper.h>
+#include <ns3/ipv4-address-helper.h>
+#include <ns3/ipv6-address-helper.h>
+#include <ns3/object.h>
 
-namespace ns3 {
+namespace ns3
+{
 
 class Node;
 class NetDevice;
@@ -59,194 +60,195 @@ class EpcS1apMme;
  */
 class PointToPointEpcHelper : public EpcHelper
 {
-public:
+  public:
+    /**
+     * Constructor
+     */
+    PointToPointEpcHelper();
 
-  /**
-   * Constructor
-   */
-  PointToPointEpcHelper ();
+    /**
+     * Destructor
+     */
+    virtual ~PointToPointEpcHelper();
 
-  /**
-   * Destructor
-   */
-  virtual ~PointToPointEpcHelper ();
+    // inherited from Object
+    /**
+     *  Register this type.
+     *  \return The object TypeId.
+     */
+    static TypeId GetTypeId(void);
+    TypeId GetInstanceTypeId() const;
+    virtual void DoDispose();
 
-  // inherited from Object
-  /**
-   *  Register this type.
-   *  \return The object TypeId.
-   */
-  static TypeId GetTypeId (void);
-  TypeId GetInstanceTypeId () const;
-  virtual void DoDispose ();
+    // inherited from EpcHelper
+    virtual void AddEnb(Ptr<Node> enbNode, Ptr<NetDevice> lteEnbNetDevice, uint16_t cellId);
+    virtual void AddUe(Ptr<NetDevice> ueLteDevice, uint64_t imsi);
+    virtual void AddX2Interface(Ptr<Node> enbNode1, Ptr<Node> enbNode2);
+    virtual uint8_t ActivateEpsBearer(Ptr<NetDevice> ueLteDevice,
+                                      uint64_t imsi,
+                                      Ptr<EpcTft> tft,
+                                      EpsBearer bearer);
+    virtual uint8_t ActivateEpsBearer(Ptr<NetDevice> ueLteDevice,
+                                      Ptr<EpcUeNas> ueNas,
+                                      uint64_t imsi,
+                                      Ptr<EpcTft> tft,
+                                      EpsBearer bearer);
+    virtual Ptr<Node> GetPgwNode();
+    virtual Ptr<Node> GetMmeNode();
+    virtual Ipv4InterfaceContainer AssignUeIpv4Address(NetDeviceContainer ueDevices);
+    virtual Ipv6InterfaceContainer AssignUeIpv6Address(NetDeviceContainer ueDevices);
+    virtual Ipv4Address GetUeDefaultGatewayAddress();
+    virtual Ipv6Address GetUeDefaultGatewayAddress6();
+    virtual int64_t AssignStreams(int64_t stream) override;
 
-  // inherited from EpcHelper
-  virtual void AddEnb (Ptr<Node> enbNode, Ptr<NetDevice> lteEnbNetDevice, uint16_t cellId);
-  virtual void AddUe (Ptr<NetDevice> ueLteDevice, uint64_t imsi);
-  virtual void AddX2Interface (Ptr<Node> enbNode1, Ptr<Node> enbNode2);
-  virtual uint8_t ActivateEpsBearer (Ptr<NetDevice> ueLteDevice, uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer);
-  virtual uint8_t ActivateEpsBearer (Ptr<NetDevice> ueLteDevice, Ptr<EpcUeNas> ueNas, uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer);
-  virtual Ptr<Node> GetPgwNode ();
-  virtual Ptr<Node> GetMmeNode ();
-  virtual Ipv4InterfaceContainer AssignUeIpv4Address (NetDeviceContainer ueDevices);
-  virtual Ipv6InterfaceContainer AssignUeIpv6Address (NetDeviceContainer ueDevices);
-  virtual Ipv4Address GetUeDefaultGatewayAddress ();
-  virtual Ipv6Address GetUeDefaultGatewayAddress6 ();
-  virtual int64_t AssignStreams (int64_t stream) override;
+  private:
+    /**
+     * helper to assign IPv4 addresses to UE devices as well as to the TUN device of the SGW/PGW
+     */
+    Ipv4AddressHelper m_uePgwAddressHelper;
 
-private:
+    /**
+     * helper to assign IPv6 addresses to UE devices as well as to the TUN device of the SGW/PGW
+     */
+    Ipv6AddressHelper m_uePgwAddressHelper6;
 
-  /**
-   * helper to assign IPv4 addresses to UE devices as well as to the TUN device of the SGW/PGW
-   */
-  Ipv4AddressHelper m_uePgwAddressHelper;
+    /**
+     * SGW-PGW network element
+     */
+    Ptr<Node> m_sgwPgw;
 
-  /**
-   * helper to assign IPv6 addresses to UE devices as well as to the TUN device of the SGW/PGW
-   */
-  Ipv6AddressHelper m_uePgwAddressHelper6;
+    /**
+     * SGW-PGW application
+     */
+    Ptr<EpcSgwPgwApplication> m_sgwPgwApp;
 
-  /**
-   * SGW-PGW network element
-   */
-  Ptr<Node> m_sgwPgw;
+    /**
+     * TUN device implementing tunneling of user data over GTP-U/UDP/IP
+     */
+    Ptr<VirtualNetDevice> m_tunDevice;
 
-  /**
-   * SGW-PGW application
-   */
-  Ptr<EpcSgwPgwApplication> m_sgwPgwApp;
+    /**
+     * MME network element
+     */
+    Ptr<Node> m_mmeNode;
 
-  /**
-   * TUN device implementing tunneling of user data over GTP-U/UDP/IP
-   */
-  Ptr<VirtualNetDevice> m_tunDevice;
+    /**
+     * MME application
+     */
+    Ptr<EpcMmeApplication> m_mmeApp;
 
-  /**
-   * MME network element
-   */
-  Ptr<Node> m_mmeNode;
+    /**
+     * S1-U interfaces
+     */
 
-  /**
-   * MME application
-   */
-  Ptr<EpcMmeApplication> m_mmeApp;
+    /**
+     * helper to assign addresses to S1-U NetDevices
+     */
+    Ipv4AddressHelper m_s1uIpv4AddressHelper;
 
-  /**
-   * S1-U interfaces
-   */
+    /**
+     * The data rate to be used for the next S1-U link to be created
+     */
+    DataRate m_s1uLinkDataRate;
 
-  /**
-   * helper to assign addresses to S1-U NetDevices
-   */
-  Ipv4AddressHelper m_s1uIpv4AddressHelper;
+    /**
+     * The delay to be used for the next S1-U link to be created
+     */
+    Time m_s1uLinkDelay;
 
-  /**
-   * The data rate to be used for the next S1-U link to be created
-   */
-  DataRate m_s1uLinkDataRate;
+    /**
+     * The MTU of the next S1-U link to be created. Note that,
+     * because of the additional GTP/UDP/IP tunneling overhead,
+     * you need a MTU larger than the end-to-end MTU that you
+     * want to support.
+     */
+    uint16_t m_s1uLinkMtu;
 
-  /**
-   * The delay to be used for the next S1-U link to be created
-   */
-  Time     m_s1uLinkDelay;
+    /**
+     * UDP port where the GTP-U Socket is bound, fixed by the standard as 2152
+     */
+    uint16_t m_gtpuUdpPort;
 
-  /**
-   * The MTU of the next S1-U link to be created. Note that,
-   * because of the additional GTP/UDP/IP tunneling overhead,
-   * you need a MTU larger than the end-to-end MTU that you
-   * want to support.
-   */
-  uint16_t m_s1uLinkMtu;
+    /**
+     * Map storing for each IMSI the corresponding eNB NetDevice
+     */
+    std::map<uint64_t, Ptr<NetDevice>> m_imsiEnbDeviceMap;
 
-  /**
-   * UDP port where the GTP-U Socket is bound, fixed by the standard as 2152
-   */
-  uint16_t m_gtpuUdpPort;
+    /**
+     * S1-AP interfaces
+     */
 
-  /**
-   * Map storing for each IMSI the corresponding eNB NetDevice
-   */
-  std::map<uint64_t, Ptr<NetDevice> > m_imsiEnbDeviceMap;
+    /**
+     * helper to assign addresses to S1-AP NetDevices
+     */
+    Ipv4AddressHelper m_s1apIpv4AddressHelper;
 
-  /**
-   * S1-AP interfaces
-   */
+    /**
+     * The data rate to be used for the next S1-AP link to be created
+     */
+    DataRate m_s1apLinkDataRate;
 
-  /**
-   * helper to assign addresses to S1-AP NetDevices
-   */
-  Ipv4AddressHelper m_s1apIpv4AddressHelper;
+    /**
+     * The delay to be used for the next S1-AP link to be created
+     */
+    Time m_s1apLinkDelay;
 
-  /**
-   * The data rate to be used for the next S1-AP link to be created
-   */
-  DataRate m_s1apLinkDataRate;
+    /**
+     * The MTU of the next S1-AP link to be created.
+     */
+    uint16_t m_s1apLinkMtu;
 
-  /**
-   * The delay to be used for the next S1-AP link to be created
-   */
-  Time     m_s1apLinkDelay;
+    /**
+     * UDP port where the UDP Socket is bound, fixed by the standard as
+     * 36412 (it should be sctp, but it is not supported in ns-3)
+     */
+    uint16_t m_s1apUdpPort;
 
-  /**
-   * The MTU of the next S1-AP link to be created.
-   */
-  uint16_t m_s1apLinkMtu;
+    /**
+     * Map storing for each eNB the corresponding MME NetDevice
+     */
+    std::map<uint16_t, Ptr<NetDevice>> m_cellIdMmeDeviceMap;
 
-  /**
-   * UDP port where the UDP Socket is bound, fixed by the standard as
-   * 36412 (it should be sctp, but it is not supported in ns-3)
-   */
-  uint16_t m_s1apUdpPort;
+    /**
+     * helper to assign addresses to X2 NetDevices
+     */
+    Ipv4AddressHelper m_x2Ipv4AddressHelper;
 
-  /**
-   * Map storing for each eNB the corresponding MME NetDevice
-   */
-  std::map<uint16_t, Ptr<NetDevice> > m_cellIdMmeDeviceMap;
+    /**
+     * The data rate to be used for the next X2 link to be created
+     */
+    DataRate m_x2LinkDataRate;
 
+    /**
+     * The delay to be used for the next X2 link to be created
+     */
+    Time m_x2LinkDelay;
 
-  /**
-   * helper to assign addresses to X2 NetDevices
-   */
-  Ipv4AddressHelper m_x2Ipv4AddressHelper;
+    /**
+     * The MTU of the next X2 link to be created. Note that,
+     * because of some big X2 messages, you need a big MTU.
+     */
+    uint16_t m_x2LinkMtu;
 
-  /**
-   * The data rate to be used for the next X2 link to be created
-   */
-  DataRate m_x2LinkDataRate;
+    /**
+     * Enable PCAP generation for X2 link
+     */
+    bool m_enablePcapOverX2;
+    /**
+     * Prefix for the PCAP file for the X2 link
+     */
+    std::string m_x2LinkPcapPrefix;
 
-  /**
-   * The delay to be used for the next X2 link to be created
-   */
-  Time     m_x2LinkDelay;
+    /**
+     * Enable PCAP generation for S1U link
+     */
+    bool m_enablePcapOverS1U;
 
-  /**
-   * The MTU of the next X2 link to be created. Note that,
-   * because of some big X2 messages, you need a big MTU.
-   */
-  uint16_t m_x2LinkMtu;
-
-  /**
-   * Enable PCAP generation for X2 link
-   */
-  bool        m_enablePcapOverX2;
-  /**
-   * Prefix for the PCAP file for the X2 link
-   */
-  std::string m_x2LinkPcapPrefix;
-
-  /**
-   * Enable PCAP generation for S1U link
-   */
-  bool        m_enablePcapOverS1U;
-
-  /**
-   * Prefix for the PCAP file for the S1 link
-   */
-  std::string m_s1uLinkPcapPrefix;
+    /**
+     * Prefix for the PCAP file for the S1 link
+     */
+    std::string m_s1uLinkPcapPrefix;
 };
-
-
-
 
 } // namespace ns3
 

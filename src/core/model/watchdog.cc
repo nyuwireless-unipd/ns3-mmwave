@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2007 INRIA
  *
@@ -18,8 +17,8 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 #include "watchdog.h"
-#include "log.h"
 
+#include "log.h"
 
 /**
  * \file
@@ -27,51 +26,51 @@
  * ns3::Watchdog timer class implementation.
  */
 
-namespace ns3 {
-
-NS_LOG_COMPONENT_DEFINE ("Watchdog");
-
-Watchdog::Watchdog ()
-  : m_impl (0),
-    m_event (),
-    m_end (MicroSeconds (0))
+namespace ns3
 {
-  NS_LOG_FUNCTION_NOARGS ();
+
+NS_LOG_COMPONENT_DEFINE("Watchdog");
+
+Watchdog::Watchdog()
+    : m_impl(nullptr),
+      m_event(),
+      m_end(MicroSeconds(0))
+{
+    NS_LOG_FUNCTION_NOARGS();
 }
 
-Watchdog::~Watchdog ()
+Watchdog::~Watchdog()
 {
-  NS_LOG_FUNCTION (this);
-  m_event.Cancel ();
-  delete m_impl;
-}
-
-void
-Watchdog::Ping (Time delay)
-{
-  NS_LOG_FUNCTION (this << delay);
-  Time end = Simulator::Now () + delay;
-  m_end = std::max (m_end, end);
-  if (m_event.IsRunning ())
-    {
-      return;
-    }
-  m_event = Simulator::Schedule (m_end - Now (), &Watchdog::Expire, this);
+    NS_LOG_FUNCTION(this);
+    m_event.Cancel();
+    delete m_impl;
 }
 
 void
-Watchdog::Expire (void)
+Watchdog::Ping(Time delay)
 {
-  NS_LOG_FUNCTION (this);
-  if (m_end == Simulator::Now ())
+    NS_LOG_FUNCTION(this << delay);
+    Time end = Simulator::Now() + delay;
+    m_end = std::max(m_end, end);
+    if (m_event.IsRunning())
     {
-      m_impl->Invoke ();
+        return;
     }
-  else
+    m_event = Simulator::Schedule(m_end - Now(), &Watchdog::Expire, this);
+}
+
+void
+Watchdog::Expire()
+{
+    NS_LOG_FUNCTION(this);
+    if (m_end == Simulator::Now())
     {
-      m_event = Simulator::Schedule (m_end - Now (), &Watchdog::Expire, this);
+        m_impl->Invoke();
+    }
+    else
+    {
+        m_event = Simulator::Schedule(m_end - Now(), &Watchdog::Expire, this);
     }
 }
 
 } // namespace ns3
-

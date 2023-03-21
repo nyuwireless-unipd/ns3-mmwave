@@ -1,4 +1,3 @@
-/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2009 CTTC
  *
@@ -18,95 +17,97 @@
  * Author: Nicola Baldo <nbaldo@cttc.es>
  */
 
-#include "ns3/log.h"
-#include "ns3/spectrum-value.h"
-#include "ns3/mobility-model.h"
-#include "ns3/net-device.h"
 #include "wifi-spectrum-phy-interface.h"
+
 #include "spectrum-wifi-phy.h"
 
-NS_LOG_COMPONENT_DEFINE ("WifiSpectrumPhyInterface");
+#include "ns3/log.h"
+#include "ns3/mobility-model.h"
+#include "ns3/net-device.h"
+#include "ns3/spectrum-value.h"
 
-namespace ns3 {
+NS_LOG_COMPONENT_DEFINE("WifiSpectrumPhyInterface");
 
-NS_OBJECT_ENSURE_REGISTERED (WifiSpectrumPhyInterface);
+namespace ns3
+{
+
+NS_OBJECT_ENSURE_REGISTERED(WifiSpectrumPhyInterface);
 
 TypeId
-WifiSpectrumPhyInterface::GetTypeId (void)
+WifiSpectrumPhyInterface::GetTypeId()
 {
-  static TypeId tid = TypeId ("ns3::WifiSpectrumPhyInterface")
-    .SetParent<SpectrumPhy> ()
-    .SetGroupName ("Wifi");
-  return tid;
+    static TypeId tid =
+        TypeId("ns3::WifiSpectrumPhyInterface").SetParent<SpectrumPhy>().SetGroupName("Wifi");
+    return tid;
 }
 
-WifiSpectrumPhyInterface::WifiSpectrumPhyInterface ()
+WifiSpectrumPhyInterface::WifiSpectrumPhyInterface()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
 void
-WifiSpectrumPhyInterface::DoDispose (void)
+WifiSpectrumPhyInterface::DoDispose()
 {
-  NS_LOG_FUNCTION (this);
-  m_spectrumWifiPhy = 0;
-  m_netDevice = 0;
-  m_channel = 0;
+    NS_LOG_FUNCTION(this);
+    m_spectrumWifiPhy = nullptr;
+    m_netDevice = nullptr;
+    m_channel = nullptr;
 }
 
-void WifiSpectrumPhyInterface::SetSpectrumWifiPhy (const Ptr<SpectrumWifiPhy> spectrumWifiPhy)
+void
+WifiSpectrumPhyInterface::SetSpectrumWifiPhy(const Ptr<SpectrumWifiPhy> spectrumWifiPhy)
 {
-  m_spectrumWifiPhy = spectrumWifiPhy;
+    m_spectrumWifiPhy = spectrumWifiPhy;
 }
 
 Ptr<NetDevice>
-WifiSpectrumPhyInterface::GetDevice () const
+WifiSpectrumPhyInterface::GetDevice() const
 {
-  return m_netDevice;
+    return m_netDevice;
 }
 
 Ptr<MobilityModel>
-WifiSpectrumPhyInterface::GetMobility () const
+WifiSpectrumPhyInterface::GetMobility() const
 {
-  return m_spectrumWifiPhy->GetMobility ();
+    return m_spectrumWifiPhy->GetMobility();
 }
 
 void
-WifiSpectrumPhyInterface::SetDevice (const Ptr<NetDevice> d)
+WifiSpectrumPhyInterface::SetDevice(const Ptr<NetDevice> d)
 {
-  m_netDevice = d;
+    m_netDevice = d;
 }
 
 void
-WifiSpectrumPhyInterface::SetMobility (const Ptr<MobilityModel> m)
+WifiSpectrumPhyInterface::SetMobility(const Ptr<MobilityModel> m)
 {
-  m_spectrumWifiPhy->SetMobility (m);
+    m_spectrumWifiPhy->SetMobility(m);
 }
 
 void
-WifiSpectrumPhyInterface::SetChannel (const Ptr<SpectrumChannel> c)
+WifiSpectrumPhyInterface::SetChannel(const Ptr<SpectrumChannel> c)
 {
-  NS_LOG_FUNCTION (this << c);
-  m_channel = c;
+    NS_LOG_FUNCTION(this << c);
+    m_channel = c;
 }
 
 Ptr<const SpectrumModel>
-WifiSpectrumPhyInterface::GetRxSpectrumModel () const
+WifiSpectrumPhyInterface::GetRxSpectrumModel() const
 {
-  return m_spectrumWifiPhy->GetRxSpectrumModel ();
+    return m_spectrumWifiPhy->GetRxSpectrumModel();
 }
 
 Ptr<Object>
-WifiSpectrumPhyInterface::GetAntenna (void) const
+WifiSpectrumPhyInterface::GetAntenna() const
 {
-  NS_LOG_FUNCTION (this);
-  return m_spectrumWifiPhy->GetAntenna ();
+    return m_spectrumWifiPhy->GetAntenna();
 }
 
 void
-WifiSpectrumPhyInterface::StartRx (Ptr<SpectrumSignalParameters> params)
+WifiSpectrumPhyInterface::StartRx(Ptr<SpectrumSignalParameters> params)
 {
-  m_spectrumWifiPhy->StartRx (params);
+    m_spectrumWifiPhy->StartRx(params);
 }
 
-} //namespace ns3
+} // namespace ns3

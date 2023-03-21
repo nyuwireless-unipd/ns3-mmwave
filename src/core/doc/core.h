@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2017 Peter D. Barnes, Jr.
  *
@@ -27,7 +26,6 @@
  * \ingroup core
  * This file provides some doxygen documentation for the core module.
  */
-
 
 /**
  * \defgroup core Core
@@ -82,4 +80,20 @@
  * \ingroup core
  * \defgroup core-tests Core module tests
  * TestSuites for the Core module
+ */
+
+/**
+ * \ingroup core
+ * \defgroup system System Services
+ *
+ * System-independent interfaces to operating system services:
+ * environment variables, files system, threading, wall clock time.
+ *
+ * Services provided:
+ *
+ *   - Environment variables
+ *   - File and directory paths.
+ *   - Thread primitives:  threads, conditional waits, mutex, critical sections.
+ *   - Asynchronous input from a file descriptor.
+ *   - Wall clock time.
  */

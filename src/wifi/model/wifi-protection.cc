@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2020 Universita' degli Studi di Napoli Federico II
  *
@@ -19,96 +18,116 @@
  */
 
 #include "wifi-protection.h"
+
 #include "wifi-utils.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /*
  * WifiProtection
  */
 
-WifiProtection::WifiProtection (Method m)
-  : method (m),
-    protectionTime (Time::Min ())   // uninitialized
+WifiProtection::WifiProtection(Method m)
+    : method(m),
+      protectionTime(Time::Min()) // uninitialized
 {
 }
 
-WifiProtection::~WifiProtection ()
+WifiProtection::~WifiProtection()
 {
 }
-
 
 /*
  * WifiNoProtection
  */
 
-WifiNoProtection::WifiNoProtection ()
-  : WifiProtection (NONE)
+WifiNoProtection::WifiNoProtection()
+    : WifiProtection(NONE)
 {
-  protectionTime = Seconds (0);
+    protectionTime = Seconds(0);
 }
 
 std::unique_ptr<WifiProtection>
-WifiNoProtection::Copy (void) const
+WifiNoProtection::Copy() const
 {
-  return std::unique_ptr<WifiProtection> (new WifiNoProtection (*this));
+    return std::unique_ptr<WifiProtection>(new WifiNoProtection(*this));
 }
 
 void
-WifiNoProtection::Print (std::ostream &os) const
+WifiNoProtection::Print(std::ostream& os) const
 {
-  os << "NONE";
+    os << "NONE";
 }
-
 
 /*
  * WifiRtsCtsProtection
  */
 
-WifiRtsCtsProtection::WifiRtsCtsProtection ()
-  : WifiProtection (RTS_CTS)
+WifiRtsCtsProtection::WifiRtsCtsProtection()
+    : WifiProtection(RTS_CTS)
 {
 }
 
 std::unique_ptr<WifiProtection>
-WifiRtsCtsProtection::Copy (void) const
+WifiRtsCtsProtection::Copy() const
 {
-  return std::unique_ptr<WifiProtection> (new WifiRtsCtsProtection (*this));
+    return std::unique_ptr<WifiProtection>(new WifiRtsCtsProtection(*this));
 }
 
 void
-WifiRtsCtsProtection::Print (std::ostream &os) const
+WifiRtsCtsProtection::Print(std::ostream& os) const
 {
-  os << "RTS_CTS";
+    os << "RTS_CTS";
 }
-
 
 /*
  * WifiCtsToSelfProtection
  */
 
-WifiCtsToSelfProtection::WifiCtsToSelfProtection ()
-  : WifiProtection (CTS_TO_SELF)
+WifiCtsToSelfProtection::WifiCtsToSelfProtection()
+    : WifiProtection(CTS_TO_SELF)
 {
 }
 
 std::unique_ptr<WifiProtection>
-WifiCtsToSelfProtection::Copy (void) const
+WifiCtsToSelfProtection::Copy() const
 {
-  return std::unique_ptr<WifiProtection> (new WifiCtsToSelfProtection (*this));
+    return std::unique_ptr<WifiProtection>(new WifiCtsToSelfProtection(*this));
 }
 
 void
-WifiCtsToSelfProtection::Print (std::ostream &os) const
+WifiCtsToSelfProtection::Print(std::ostream& os) const
 {
-  os << "CTS_TO_SELF";
+    os << "CTS_TO_SELF";
 }
 
+/*
+ * WifiMuRtsCtsProtection
+ */
 
-std::ostream & operator << (std::ostream &os, const WifiProtection* protection)
+WifiMuRtsCtsProtection::WifiMuRtsCtsProtection()
+    : WifiProtection(MU_RTS_CTS)
 {
-  protection->Print (os);
-  return os;
 }
 
-} //namespace ns3
+std::unique_ptr<WifiProtection>
+WifiMuRtsCtsProtection::Copy() const
+{
+    return std::unique_ptr<WifiProtection>(new WifiMuRtsCtsProtection(*this));
+}
+
+void
+WifiMuRtsCtsProtection::Print(std::ostream& os) const
+{
+    os << "MU_RTS_CTS";
+}
+
+std::ostream&
+operator<<(std::ostream& os, const WifiProtection* protection)
+{
+    protection->Print(os);
+    return os;
+}
+
+} // namespace ns3

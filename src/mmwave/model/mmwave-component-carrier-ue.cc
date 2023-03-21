@@ -19,105 +19,105 @@
  * Author: Danilo Abrignani <danilo.abrignani@unibo.it>
  *
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
- *								 Integration of Carrier Aggregation
+ *                               Integration of Carrier Aggregation
  */
 
 #include "mmwave-component-carrier-ue.h"
-#include <ns3/uinteger.h>
-#include <ns3/boolean.h>
-#include <ns3/simulator.h>
-#include <ns3/log.h>
+
 #include <ns3/abort.h>
-#include <ns3/mmwave-ue-phy.h>
+#include <ns3/boolean.h>
+#include <ns3/log.h>
 #include <ns3/mmwave-ue-mac.h>
+#include <ns3/mmwave-ue-phy.h>
 #include <ns3/pointer.h>
+#include <ns3/simulator.h>
+#include <ns3/uinteger.h>
 
-namespace ns3 {
-
-namespace mmwave {
-
-NS_LOG_COMPONENT_DEFINE ("MmWaveComponentCarrierUe");
-
-NS_OBJECT_ENSURE_REGISTERED ( MmWaveComponentCarrierUe);
-
-TypeId MmWaveComponentCarrierUe::GetTypeId (void)
+namespace ns3
 {
-  static TypeId
-    tid =
-    TypeId ("ns3::MmWaveComponentCarrierUe")
-    .SetParent<MmWaveComponentCarrier> ()
-    .AddConstructor<MmWaveComponentCarrierUe> ()
-    .AddAttribute ("MmWaveUePhy",
-                   "The PHY associated to this ComponentCarrierUe",
-                   PointerValue (),
-                   MakePointerAccessor (&MmWaveComponentCarrierUe::m_phy),
-                   MakePointerChecker <MmWaveUePhy> ())
-    .AddAttribute ("MmWaveUeMac",
-                   "The MAC associated to this ComponentCarrierUe",
-                   PointerValue (),
-                   MakePointerAccessor (&MmWaveComponentCarrierUe::m_mac),
-                   MakePointerChecker <MmWaveUeMac> ())
-  ;
-  return tid;
-}
-MmWaveComponentCarrierUe::MmWaveComponentCarrierUe ()
+
+namespace mmwave
 {
-  NS_LOG_FUNCTION (this);
+
+NS_LOG_COMPONENT_DEFINE("MmWaveComponentCarrierUe");
+
+NS_OBJECT_ENSURE_REGISTERED(MmWaveComponentCarrierUe);
+
+TypeId
+MmWaveComponentCarrierUe::GetTypeId(void)
+{
+    static TypeId tid = TypeId("ns3::MmWaveComponentCarrierUe")
+                            .SetParent<MmWaveComponentCarrier>()
+                            .AddConstructor<MmWaveComponentCarrierUe>()
+                            .AddAttribute("MmWaveUePhy",
+                                          "The PHY associated to this ComponentCarrierUe",
+                                          PointerValue(),
+                                          MakePointerAccessor(&MmWaveComponentCarrierUe::m_phy),
+                                          MakePointerChecker<MmWaveUePhy>())
+                            .AddAttribute("MmWaveUeMac",
+                                          "The MAC associated to this ComponentCarrierUe",
+                                          PointerValue(),
+                                          MakePointerAccessor(&MmWaveComponentCarrierUe::m_mac),
+                                          MakePointerChecker<MmWaveUeMac>());
+    return tid;
 }
 
-MmWaveComponentCarrierUe::~MmWaveComponentCarrierUe (void)
+MmWaveComponentCarrierUe::MmWaveComponentCarrierUe()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
-void
-MmWaveComponentCarrierUe::DoDispose ()
+MmWaveComponentCarrierUe::~MmWaveComponentCarrierUe(void)
 {
-  NS_LOG_FUNCTION (this);
-  m_phy->Dispose ();
-  m_phy = 0;
-  m_mac->Dispose ();
-  m_mac = 0;
-  MmWaveComponentCarrier::DoDispose ();
-}
-
-
-void
-MmWaveComponentCarrierUe::DoInitialize (void)
-{
-  NS_LOG_FUNCTION (this);
-  m_isConstructed = true;
-  m_phy->Initialize ();
-  m_mac->Initialize ();
+    NS_LOG_FUNCTION(this);
 }
 
 void
-MmWaveComponentCarrierUe::SetPhy (Ptr<MmWaveUePhy> s)
+MmWaveComponentCarrierUe::DoDispose()
 {
-  NS_LOG_FUNCTION (this);
-  m_phy = s;
+    NS_LOG_FUNCTION(this);
+    m_phy->Dispose();
+    m_phy = 0;
+    m_mac->Dispose();
+    m_mac = 0;
+    MmWaveComponentCarrier::DoDispose();
 }
 
+void
+MmWaveComponentCarrierUe::DoInitialize(void)
+{
+    NS_LOG_FUNCTION(this);
+    m_isConstructed = true;
+    m_phy->Initialize();
+    m_mac->Initialize();
+}
+
+void
+MmWaveComponentCarrierUe::SetPhy(Ptr<MmWaveUePhy> s)
+{
+    NS_LOG_FUNCTION(this);
+    m_phy = s;
+}
 
 Ptr<MmWaveUePhy>
-MmWaveComponentCarrierUe::GetPhy () const
+MmWaveComponentCarrierUe::GetPhy() const
 {
-  NS_LOG_FUNCTION (this);
-  return m_phy;
+    NS_LOG_FUNCTION(this);
+    return m_phy;
 }
 
 void
-MmWaveComponentCarrierUe::SetMac (Ptr<MmWaveUeMac> s)
+MmWaveComponentCarrierUe::SetMac(Ptr<MmWaveUeMac> s)
 {
-  NS_LOG_FUNCTION (this);
-  m_mac = s;
+    NS_LOG_FUNCTION(this);
+    m_mac = s;
 }
 
 Ptr<MmWaveUeMac>
-MmWaveComponentCarrierUe::GetMac () const
+MmWaveComponentCarrierUe::GetMac() const
 {
-  NS_LOG_FUNCTION (this);
-  return m_mac;
+    NS_LOG_FUNCTION(this);
+    return m_mac;
 }
 
 } // namespace mmwave

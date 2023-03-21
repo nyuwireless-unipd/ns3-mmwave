@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2007 University of Washington
  *
@@ -27,7 +26,8 @@
 
 #include "point-to-point-channel.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup point-to-point
@@ -40,38 +40,35 @@ namespace ns3 {
  */
 class PointToPointRemoteChannel : public PointToPointChannel
 {
-public:
-  /**
-   * \brief Get the TypeId
-   *
-   * \return The TypeId for this class
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     * \brief Get the TypeId
+     *
+     * \return The TypeId for this class
+     */
+    static TypeId GetTypeId();
 
-  /**
-   * \brief Constructor
-   */
-  PointToPointRemoteChannel ();
+    /**
+     * \brief Constructor
+     */
+    PointToPointRemoteChannel();
 
-  /**
-   * \brief Deconstructor
-   */
-  ~PointToPointRemoteChannel ();
+    /**
+     * \brief Deconstructor
+     */
+    ~PointToPointRemoteChannel() override;
 
-  /**
-   * \brief Transmit the packet
-   *
-   * \param p Packet to transmit
-   * \param src Source PointToPointNetDevice
-   * \param txTime Transmit time to apply
-   * \returns true if successful (currently always true)
-   */
-  virtual bool TransmitStart (Ptr<const Packet> p, Ptr<PointToPointNetDevice> src,
-                              Time txTime);
+    /**
+     * \brief Transmit the packet
+     *
+     * \param p Packet to transmit
+     * \param src Source PointToPointNetDevice
+     * \param txTime Transmit time to apply
+     * \returns true if successful (currently always true)
+     */
+    bool TransmitStart(Ptr<const Packet> p, Ptr<PointToPointNetDevice> src, Time txTime) override;
 };
 
 } // namespace ns3
 
 #endif
-
-

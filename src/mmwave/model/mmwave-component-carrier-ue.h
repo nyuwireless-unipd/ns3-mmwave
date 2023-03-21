@@ -19,25 +19,27 @@
  * Author: Danilo Abrignani <danilo.abrignani@unibo.it>
  *
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
- *								 Integration of Carrier Aggregation
+ *                               Integration of Carrier Aggregation
  */
-
 
 #ifndef MMWAVE_COMPONENT_CARRIER_UE_H
 #define MMWAVE_COMPONENT_CARRIER_UE_H
 
+#include "ns3/mmwave-phy.h"
+#include <ns3/mmwave-component-carrier.h>
+#include <ns3/mmwave-ue-phy.h>
+#include <ns3/nstime.h>
 #include <ns3/object.h>
 #include <ns3/packet.h>
-#include <ns3/nstime.h>
-#include "ns3/mmwave-phy.h"
-#include <ns3/mmwave-ue-phy.h>
-#include <ns3/mmwave-component-carrier.h>
 
-namespace ns3 {
+namespace ns3
+{
 
-namespace mmwave {
+namespace mmwave
+{
 
 class MmWaveUeMac;
+
 /**
  * \ingroup lte
  *
@@ -45,55 +47,51 @@ class MmWaveUeMac;
  */
 class MmWaveComponentCarrierUe : public MmWaveComponentCarrier
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId(void);
 
-  MmWaveComponentCarrierUe ();
+    MmWaveComponentCarrierUe();
 
-  virtual ~MmWaveComponentCarrierUe (void);
-  virtual void DoDispose (void) override;
+    virtual ~MmWaveComponentCarrierUe(void);
+    virtual void DoDispose(void) override;
 
+    /**
+     * \return a pointer to the physical layer.
+     */
+    Ptr<MmWaveUePhy> GetPhy(void) const;
 
-  /**
-   * \return a pointer to the physical layer.
-   */
-  Ptr<MmWaveUePhy> GetPhy (void) const;
+    /**
+     * \return a pointer to the MAC layer.
+     */
+    Ptr<MmWaveUeMac> GetMac(void) const;
 
-  /**
-   * \return a pointer to the MAC layer.
-   */
-  Ptr<MmWaveUeMac> GetMac (void) const;
+    /**
+     * Set MmWaveUePhy
+     * \param s a pointer to the MmWaveUePhy
+     */
+    void SetPhy(Ptr<MmWaveUePhy> s);
 
-  /**
-   * Set MmWaveUePhy
-   * \param s a pointer to the MmWaveUePhy
-   */
-  void SetPhy (Ptr<MmWaveUePhy> s);
+    /**
+     * Set the MmWaveEnbMac
+     * \param s a pointer to the MmWaveEnbMac
+     */
+    void SetMac(Ptr<MmWaveUeMac> s);
 
-  /**
-   * Set the MmWaveEnbMac
-   * \param s a pointer to the MmWaveEnbMac
-   */
-  void SetMac (Ptr<MmWaveUeMac> s);
+  protected:
+    // inherited from Object
+    virtual void DoInitialize(void) override;
 
-protected:
-  // inherited from Object
-  virtual void DoInitialize (void) override;
-
-private:
-  Ptr<MmWaveUePhy> m_phy; ///< the Phy instance of this eNodeB component carrier
-  Ptr<MmWaveUeMac> m_mac; ///< the MAC instance of this eNodeB component carrier
-
+  private:
+    Ptr<MmWaveUePhy> m_phy; ///< the Phy instance of this eNodeB component carrier
+    Ptr<MmWaveUeMac> m_mac; ///< the MAC instance of this eNodeB component carrier
 };
 
 } // namespace mmwave
 
 } // namespace ns3
-
-
 
 #endif /* MMWAVE_COMPONENT_CARRIER_UE_H */

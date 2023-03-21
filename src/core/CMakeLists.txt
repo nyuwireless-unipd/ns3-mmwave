@@ -123,9 +123,25 @@ if(${ENABLE_BUILD_VERSION})
   )
 endif()
 
+if(WIN32)
+  set(libraries_to_link
+      ${libraries_to_link}
+      wsock32
+      ws2_32
+  )
+  set(fd-reader-sources
+      model/win32-fd-reader.cc
+  )
+else()
+  set(fd-reader-sources
+      model/unix-fd-reader.cc
+  )
+endif()
+
 # Define core lib sources
 set(source_files
     ${int64x64_sources}
+    ${fd-reader-sources}
     ${example_as_test_sources}
     ${embedded_version_sources}
     helper/csv-reader.cc
@@ -147,12 +163,12 @@ set(source_files
     model/watchdog.cc
     model/synchronizer.cc
     model/make-event.cc
+    model/environment-variable.cc
     model/log.cc
     model/breakpoint.cc
     model/type-id.cc
     model/attribute-construction-list.cc
     model/object-base.cc
-    model/ref-count-base.cc
     model/object.cc
     model/test.cc
     model/random-variable-stream.cc
@@ -191,9 +207,9 @@ set(source_files
     model/system-wall-clock-timestamp.cc
     model/length.cc
     model/trickle-timer.cc
-    model/unix-fd-reader.cc
     model/realtime-simulator-impl.cc
     model/wall-clock-synchronizer.cc
+    model/matrix-array.cc
 )
 
 # Define core lib headers
@@ -230,6 +246,8 @@ set(header_files
     model/event-impl.h
     model/fatal-error.h
     model/fatal-impl.h
+    model/fd-reader.h
+    model/environment-variable.h
     model/global-value.h
     model/hash-fnv.h
     model/hash-function.h
@@ -262,7 +280,6 @@ set(header_files
     model/priority-queue-scheduler.h
     model/ptr.h
     model/random-variable-stream.h
-    model/ref-count-base.h
     model/rng-seed-manager.h
     model/rng-stream.h
     model/scheduler.h
@@ -290,13 +307,15 @@ set(header_files
     model/type-name.h
     model/type-traits.h
     model/uinteger.h
-    model/unix-fd-reader.h
     model/unused.h
     model/valgrind.h
     model/vector.h
+    model/warnings.h
     model/watchdog.h
     model/realtime-simulator-impl.h
     model/wall-clock-synchronizer.h
+    model/val-array.h
+    model/matrix-array.h
 )
 
 set(test_sources
@@ -308,6 +327,7 @@ set(test_sources
     test/callback-test-suite.cc
     test/command-line-test-suite.cc
     test/config-test-suite.cc
+    test/environment-variable-test-suite.cc
     test/event-garbage-collector-test-suite.cc
     test/global-value-test-suite.cc
     test/hash-test-suite.cc
@@ -321,6 +341,7 @@ set(test_sources
     test/ptr-test-suite.cc
     test/sample-test-suite.cc
     test/simulator-test-suite.cc
+    test/splitstring-test-suite.cc
     test/threaded-test-suite.cc
     test/time-test-suite.cc
     test/timer-test-suite.cc
@@ -330,6 +351,8 @@ set(test_sources
     test/type-id-test-suite.cc
     test/type-traits-test-suite.cc
     test/watchdog-test-suite.cc
+    test/val-array-test-suite.cc
+    test/matrix-array-test-suite.cc
 )
 
 # Build core lib

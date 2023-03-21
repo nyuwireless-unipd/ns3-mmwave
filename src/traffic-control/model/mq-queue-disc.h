@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2016 Universita' degli Studi di Napoli Federico II
  *
@@ -24,7 +23,8 @@
 
 #include "ns3/queue-disc.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup traffic-control
@@ -33,32 +33,33 @@ namespace ns3 {
  * queue discs as the number of device transmission queues. Packets are
  * directly enqueued into and dequeued from child queue discs.
  */
-class MqQueueDisc : public QueueDisc {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
-  /**
-   * \brief MqQueueDisc constructor
-   */
-  MqQueueDisc ();
+class MqQueueDisc : public QueueDisc
+{
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
+    /**
+     * \brief MqQueueDisc constructor
+     */
+    MqQueueDisc();
 
-  virtual ~MqQueueDisc();
+    ~MqQueueDisc() override;
 
- /**
-   * \brief Return the wake mode adopted by this queue disc.
-   * \return the wake mode adopted by this queue disc.
-   */
-  WakeMode GetWakeMode (void) const;
+    /**
+     * \brief Return the wake mode adopted by this queue disc.
+     * \return the wake mode adopted by this queue disc.
+     */
+    WakeMode GetWakeMode() const override;
 
-private:
-  virtual bool DoEnqueue (Ptr<QueueDiscItem> item);
-  virtual Ptr<QueueDiscItem> DoDequeue (void);
-  virtual Ptr<const QueueDiscItem> DoPeek (void);
-  virtual bool CheckConfig (void);
-  virtual void InitializeParams (void);
+  private:
+    bool DoEnqueue(Ptr<QueueDiscItem> item) override;
+    Ptr<QueueDiscItem> DoDequeue() override;
+    Ptr<const QueueDiscItem> DoPeek() override;
+    bool CheckConfig() override;
+    void InitializeParams() override;
 };
 
 } // namespace ns3

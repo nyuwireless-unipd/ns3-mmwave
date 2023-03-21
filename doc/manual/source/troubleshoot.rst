@@ -28,7 +28,7 @@ Here is an example of what might occur::
     Compilation finished successfully
     Command ['/home/tomh/ns-3-nsc/build/debug/examples/tcp-point-to-point'] exited with code -11
 
-The error message says that the program terminated unsuccessfully, but it is
+The error message says that the program terminated unsuccessfuly, but it is
 not clear from this information what might be wrong. To examine more
 closely, try running it under the `gdb debugger
 <https://access.redhat.com/documentation/en-us/red_hat_developer_toolset/9/html/user_guide/chap-gdb>`_:
@@ -55,7 +55,7 @@ closely, try running it under the `gdb debugger
     Program received signal SIGSEGV, Segmentation fault.
     0x0804aa12 in main (argc=1, argv=0xbfdfefa4)
         at ../examples/tcp-point-to-point.cc:136
-    136       Ptr<Socket> localSocket = socketFactory->CreateSocket ();
+    136       Ptr<Socket> localSocket = socketFactory->CreateSocket();
     (gdb) p localSocket
     $1 = {m_ptr = 0x3c5d65}
     (gdb) p socketFactory
@@ -73,9 +73,9 @@ Let's look around line 136 of tcp-point-to-point, as gdb suggests:
 
 .. sourcecode:: cpp
 
-  Ptr<SocketFactory> socketFactory = n2->GetObject<SocketFactory> (Tcp::iid);
-  Ptr<Socket> localSocket = socketFactory->CreateSocket ();
-  localSocket->Bind ();
+  Ptr<SocketFactory> socketFactory = n2->GetObject<SocketFactory>(Tcp::iid);
+  Ptr<Socket> localSocket = socketFactory->CreateSocket();
+  localSocket->Bind();
 
 The culprit here is that the return value of GetObject is not being checked and
 may be null.

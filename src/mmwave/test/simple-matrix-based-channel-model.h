@@ -23,7 +23,8 @@
 #include <ns3/matrix-based-channel-model.h>
 #include <ns3/vector.h>
 
-namespace ns3 {
+namespace ns3
+{
 
 class MobilityModel;
 
@@ -38,83 +39,84 @@ class MobilityModel;
  */
 class SimpleMatrixBasedChannelModel : public MatrixBasedChannelModel
 {
-public:
-  /**
-   * Constructor
-   */
-  SimpleMatrixBasedChannelModel ();
+  public:
+    /**
+     * Constructor
+     */
+    SimpleMatrixBasedChannelModel();
 
-  /**
-   * Destructor
-   */
-  virtual ~SimpleMatrixBasedChannelModel () override;
+    /**
+     * Destructor
+     */
+    virtual ~SimpleMatrixBasedChannelModel() override;
 
-  /**
-   * Get the type ID
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId ();
+    /**
+     * Get the type ID
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  void SetFrequency (double f);
-  double GetFrequency (void) const;
+    void SetFrequency(double f);
+    double GetFrequency(void) const;
 
-  void SetAodAzimuth (DoubleVector x);
-  DoubleVector GetAodAzimuth (void) const;
+    void SetAodAzimuth(DoubleVector x);
+    DoubleVector GetAodAzimuth(void) const;
 
-  void SetAodElevation (DoubleVector x);
-  DoubleVector GetAodElevation (void) const;
+    void SetAodElevation(DoubleVector x);
+    DoubleVector GetAodElevation(void) const;
 
-  void SetAoaAzimuth (DoubleVector x);
-  DoubleVector GetAoaAzimuth (void) const;
+    void SetAoaAzimuth(DoubleVector x);
+    DoubleVector GetAoaAzimuth(void) const;
 
-  void SetAoaElevation (DoubleVector x);
-  DoubleVector GetAoaElevation (void) const;
+    void SetAoaElevation(DoubleVector x);
+    DoubleVector GetAoaElevation(void) const;
 
-  void SetPhaseShift (DoubleVector x);
-  DoubleVector GetPhaseShift (void) const;
+    void SetPhaseShift(DoubleVector x);
+    DoubleVector GetPhaseShift(void) const;
 
-  void SetPathLoss (DoubleVector x);
-  DoubleVector GetPathLoss (void) const;
+    void SetPathLoss(DoubleVector x);
+    DoubleVector GetPathLoss(void) const;
 
-  void SetDelay (DoubleVector x);
-  DoubleVector GetDelay (void) const;
+    void SetDelay(DoubleVector x);
+    DoubleVector GetDelay(void) const;
 
-  /**
-   * It creates a channel matrix based on the given rays' parameters.
-   * If the parameters are inconsistent, the simulation is aborted.
-   *
-   * \param aMob mobility model of the a device
-   * \param bMob mobility model of the b device
-   * \param aAntenna antenna of the a device
-   * \param bAntenna antenna of the b device
-   * \return the channel matrix
-   */
-  Ptr<const ChannelMatrix> GetChannel (Ptr<const MobilityModel> aMob,
-                                       Ptr<const MobilityModel> bMob,
-                                       Ptr<const PhasedArrayModel> aAntenna,
-                                       Ptr<const PhasedArrayModel> bAntenna) override;
+    /**
+     * It creates a channel matrix based on the given rays' parameters.
+     * If the parameters are inconsistent, the simulation is aborted.
+     *
+     * \param aMob mobility model of the a device
+     * \param bMob mobility model of the b device
+     * \param aAntenna antenna of the a device
+     * \param bAntenna antenna of the b device
+     * \return the channel matrix
+     */
+    Ptr<const ChannelMatrix> GetChannel(Ptr<const MobilityModel> aMob,
+                                        Ptr<const MobilityModel> bMob,
+                                        Ptr<const PhasedArrayModel> aAntenna,
+                                        Ptr<const PhasedArrayModel> bAntenna) override;
 
-  /**
-   * Returns a channel parameters structure used to obtain the channel between
-   * the nodes with mobility objects passed as input parameters.
-   *
-   * \param aMob mobility model of the a device
-   * \param bMob mobility model of the b device
-   * \return the channel matrix
-   */
-  Ptr<const ChannelParams> GetParams (Ptr<const MobilityModel> aMob, 
-                                      Ptr<const MobilityModel> bMob) const override;
-private:
-  void DoDispose () override;
+    /**
+     * Returns a channel parameters structure used to obtain the channel between
+     * the nodes with mobility objects passed as input parameters.
+     *
+     * \param aMob mobility model of the a device
+     * \param bMob mobility model of the b device
+     * \return the channel matrix
+     */
+    Ptr<const ChannelParams> GetParams(Ptr<const MobilityModel> aMob,
+                                       Ptr<const MobilityModel> bMob) const override;
 
-  double m_frequency; //!< the operating frequency
-  DoubleVector m_aodAz; //!< the list of AoD azimuth [deg]
-  DoubleVector m_aodEl; //!< the list of AoD elevation [deg]
-  DoubleVector m_aoaAz; //!< the list of AoA azimuth [deg]
-  DoubleVector m_aoaEl; //!< the list of AoA elevation [deg]
-  DoubleVector m_phaseShift; //!< the list of phase shifts [rad]
-  DoubleVector m_pathLoss; //!< the list of path losses [dB]
-  DoubleVector m_delay; //!< the list of delays [s]
+  private:
+    void DoDispose() override;
+
+    double m_frequency;        //!< the operating frequency
+    DoubleVector m_aodAz;      //!< the list of AoD azimuth [deg]
+    DoubleVector m_aodEl;      //!< the list of AoD elevation [deg]
+    DoubleVector m_aoaAz;      //!< the list of AoA azimuth [deg]
+    DoubleVector m_aoaEl;      //!< the list of AoA elevation [deg]
+    DoubleVector m_phaseShift; //!< the list of phase shifts [rad]
+    DoubleVector m_pathLoss;   //!< the list of path losses [dB]
+    DoubleVector m_delay;      //!< the list of delays [s]
 };
 
 } // namespace ns3

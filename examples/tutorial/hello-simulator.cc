@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -18,10 +17,11 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("HelloSimulator");
+NS_LOG_COMPONENT_DEFINE("HelloSimulator");
 
 int
-main (int argc, char *argv[])
+main(int argc, char* argv[])
 {
-  NS_LOG_UNCOND ("Hello Simulator");
+    NS_LOG_UNCOND("Hello Simulator");
+    return 0;
 }

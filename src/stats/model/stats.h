@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2013 Universita' di Firenze
  *
@@ -29,11 +28,11 @@
  * The statistics module includes some useful features to ease data collection from experiments.
  * In particular the following features are included:
  * <ul>
- * <li> The core framework and two basic data collectors: A counter, and a min/max/avg/total observer.</li>
- * <li> Extensions of those to easily work with times and packets.</li>
- * <li> Plaintext output formatted for OMNet++.</li>
- * <li> Database output using SQLite, a standalone, lightweight, high performance SQL engine.</li>
- * <li> Mandatory and open ended metadata for describing and working with runs.</li>
+ * <li> The core framework and two basic data collectors: A counter, and a min/max/avg/total
+ * observer.</li> <li> Extensions of those to easily work with times and packets.</li> <li>
+ * Plaintext output formatted for OMNet++.</li> <li> Database output using SQLite, a standalone,
+ * lightweight, high performance SQL engine.</li> <li> Mandatory and open ended metadata for
+ * describing and working with runs.</li>
  * </ul>
  *
  * See the manual for a complete documentation.

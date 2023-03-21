@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2008 INRIA
  *
@@ -20,10 +19,11 @@
 #ifndef UINTEGER_H
 #define UINTEGER_H
 
-#include "attribute.h"
 #include "attribute-helper.h"
-#include <stdint.h>
+#include "attribute.h"
+
 #include <limits>
+#include <stdint.h>
 
 /**
  * \file
@@ -31,7 +31,8 @@
  * ns3::UintegerValue attribute value declarations and template implementations.
  */
 
-namespace ns3 {
+namespace ns3
+{
 
 //  Additional docs for class UintegerValue:
 /**
@@ -41,11 +42,11 @@ namespace ns3 {
  * type such as uint8_t, uint16_t, uint32_t, uint64_t, or,
  * unsigned int, etc.
  */
-ATTRIBUTE_VALUE_DEFINE_WITH_NAME (uint64_t, Uinteger);
-ATTRIBUTE_ACCESSOR_DEFINE (Uinteger);
+ATTRIBUTE_VALUE_DEFINE_WITH_NAME(uint64_t, Uinteger);
+ATTRIBUTE_ACCESSOR_DEFINE(Uinteger);
 
 template <typename T>
-Ptr<const AttributeChecker> MakeUintegerChecker (void);
+Ptr<const AttributeChecker> MakeUintegerChecker();
 
 /**
  * Make a checker with a minimum value.
@@ -57,7 +58,7 @@ Ptr<const AttributeChecker> MakeUintegerChecker (void);
  * \see AttributeChecker
  */
 template <typename T>
-Ptr<const AttributeChecker> MakeUintegerChecker (uint64_t min);
+Ptr<const AttributeChecker> MakeUintegerChecker(uint64_t min);
 
 /**
  * Make a checker with a minimum and a maximum value.
@@ -70,10 +71,9 @@ Ptr<const AttributeChecker> MakeUintegerChecker (uint64_t min);
  * \see AttributeChecker
  */
 template <typename T>
-Ptr<const AttributeChecker> MakeUintegerChecker (uint64_t min, uint64_t max);
+Ptr<const AttributeChecker> MakeUintegerChecker(uint64_t min, uint64_t max);
 
 } // namespace ns3
-
 
 /***************************************************************
  *  Implementation of the templates declared above.
@@ -81,37 +81,37 @@ Ptr<const AttributeChecker> MakeUintegerChecker (uint64_t min, uint64_t max);
 
 #include "type-name.h"
 
-namespace ns3 {
+namespace ns3
+{
 
-namespace internal {
+namespace internal
+{
 
-Ptr<const AttributeChecker> MakeUintegerChecker (uint64_t min, uint64_t max, std::string name);
+Ptr<const AttributeChecker> MakeUintegerChecker(uint64_t min, uint64_t max, std::string name);
 
 } // namespace internal
 
-
 template <typename T>
-Ptr<const AttributeChecker> MakeUintegerChecker (void)
+Ptr<const AttributeChecker>
+MakeUintegerChecker()
 {
-  return internal::MakeUintegerChecker (std::numeric_limits<T>::min (),
-                                        std::numeric_limits<T>::max (),
-                                        TypeNameGet<T> ());
+    return internal::MakeUintegerChecker(std::numeric_limits<T>::min(),
+                                         std::numeric_limits<T>::max(),
+                                         TypeNameGet<T>());
 }
 
 template <typename T>
-Ptr<const AttributeChecker> MakeUintegerChecker (uint64_t min)
+Ptr<const AttributeChecker>
+MakeUintegerChecker(uint64_t min)
 {
-  return internal::MakeUintegerChecker (min,
-                                        std::numeric_limits<T>::max (),
-                                        TypeNameGet<T> ());
+    return internal::MakeUintegerChecker(min, std::numeric_limits<T>::max(), TypeNameGet<T>());
 }
 
 template <typename T>
-Ptr<const AttributeChecker> MakeUintegerChecker (uint64_t min, uint64_t max)
+Ptr<const AttributeChecker>
+MakeUintegerChecker(uint64_t min, uint64_t max)
 {
-  return internal::MakeUintegerChecker (min,
-                                        max,
-                                        TypeNameGet<T> ());
+    return internal::MakeUintegerChecker(min, max, TypeNameGet<T>());
 }
 
 } // namespace ns3

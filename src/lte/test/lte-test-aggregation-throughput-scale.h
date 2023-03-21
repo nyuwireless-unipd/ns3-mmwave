@@ -33,8 +33,8 @@ using namespace ns3;
  */
 class LteAggregationThroughputScaleTestSuite : public TestSuite
 {
-public:
-  LteAggregationThroughputScaleTestSuite ();
+  public:
+    LteAggregationThroughputScaleTestSuite();
 };
 
 /**
@@ -46,25 +46,25 @@ public:
  */
 class LteAggregationThroughputScaleTestCase : public TestCase
 {
-public:
-  /**
-   * \brief Creates an instance of the carrier aggregation throughput scaling test case.
-   * \param name name of this test
-   */
-  LteAggregationThroughputScaleTestCase (std::string name);
+  public:
+    /**
+     * \brief Creates an instance of the carrier aggregation throughput scaling test case.
+     * \param name name of this test
+     */
+    LteAggregationThroughputScaleTestCase(std::string name);
 
-  virtual ~LteAggregationThroughputScaleTestCase ();
+    virtual ~LteAggregationThroughputScaleTestCase();
 
-private:
-  /**
-   * \brief Setup the simulation, run it, and verify the result.
-   */
-  virtual void DoRun ();
+  private:
+    /**
+     * \brief Setup the simulation, run it, and verify the result.
+     */
+    virtual void DoRun();
 
-  double GetThroughput (uint8_t numberOfComponentCarriers);
+    double GetThroughput(uint8_t numberOfComponentCarriers);
 
-  uint16_t m_expectedCellId; //< Cell ID UE is expected to attach to
-  uint16_t m_actualCellId; //< Cell ID UE has attached to
+    uint16_t m_expectedCellId; //< Cell ID UE is expected to attach to
+    uint16_t m_actualCellId;   //< Cell ID UE has attached to
 };
 
 #endif /* LTE_AGGREGATION_THROUGHPUT_SCALE_H */

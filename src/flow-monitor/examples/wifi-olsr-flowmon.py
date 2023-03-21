@@ -24,30 +24,21 @@ from ns import ns
 DISTANCE = 20 # (m)
 NUM_NODES_SIDE = 3
 
-ns.cppyy.cppdef("""
-using namespace ns3;
-
-CommandLine& GetCommandLine(std::string filename, int& NumNodesSide, bool& Plot, std::string Results)
-{
-	static CommandLine cmd = CommandLine(filename);
-    cmd.AddValue("NumNodesSide", "Grid side number of nodes (total number of nodes will be this number squared)", NumNodesSide);
-    cmd.AddValue("Results", "Write XML results to file", Results);
-    cmd.AddValue("Plot", "Plot the results using the matplotlib python module", Plot);
-	return cmd;
-}
-""")
 
 def main(argv):
 
-    from ctypes import c_int, c_bool
+    from ctypes import c_int, c_bool, c_char_p, create_string_buffer
     NumNodesSide = c_int(2)
     Plot = c_bool(False)
-    Results = "output.xml"
-    cmd = ns.cppyy.gbl.GetCommandLine(__file__, NumNodesSide, Plot, Results)
-    cmd.Parse(argv)
+    BUFFLEN = 4096
+    ResultsBuffer = create_string_buffer(b"output.xml", BUFFLEN)
+    Results = c_char_p(ResultsBuffer.raw)
 
-    Plot = Plot.value
-    NumNodesSide = NumNodesSide.value
+    cmd = ns.CommandLine(__file__)
+    cmd.AddValue("NumNodesSide", "Grid side number of nodes (total number of nodes will be this number squared)", NumNodesSide)
+    cmd.AddValue("Results", "Write XML results to file", Results, BUFFLEN)
+    cmd.AddValue("Plot", "Plot the results using the matplotlib python module", Plot)
+    cmd.Parse(argv)
 
     wifi = ns.CreateObject("WifiHelper")
     wifiMac = ns.CreateObject("WifiMacHelper")
@@ -71,8 +62,7 @@ def main(argv):
 
     port = 9   # Discard port(RFC 863)
     inetAddress = ns.network.InetSocketAddress(ns.network.Ipv4Address("10.0.0.1"), port)
-    onOffHelper = ns.applications.OnOffHelper("ns3::UdpSocketFactory",
-                                  ns.network.Address(ns.addressFromInetSocketAddress(inetAddress)))
+    onOffHelper = ns.applications.OnOffHelper("ns3::UdpSocketFactory", inetAddress.ConvertTo())
     onOffHelper.SetAttribute("DataRate", ns.network.DataRateValue(ns.network.DataRate("100kbps")))
     onOffHelper.SetAttribute("OnTime", ns.core.StringValue ("ns3::ConstantRandomVariable[Constant=1]"))
     onOffHelper.SetAttribute("OffTime", ns.core.StringValue ("ns3::ConstantRandomVariable[Constant=0]"))
@@ -80,10 +70,10 @@ def main(argv):
     addresses = []
     nodes = []
 
-    if NumNodesSide is None:
+    if NumNodesSide.value == 2:
         num_nodes_side = NUM_NODES_SIDE
     else:
-        num_nodes_side = NumNodesSide
+        num_nodes_side = NumNodesSide.value
 
     nodes = ns.NodeContainer(num_nodes_side*num_nodes_side)
     accumulator = 0
@@ -106,8 +96,7 @@ def main(argv):
     for i, node in [(i, nodes.Get(i)) for i in range(nodes.GetN())]:
         destaddr = addresses[(len(addresses) - 1 - i) % len(addresses)]
         #print (i, destaddr)
-        genericAddress = ns.addressFromInetSocketAddress(ns.network.InetSocketAddress(destaddr, port))
-        onOffHelper.SetAttribute("Remote", ns.network.AddressValue(genericAddress))
+        onOffHelper.SetAttribute("Remote", ns.network.AddressValue(ns.network.InetSocketAddress(destaddr, port).ConvertTo()))
         container = ns.network.NodeContainer(node)
         app = onOffHelper.Install(container)
         urv = ns.CreateObject("UniformRandomVariable")#ns.cppyy.gbl.get_rng()
@@ -159,7 +148,7 @@ def main(argv):
     monitor.CheckForLostPackets()
     classifier = flowmon_helper.GetClassifier()
 
-    if Results is None:
+    if Results.value != b"output.xml":
         for flow_id, flow_stats in monitor.GetFlowStats():
             t = classifier.FindFlow(flow_id)
             proto = {6: 'TCP', 17: 'UDP'} [t.protocol]
@@ -167,10 +156,11 @@ def main(argv):
                 (flow_id, proto, t.sourceAddress, t.sourcePort, t.destinationAddress, t.destinationPort))
             print_stats(sys.stdout, flow_stats)
     else:
-        print (monitor.SerializeToXmlFile(Results, True, True))
+        res = monitor.SerializeToXmlFile(Results.value.decode("utf-8"), True, True)
+        print (res)
 
 
-    if Plot:
+    if Plot.value:
         import pylab
         delays = []
         for flow_id, flow_stats in monitor.GetFlowStats():

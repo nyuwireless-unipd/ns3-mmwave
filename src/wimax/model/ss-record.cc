@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2007,2008, 2009 INRIA, UDcast
  *
@@ -20,328 +19,345 @@
  */
 
 #include "ss-record.h"
+
 #include "service-flow.h"
+
 #include <stdint.h>
 
-namespace ns3 {
-
-SSRecord::SSRecord (void)
+namespace ns3
 {
-  Initialize ();
+
+SSRecord::SSRecord()
+{
+    Initialize();
 }
 
-SSRecord::SSRecord (Mac48Address macAddress)
+SSRecord::SSRecord(Mac48Address macAddress)
 {
-  m_macAddress = macAddress;
-  Initialize ();
+    m_macAddress = macAddress;
+    Initialize();
 }
 
-SSRecord::SSRecord (Mac48Address macAddress, Ipv4Address IPaddress)
+SSRecord::SSRecord(Mac48Address macAddress, Ipv4Address IPaddress)
 {
-  m_macAddress = macAddress;
-  m_IPAddress = IPaddress;
-  Initialize ();
-}
-
-void
-SSRecord::Initialize (void)
-{
-  m_basicCid = Cid ();
-  m_primaryCid = Cid ();
-
-  m_rangingCorrectionRetries = 0;
-  m_invitedRangingRetries = 0;
-  m_modulationType = WimaxPhy::MODULATION_TYPE_BPSK_12;
-  m_rangingStatus = WimaxNetDevice::RANGING_STATUS_EXPIRED;
-  m_pollForRanging = false;
-  m_areServiceFlowsAllocated = false;
-  m_pollMeBit = false;
-
-  m_sfTransactionId = 0;
-  m_dsaRspRetries = 0;
-
-  m_serviceFlows = new std::vector<ServiceFlow*> ();
-  m_dsaRsp = DsaRsp ();
-  m_broadcast = 0;
-}
-
-SSRecord::~SSRecord (void)
-{
-  delete m_serviceFlows;
-  m_serviceFlows = 0;
+    m_macAddress = macAddress;
+    m_IPAddress = IPaddress;
+    Initialize();
 }
 
 void
-SSRecord::SetIPAddress (Ipv4Address IPAddress)
+SSRecord::Initialize()
 {
-  m_IPAddress = IPAddress;
+    m_basicCid = Cid();
+    m_primaryCid = Cid();
+
+    m_rangingCorrectionRetries = 0;
+    m_invitedRangingRetries = 0;
+    m_modulationType = WimaxPhy::MODULATION_TYPE_BPSK_12;
+    m_rangingStatus = WimaxNetDevice::RANGING_STATUS_EXPIRED;
+    m_pollForRanging = false;
+    m_areServiceFlowsAllocated = false;
+    m_pollMeBit = false;
+
+    m_sfTransactionId = 0;
+    m_dsaRspRetries = 0;
+
+    m_serviceFlows = new std::vector<ServiceFlow*>();
+    m_dsaRsp = DsaRsp();
+    m_broadcast = 0;
 }
 
-Ipv4Address SSRecord::GetIPAddress (void)
+SSRecord::~SSRecord()
 {
-  return m_IPAddress;
+    delete m_serviceFlows;
+    m_serviceFlows = nullptr;
 }
 
 void
-SSRecord::SetBasicCid (Cid basicCid)
+SSRecord::SetIPAddress(Ipv4Address IPAddress)
 {
-  m_basicCid = basicCid;
+    m_IPAddress = IPAddress;
+}
+
+Ipv4Address
+SSRecord::GetIPAddress()
+{
+    return m_IPAddress;
+}
+
+void
+SSRecord::SetBasicCid(Cid basicCid)
+{
+    m_basicCid = basicCid;
 }
 
 Cid
-SSRecord::GetBasicCid (void) const
+SSRecord::GetBasicCid() const
 {
-  return m_basicCid;
+    return m_basicCid;
 }
 
 void
-SSRecord::SetPrimaryCid (Cid primaryCid)
+SSRecord::SetPrimaryCid(Cid primaryCid)
 {
-  m_primaryCid = primaryCid;
+    m_primaryCid = primaryCid;
 }
 
 Cid
-SSRecord::GetPrimaryCid (void) const
+SSRecord::GetPrimaryCid() const
 {
-  return m_primaryCid;
+    return m_primaryCid;
 }
 
 void
-SSRecord::SetMacAddress (Mac48Address macAddress)
+SSRecord::SetMacAddress(Mac48Address macAddress)
 {
-  m_macAddress = macAddress;
+    m_macAddress = macAddress;
 }
 
 Mac48Address
-SSRecord::GetMacAddress (void) const
+SSRecord::GetMacAddress() const
 {
-  return m_macAddress;
+    return m_macAddress;
 }
 
 uint8_t
-SSRecord::GetRangingCorrectionRetries (void) const
+SSRecord::GetRangingCorrectionRetries() const
 {
-  return m_rangingCorrectionRetries;
+    return m_rangingCorrectionRetries;
 }
 
 void
-SSRecord::ResetRangingCorrectionRetries (void)
+SSRecord::ResetRangingCorrectionRetries()
 {
-  m_rangingCorrectionRetries = 0;
+    m_rangingCorrectionRetries = 0;
 }
 
 void
-SSRecord::IncrementRangingCorrectionRetries (void)
+SSRecord::IncrementRangingCorrectionRetries()
 {
-  m_rangingCorrectionRetries++;
+    m_rangingCorrectionRetries++;
 }
 
 uint8_t
-SSRecord::GetInvitedRangRetries (void) const
+SSRecord::GetInvitedRangRetries() const
 {
-  return m_invitedRangingRetries;
+    return m_invitedRangingRetries;
 }
 
 void
-SSRecord::ResetInvitedRangingRetries (void)
+SSRecord::ResetInvitedRangingRetries()
 {
-  m_invitedRangingRetries = 0;
+    m_invitedRangingRetries = 0;
 }
 
 void
-SSRecord::IncrementInvitedRangingRetries (void)
+SSRecord::IncrementInvitedRangingRetries()
 {
-  m_invitedRangingRetries++;
+    m_invitedRangingRetries++;
 }
 
 void
-SSRecord::SetModulationType (WimaxPhy::ModulationType modulationType)
+SSRecord::SetModulationType(WimaxPhy::ModulationType modulationType)
 {
-  m_modulationType = modulationType;
+    m_modulationType = modulationType;
 }
 
 WimaxPhy::ModulationType
-SSRecord::GetModulationType (void) const
+SSRecord::GetModulationType() const
 {
-  return m_modulationType;
+    return m_modulationType;
 }
 
 void
-SSRecord::SetRangingStatus (WimaxNetDevice::RangingStatus rangingStatus)
+SSRecord::SetRangingStatus(WimaxNetDevice::RangingStatus rangingStatus)
 {
-  m_rangingStatus = rangingStatus;
+    m_rangingStatus = rangingStatus;
 }
 
 WimaxNetDevice::RangingStatus
-SSRecord::GetRangingStatus (void) const
+SSRecord::GetRangingStatus() const
 {
-  return m_rangingStatus;
+    return m_rangingStatus;
 }
 
 void
-SSRecord::EnablePollForRanging (void)
+SSRecord::EnablePollForRanging()
 {
-  m_pollForRanging = true;
+    m_pollForRanging = true;
 }
 
 void
-SSRecord::DisablePollForRanging (void)
+SSRecord::DisablePollForRanging()
 {
-  m_pollForRanging = false;
+    m_pollForRanging = false;
 }
 
 bool
-SSRecord::GetPollForRanging (void) const
+SSRecord::GetPollForRanging() const
 {
-  return m_pollForRanging;
+    return m_pollForRanging;
 }
 
 void
-SSRecord::SetAreServiceFlowsAllocated (bool val)
+SSRecord::SetAreServiceFlowsAllocated(bool val)
 {
-  m_areServiceFlowsAllocated = val;
+    m_areServiceFlowsAllocated = val;
 }
 
 bool
-SSRecord::GetAreServiceFlowsAllocated (void) const
+SSRecord::GetAreServiceFlowsAllocated() const
 {
-  return m_areServiceFlowsAllocated;
+    return m_areServiceFlowsAllocated;
 }
 
 void
-SSRecord::SetPollMeBit (bool pollMeBit)
+SSRecord::SetPollMeBit(bool pollMeBit)
 {
-  m_pollMeBit = pollMeBit;
+    m_pollMeBit = pollMeBit;
 }
 
 bool
-SSRecord::GetPollMeBit (void) const
+SSRecord::GetPollMeBit() const
 {
-  return m_pollMeBit;
+    return m_pollMeBit;
 }
 
 void
-SSRecord::AddServiceFlow (ServiceFlow *serviceFlow)
+SSRecord::AddServiceFlow(ServiceFlow* serviceFlow)
 {
-  m_serviceFlows->push_back (serviceFlow);
+    m_serviceFlows->push_back(serviceFlow);
 }
 
-std::vector<ServiceFlow*> SSRecord::GetServiceFlows (enum ServiceFlow::SchedulingType schedulingType) const
+std::vector<ServiceFlow*>
+SSRecord::GetServiceFlows(enum ServiceFlow::SchedulingType schedulingType) const
 {
-  std::vector<ServiceFlow*> tmpServiceFlows;
-  for (std::vector<ServiceFlow*>::iterator iter = m_serviceFlows->begin (); iter != m_serviceFlows->end (); ++iter)
+    std::vector<ServiceFlow*> tmpServiceFlows;
+    for (std::vector<ServiceFlow*>::iterator iter = m_serviceFlows->begin();
+         iter != m_serviceFlows->end();
+         ++iter)
     {
-      if (((*iter)->GetSchedulingType () == schedulingType) || (schedulingType == ServiceFlow::SF_TYPE_ALL))
+        if (((*iter)->GetSchedulingType() == schedulingType) ||
+            (schedulingType == ServiceFlow::SF_TYPE_ALL))
         {
-          tmpServiceFlows.push_back ((*iter));
+            tmpServiceFlows.push_back((*iter));
         }
     }
-  return tmpServiceFlows;
+    return tmpServiceFlows;
 }
 
 void
-SSRecord::SetIsBroadcastSS (bool broadcast_enable)
+SSRecord::SetIsBroadcastSS(bool broadcast_enable)
 {
-  m_broadcast = broadcast_enable;
+    m_broadcast = broadcast_enable;
 }
 
 bool
-SSRecord::GetIsBroadcastSS (void)
+SSRecord::GetIsBroadcastSS() const
 {
-  return m_broadcast;
+    return m_broadcast;
 }
 
 bool
-SSRecord::GetHasServiceFlowUgs (void) const
+SSRecord::GetHasServiceFlowUgs() const
 {
-  for (std::vector<ServiceFlow*>::iterator iter = m_serviceFlows->begin (); iter != m_serviceFlows->end (); ++iter)
+    for (std::vector<ServiceFlow*>::iterator iter = m_serviceFlows->begin();
+         iter != m_serviceFlows->end();
+         ++iter)
     {
-      if ((*iter)->GetSchedulingType () == ServiceFlow::SF_TYPE_UGS)
+        if ((*iter)->GetSchedulingType() == ServiceFlow::SF_TYPE_UGS)
         {
-          return true;
+            return true;
         }
     }
-  return false;
+    return false;
 }
 
 bool
-SSRecord::GetHasServiceFlowRtps (void) const
+SSRecord::GetHasServiceFlowRtps() const
 {
-  for (std::vector<ServiceFlow*>::iterator iter = m_serviceFlows->begin (); iter != m_serviceFlows->end (); ++iter)
+    for (std::vector<ServiceFlow*>::iterator iter = m_serviceFlows->begin();
+         iter != m_serviceFlows->end();
+         ++iter)
     {
-      if ((*iter)->GetSchedulingType () == ServiceFlow::SF_TYPE_RTPS)
+        if ((*iter)->GetSchedulingType() == ServiceFlow::SF_TYPE_RTPS)
         {
-          return true;
+            return true;
         }
     }
-  return false;
+    return false;
 }
 
 bool
-SSRecord::GetHasServiceFlowNrtps (void) const
+SSRecord::GetHasServiceFlowNrtps() const
 {
-  for (std::vector<ServiceFlow*>::iterator iter = m_serviceFlows->begin (); iter != m_serviceFlows->end (); ++iter)
+    for (std::vector<ServiceFlow*>::iterator iter = m_serviceFlows->begin();
+         iter != m_serviceFlows->end();
+         ++iter)
     {
-      if ((*iter)->GetSchedulingType () == ServiceFlow::SF_TYPE_NRTPS)
+        if ((*iter)->GetSchedulingType() == ServiceFlow::SF_TYPE_NRTPS)
         {
-          return true;
+            return true;
         }
     }
-  return false;
+    return false;
 }
 
 bool
-SSRecord::GetHasServiceFlowBe (void) const
+SSRecord::GetHasServiceFlowBe() const
 {
-  for (std::vector<ServiceFlow*>::iterator iter = m_serviceFlows->begin (); iter != m_serviceFlows->end (); ++iter)
+    for (std::vector<ServiceFlow*>::iterator iter = m_serviceFlows->begin();
+         iter != m_serviceFlows->end();
+         ++iter)
     {
-      if ((*iter)->GetSchedulingType () == ServiceFlow::SF_TYPE_BE)
+        if ((*iter)->GetSchedulingType() == ServiceFlow::SF_TYPE_BE)
         {
-          return true;
+            return true;
         }
     }
-  return false;
+    return false;
 }
 
 void
-SSRecord::SetSfTransactionId (uint16_t sfTransactionId)
+SSRecord::SetSfTransactionId(uint16_t sfTransactionId)
 {
-  m_sfTransactionId = sfTransactionId;
+    m_sfTransactionId = sfTransactionId;
 }
 
-uint16_t SSRecord::GetSfTransactionId (void) const
+uint16_t
+SSRecord::GetSfTransactionId() const
 {
-  return m_sfTransactionId;
-}
-
-void
-SSRecord::SetDsaRspRetries (uint8_t dsaRspRetries)
-{
-  m_dsaRspRetries = dsaRspRetries;
+    return m_sfTransactionId;
 }
 
 void
-SSRecord::IncrementDsaRspRetries (void)
+SSRecord::SetDsaRspRetries(uint8_t dsaRspRetries)
 {
-  m_dsaRspRetries++;
+    m_dsaRspRetries = dsaRspRetries;
+}
+
+void
+SSRecord::IncrementDsaRspRetries()
+{
+    m_dsaRspRetries++;
 }
 
 uint8_t
-SSRecord::GetDsaRspRetries (void) const
+SSRecord::GetDsaRspRetries() const
 {
-  return m_dsaRspRetries;
+    return m_dsaRspRetries;
 }
 
 void
-SSRecord::SetDsaRsp (DsaRsp dsaRsp)
+SSRecord::SetDsaRsp(DsaRsp dsaRsp)
 {
-  m_dsaRsp = dsaRsp;
+    m_dsaRsp = dsaRsp;
 }
 
 DsaRsp
-SSRecord::GetDsaRsp (void) const
+SSRecord::GetDsaRsp() const
 {
-  return m_dsaRsp;
+    return m_dsaRsp;
 }
 
 } // namespace ns3

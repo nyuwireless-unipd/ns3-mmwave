@@ -23,10 +23,9 @@
 
 #include "ns3/simulator.h"
 #include "ns3/test.h"
-
+#include <ns3/radio-bearer-stats-calculator.h>
 
 using namespace ns3;
-
 
 /**
  * \ingroup lte-test
@@ -39,46 +38,47 @@ using namespace ns3;
  */
 class LenaMimoTestCase : public TestCase
 {
-public:
-  /**
-   * Constructor
-   *
-   * \param dist the distance
-   * \param estThrDl the estimated throughput DL
-   * \param schedulerType the scheduler type
-   * \param useIdealRrc true if use ideal RRC
-   */
-  LenaMimoTestCase (uint16_t dist, std::vector<uint32_t> estThrDl, std::string schedulerType, bool useIdealRrc);
-  virtual ~LenaMimoTestCase ();
+  public:
+    /**
+     * Constructor
+     *
+     * \param dist the distance
+     * \param estThrDl the estimated throughput DL
+     * \param schedulerType the scheduler type
+     * \param useIdealRrc true if use ideal RRC
+     */
+    LenaMimoTestCase(uint16_t dist,
+                     std::vector<uint32_t> estThrDl,
+                     std::string schedulerType,
+                     bool useIdealRrc);
+    virtual ~LenaMimoTestCase();
 
-private:
-  virtual void DoRun (void);
+  private:
+    virtual void DoRun(void);
 
-  /**
-   * Get RLC buffer sample
-   * \param rlcStats Ptr<RadioBearerStatsCalculator>
-   * \param imsi the IMSI
-   * \param rnti the RNTI
-   */
-  void GetRlcBufferSample (Ptr<RadioBearerStatsCalculator> rlcStats, uint64_t imsi, uint8_t rnti);
+    /**
+     * Get RLC buffer sample
+     * \param rlcStats Ptr<RadioBearerStatsCalculator>
+     * \param imsi the IMSI
+     * \param rnti the RNTI
+     */
+    void GetRlcBufferSample(Ptr<RadioBearerStatsCalculator> rlcStats, uint64_t imsi, uint8_t rnti);
 
-  /**
-   * Builds the test name string based on provided parameter values
-   * \param dist the distance
-   * \param schedulerType the scheduler type
-   * \param useIdealRrc if true use the ideal RRC
-   * \returns the name string
-   */
-  static std::string BuildNameString (uint16_t dist, std::string schedulerType, bool useIdealRrc);
-  uint16_t m_dist; ///< the distance
-  std::vector<uint32_t> m_estThrDl; ///< estimated throughput DL
-  std::string m_schedulerType; ///< the scheduler type
-  bool m_useIdealRrc; ///< whether to use the ideal RRC
-  
-  std::vector <uint64_t> m_dlDataRxed; ///< DL data received
+    /**
+     * Builds the test name string based on provided parameter values
+     * \param dist the distance
+     * \param schedulerType the scheduler type
+     * \param useIdealRrc if true use the ideal RRC
+     * \returns the name string
+     */
+    static std::string BuildNameString(uint16_t dist, std::string schedulerType, bool useIdealRrc);
+    uint16_t m_dist;                  ///< the distance
+    std::vector<uint32_t> m_estThrDl; ///< estimated throughput DL
+    std::string m_schedulerType;      ///< the scheduler type
+    bool m_useIdealRrc;               ///< whether to use the ideal RRC
 
+    std::vector<uint64_t> m_dlDataRxed; ///< DL data received
 };
-
 
 /**
  * \ingroup lte-test
@@ -89,8 +89,8 @@ private:
 
 class LenaTestMimoSuite : public TestSuite
 {
-public:
-  LenaTestMimoSuite ();
+  public:
+    LenaTestMimoSuite();
 };
 
 #endif /* LENA_TEST_MIMO_H */

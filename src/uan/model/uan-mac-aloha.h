@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2009 University of Washington
  *
@@ -22,11 +21,11 @@
 #define UAN_MAC_ALOHA_H
 
 #include "uan-mac.h"
+
 #include "ns3/mac8-address.h"
 
 namespace ns3
 {
-
 
 class UanPhy;
 class UanTxMode;
@@ -42,53 +41,53 @@ class UanTxMode;
  */
 class UanMacAloha : public UanMac
 {
-public:
-  /** Default constructor */
-  UanMacAloha ();
-  /** Dummy destructor, see DoDispose. */
-  virtual ~UanMacAloha ();
-  /**
-   * Register this type.
-   * \return The TypeId.
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /** Default constructor */
+    UanMacAloha();
+    /** Dummy destructor, see DoDispose. */
+    ~UanMacAloha() override;
+    /**
+     * Register this type.
+     * \return The TypeId.
+     */
+    static TypeId GetTypeId();
 
+    // Inherited methods
+    bool Enqueue(Ptr<Packet> pkt, uint16_t protocolNumber, const Address& dest) override;
+    void SetForwardUpCb(Callback<void, Ptr<Packet>, uint16_t, const Mac8Address&> cb) override;
+    void AttachPhy(Ptr<UanPhy> phy) override;
+    void Clear() override;
+    int64_t AssignStreams(int64_t stream) override;
 
-  // Inherited methods
-  virtual bool Enqueue (Ptr<Packet> pkt, uint16_t protocolNumber, const Address &dest);
-  virtual void SetForwardUpCb (Callback<void, Ptr<Packet>, uint16_t, const Mac8Address&> cb);
-  virtual void AttachPhy (Ptr<UanPhy> phy);
-  virtual void Clear (void);
-  int64_t AssignStreams (int64_t stream);
+  private:
+    /** PHY layer attached to this MAC. */
+    Ptr<UanPhy> m_phy;
+    /** Forwarding up callback. */
+    Callback<void, Ptr<Packet>, uint16_t, const Mac8Address&> m_forUpCb;
+    /** Flag when we've been cleared. */
+    bool m_cleared;
 
-private:
-  /** PHY layer attached to this MAC. */
-  Ptr<UanPhy> m_phy;
-  /** Forwarding up callback. */
-  Callback<void, Ptr<Packet>, uint16_t, const Mac8Address& > m_forUpCb;
-  /** Flag when we've been cleared. */
-  bool m_cleared;
+    /**
+     * Receive packet from lower layer (passed to PHY as callback).
+     *
+     * \param pkt Packet being received.
+     * \param sinr SINR of received packet.
+     * \param txMode Mode of received packet.
+     */
+    void RxPacketGood(Ptr<Packet> pkt, double sinr, UanTxMode txMode);
 
-  /**
-   * Receive packet from lower layer (passed to PHY as callback).
-   *
-   * \param pkt Packet being received.
-   * \param sinr SINR of received packet.
-   * \param txMode Mode of received packet.
-   */
-  void RxPacketGood (Ptr<Packet> pkt, double sinr, UanTxMode txMode);
+    /**
+     * Packet received at lower layer in error.
+     *
+     * \param pkt Packet received in error.
+     * \param sinr SINR of received packet.
+     */
+    void RxPacketError(Ptr<Packet> pkt, double sinr);
 
-  /**
-   * Packet received at lower layer in error.
-   *
-   * \param pkt Packet received in error.
-   * \param sinr SINR of received packet.
-   */
-  void RxPacketError (Ptr<Packet> pkt, double sinr);
-protected:
-  virtual void DoDispose ();
+  protected:
+    void DoDispose() override;
 
-};  // class UanMacAloha
+}; // class UanMacAloha
 
 } // namespace ns3
 

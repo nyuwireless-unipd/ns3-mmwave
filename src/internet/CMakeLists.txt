@@ -79,7 +79,6 @@ set(source_files
     model/ipv6.cc
     model/loopback-net-device.cc
     model/ndisc-cache.cc
-    model/pending-data.cc
     model/rip-header.cc
     model/rip.cc
     model/ripng-header.cc
@@ -119,7 +118,7 @@ set(source_files
     model/tcp-tx-item.cc
     model/tcp-vegas.cc
     model/tcp-veno.cc
-    model/tcp-westwood.cc
+    model/tcp-westwood-plus.cc
     model/tcp-yeah.cc
     model/udp-header.cc
     model/udp-l4-protocol.cc
@@ -244,7 +243,7 @@ set(header_files
     model/tcp-tx-item.h
     model/tcp-vegas.h
     model/tcp-veno.h
-    model/tcp-westwood.h
+    model/tcp-westwood-plus.h
     model/tcp-yeah.h
     model/udp-header.h
     model/udp-l4-protocol.h
@@ -252,6 +251,13 @@ set(header_files
     model/udp-socket.h
     model/windowed-filter.h
 )
+
+set(private_header_files)
+if(WIN32)
+  set(private_header_files
+      model/win32-internet.h
+  )
+endif()
 
 set(test_sources
     test/global-route-manager-impl-test-suite.cc
@@ -333,6 +339,7 @@ build_lib(
   LIBNAME internet
   SOURCE_FILES ${source_files}
   HEADER_FILES ${header_files}
+  PRIVATE_HEADER_FILES ${private_header_files}
   LIBRARIES_TO_LINK
     ${libnetwork}
     ${libcore}

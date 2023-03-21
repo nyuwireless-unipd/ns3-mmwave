@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright 2007 University of Washington
  *
@@ -22,7 +21,10 @@
 #ifndef GLOBAL_ROUTE_MANAGER_H
 #define GLOBAL_ROUTE_MANAGER_H
 
-namespace ns3 {
+#include <cstdint>
+
+namespace ns3
+{
 
 /**
  * \ingroup globalrouting
@@ -39,35 +41,35 @@ namespace ns3 {
  */
 class GlobalRouteManager
 {
-public:
-  // Delete copy constructor and assignment operator to avoid misuse
-  GlobalRouteManager (const GlobalRouteManager &) = delete;
-  GlobalRouteManager &operator= (const GlobalRouteManager &) = delete;
+  public:
+    // Delete copy constructor and assignment operator to avoid misuse
+    GlobalRouteManager(const GlobalRouteManager&) = delete;
+    GlobalRouteManager& operator=(const GlobalRouteManager&) = delete;
 
-/**
- * @brief Allocate a 32-bit router ID from monotonically increasing counter.
- * @returns A new new RouterId.
- */
-  static uint32_t AllocateRouterId ();
+    /**
+     * @brief Allocate a 32-bit router ID from monotonically increasing counter.
+     * @returns A new new RouterId.
+     */
+    static uint32_t AllocateRouterId();
 
-/**
- * @brief Delete all static routes on all nodes that have a
- * GlobalRouterInterface
- *
- */
-  static void DeleteGlobalRoutes ();
+    /**
+     * @brief Delete all static routes on all nodes that have a
+     * GlobalRouterInterface
+     *
+     */
+    static void DeleteGlobalRoutes();
 
-/**
- * @brief Build the routing database by gathering Link State Advertisements
- * from each node exporting a GlobalRouter interface.
- */
-  static void BuildGlobalRoutingDatabase ();
+    /**
+     * @brief Build the routing database by gathering Link State Advertisements
+     * from each node exporting a GlobalRouter interface.
+     */
+    static void BuildGlobalRoutingDatabase();
 
-/**
- * @brief Compute routes using a Dijkstra SPF computation and populate
- * per-node forwarding tables
- */
-  static void InitializeRoutes ();
+    /**
+     * @brief Compute routes using a Dijkstra SPF computation and populate
+     * per-node forwarding tables
+     */
+    static void InitializeRoutes();
 };
 
 } // namespace ns3

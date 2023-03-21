@@ -22,16 +22,17 @@
  *          Dual Connectivity functionalities
  */
 
-
 #ifndef LTE_AS_SAP_H
 #define LTE_AS_SAP_H
 
-#include <stdint.h>
-#include <ns3/ptr.h>
-#include <ns3/packet.h>
 #include <ns3/lte-rrc-sap.h>
+#include <ns3/packet.h>
+#include <ns3/ptr.h>
 
-namespace ns3 {
+#include <stdint.h>
+
+namespace ns3
+{
 
 class LteEnbNetDevice;
 
@@ -45,72 +46,73 @@ class LteEnbNetDevice;
  */
 class LteAsSapProvider
 {
-public:
-  virtual ~LteAsSapProvider ();
+  public:
+    virtual ~LteAsSapProvider();
 
-  /**
-   * \brief Set the selected Closed Subscriber Group subscription list to be
-   *        used for cell selection.
-   *
-   * \param csgId identity of the subscribed CSG
-   */
-  virtual void SetCsgWhiteList (uint32_t csgId) = 0;
+    /**
+     * \brief Set the selected Closed Subscriber Group subscription list to be
+     *        used for cell selection.
+     *
+     * \param csgId identity of the subscribed CSG
+     */
+    virtual void SetCsgWhiteList(uint32_t csgId) = 0;
 
-  /**
-   * \brief Initiate Idle mode cell selection procedure.
-   *
-   * \param dlEarfcn the downlink carrier frequency (EARFCN)
-   */
-  virtual void StartCellSelection (uint32_t dlEarfcn) = 0;
+    /**
+     * \brief Initiate Idle mode cell selection procedure.
+     *
+     * \param dlEarfcn the downlink carrier frequency (EARFCN)
+     */
+    virtual void StartCellSelection(uint32_t dlEarfcn) = 0;
 
-  /**
-   * \brief Force the RRC entity to stay camped on a certain eNodeB.
-   *
-   * \param cellId the cell ID identifying the eNodeB
-   * \param dlEarfcn the downlink carrier frequency (EARFCN)
-   */
-  virtual void ForceCampedOnEnb (uint16_t cellId, uint32_t dlEarfcn) = 0;
+    /**
+     * \brief Force the RRC entity to stay camped on a certain eNodeB.
+     *
+     * \param cellId the cell ID identifying the eNodeB
+     * \param dlEarfcn the downlink carrier frequency (EARFCN)
+     */
+    virtual void ForceCampedOnEnb(uint16_t cellId, uint32_t dlEarfcn) = 0;
 
-  /**
-   * \brief Tell the RRC entity to enter Connected mode.
-   *
-   * If this function is called when the UE is in a situation where connecting
-   * is not possible (e.g. before the simulation begin), then the UE will
-   * attempt to connect at the earliest possible time (e.g. after it camps to a
-   * suitable cell).
-   */
-  virtual void Connect (void) = 0;
+    /**
+     * \brief Tell the RRC entity to enter Connected mode.
+     *
+     * If this function is called when the UE is in a situation where connecting
+     * is not possible (e.g. before the simulation begin), then the UE will
+     * attempt to connect at the earliest possible time (e.g. after it camps to a
+     * suitable cell).
+     */
+    virtual void Connect(void) = 0;
 
-  /**
-   * \brief Send a data packet.
-   *
-   * \param packet the packet
-   * \param bid the EPS bearer ID
-   */
-  virtual void SendData (Ptr<Packet> packet, uint8_t bid) = 0;
+    /**
+     * \brief Send a data packet.
+     *
+     * \param packet the packet
+     * \param bid the EPS bearer ID
+     */
+    virtual void SendData(Ptr<Packet> packet, uint8_t bid) = 0;
 
+    /**
+     * \brief Tell the RRC entity to release the connection.
+     *
+     */
+    virtual void Disconnect() = 0;
 
-  /**
-   * \brief Tell the RRC entity to release the connection.
-   *
-   */
-  virtual void Disconnect () = 0;
+    /**
+     * \brief Tell the RRC that a secondary cell was connected
+     *
+     */
+    virtual void NotifySecondaryCellConnected(uint16_t rnti, uint16_t mmWaveCellId) = 0;
 
-  /**
-   * \brief Tell the RRC that a secondary cell was connected
-   *
-   */
-  virtual void NotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveCellId) = 0;
-
-  /**
-   * \brief Tell the LTE RRC in the UE that a secondary cell handover was performed,
-   * and trigger the RLC instances update
-   *
-   */
-  virtual void NotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated) = 0;
-
+    /**
+     * \brief Tell the LTE RRC in the UE that a secondary cell handover was performed,
+     * and trigger the RLC instances update
+     *
+     */
+    virtual void NotifySecondaryCellHandover(
+        uint16_t oldRnti,
+        uint16_t newRnti,
+        uint16_t mmWaveCellId,
+        LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated) = 0;
 };
-
 
 /**
  * This class implements the Access Stratum (AS) Service Access Point
@@ -122,49 +124,48 @@ public:
  */
 class LteAsSapUser
 {
-public:
-  virtual ~LteAsSapUser ();
+  public:
+    virtual ~LteAsSapUser();
 
-  /**
-   * \brief Notify the NAS that RRC Connection Establishment was successful.
-   *
-   */
-  virtual void NotifyConnectionSuccessful (uint16_t rnti) = 0;
+    /**
+     * \brief Notify the NAS that RRC Connection Establishment was successful.
+     *
+     */
+    virtual void NotifyConnectionSuccessful(uint16_t rnti) = 0;
 
-  virtual void NotifyHandoverSuccessful (uint16_t rnti, uint16_t mmWaveCellId) = 0;
+    virtual void NotifyHandoverSuccessful(uint16_t rnti, uint16_t mmWaveCellId) = 0;
 
-  virtual void NotifySecondaryCellHandoverStarted (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated) = 0;
+    virtual void NotifySecondaryCellHandoverStarted(
+        uint16_t oldRnti,
+        uint16_t newRnti,
+        uint16_t mmWaveCellId,
+        LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated) = 0;
 
-  /**
-   * \brief Notify the NAS that LTE RRC received an indication to connect to a MmWave eNB
-   *
-   */
-  virtual void NotifyConnectToMmWave (uint16_t mmWaveCellId) = 0;
+    /**
+     * \brief Notify the NAS that LTE RRC received an indication to connect to a MmWave eNB
+     *
+     */
+    virtual void NotifyConnectToMmWave(uint16_t mmWaveCellId) = 0;
 
-  /**
-   * \brief Notify the NAS that RRC Connection Establishment failed.
-   *
-   */
-  virtual void NotifyConnectionFailed () = 0;
+    /**
+     * \brief Notify the NAS that RRC Connection Establishment failed.
+     *
+     */
+    virtual void NotifyConnectionFailed() = 0;
 
+    /**
+     * Notify the NAS that RRC Connection was released
+     *
+     */
+    virtual void NotifyConnectionReleased() = 0;
 
-  /**
-   * Notify the NAS that RRC Connection was released
-   *
-   */
-  virtual void NotifyConnectionReleased () = 0;
-
-  /**
-   * receive a data packet
-   *
-   * \param packet the packet
-   */
-  virtual void RecvData (Ptr<Packet> packet) = 0;
-
+    /**
+     * receive a data packet
+     *
+     * \param packet the packet
+     */
+    virtual void RecvData(Ptr<Packet> packet) = 0;
 };
-
-
-
 
 /**
  * Template for the implementation of the LteAsSapProvider as a member
@@ -174,96 +175,106 @@ public:
 template <class C>
 class MemberLteAsSapProvider : public LteAsSapProvider
 {
-public:
-  /**
-   * Constructor
-   *
-   * \param owner the owner class
-   */
-  MemberLteAsSapProvider (C* owner);
+  public:
+    /**
+     * Constructor
+     *
+     * \param owner the owner class
+     */
+    MemberLteAsSapProvider(C* owner);
 
-  // inherited from LteAsSapProvider
-  virtual void SetCsgWhiteList (uint32_t csgId);
-  virtual void StartCellSelection (uint32_t dlEarfcn);
-  virtual void ForceCampedOnEnb (uint16_t cellId, uint32_t dlEarfcn);
-  virtual void Connect (void);
-  virtual void SendData (Ptr<Packet> packet, uint8_t bid);
-  virtual void Disconnect ();
-  virtual void NotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveCellId);
-  virtual void NotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated);
+    // inherited from LteAsSapProvider
+    virtual void SetCsgWhiteList(uint32_t csgId);
+    virtual void StartCellSelection(uint32_t dlEarfcn);
+    virtual void ForceCampedOnEnb(uint16_t cellId, uint32_t dlEarfcn);
+    virtual void Connect(void);
+    virtual void SendData(Ptr<Packet> packet, uint8_t bid);
+    virtual void Disconnect();
+    virtual void NotifySecondaryCellConnected(uint16_t rnti, uint16_t mmWaveCellId);
+    virtual void NotifySecondaryCellHandover(
+        uint16_t oldRnti,
+        uint16_t newRnti,
+        uint16_t mmWaveCellId,
+        LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated);
 
-private:
-  MemberLteAsSapProvider ();
-  C* m_owner; ///< the owner class
+  private:
+    MemberLteAsSapProvider();
+    C* m_owner; ///< the owner class
 };
 
 template <class C>
-MemberLteAsSapProvider<C>::MemberLteAsSapProvider (C* owner)
-  : m_owner (owner)
+MemberLteAsSapProvider<C>::MemberLteAsSapProvider(C* owner)
+    : m_owner(owner)
 {
 }
 
 template <class C>
-MemberLteAsSapProvider<C>::MemberLteAsSapProvider ()
+MemberLteAsSapProvider<C>::MemberLteAsSapProvider()
 {
-}
-
-template <class C>
-void
-MemberLteAsSapProvider<C>::SetCsgWhiteList (uint32_t csgId)
-{
-  m_owner->DoSetCsgWhiteList (csgId);
 }
 
 template <class C>
 void
-MemberLteAsSapProvider<C>::StartCellSelection (uint32_t dlEarfcn)
+MemberLteAsSapProvider<C>::SetCsgWhiteList(uint32_t csgId)
 {
-  m_owner->DoStartCellSelection (dlEarfcn);
+    m_owner->DoSetCsgWhiteList(csgId);
 }
 
 template <class C>
 void
-MemberLteAsSapProvider<C>::ForceCampedOnEnb (uint16_t cellId, uint32_t dlEarfcn)
+MemberLteAsSapProvider<C>::StartCellSelection(uint32_t dlEarfcn)
 {
-  m_owner->DoForceCampedOnEnb (cellId, dlEarfcn);
+    m_owner->DoStartCellSelection(dlEarfcn);
 }
 
 template <class C>
 void
-MemberLteAsSapProvider<C>::Connect ()
+MemberLteAsSapProvider<C>::ForceCampedOnEnb(uint16_t cellId, uint32_t dlEarfcn)
 {
-  m_owner->DoConnect ();
+    m_owner->DoForceCampedOnEnb(cellId, dlEarfcn);
 }
 
 template <class C>
 void
-MemberLteAsSapProvider<C>::SendData (Ptr<Packet> packet, uint8_t bid)
+MemberLteAsSapProvider<C>::Connect()
 {
-  m_owner->DoSendData (packet, bid);
+    m_owner->DoConnect();
 }
 
 template <class C>
 void
-MemberLteAsSapProvider<C>::Disconnect ()
+MemberLteAsSapProvider<C>::SendData(Ptr<Packet> packet, uint8_t bid)
 {
-  m_owner->DoDisconnect ();
+    m_owner->DoSendData(packet, bid);
 }
 
 template <class C>
 void
-MemberLteAsSapProvider<C>::NotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveCellId)
+MemberLteAsSapProvider<C>::Disconnect()
 {
-  m_owner->DoNotifySecondaryCellConnected (rnti, mmWaveCellId);
+    m_owner->DoDisconnect();
 }
 
 template <class C>
 void
-MemberLteAsSapProvider<C>::NotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated)
+MemberLteAsSapProvider<C>::NotifySecondaryCellConnected(uint16_t rnti, uint16_t mmWaveCellId)
 {
-  m_owner->DoNotifySecondaryCellHandover (oldRnti, newRnti, mmWaveCellId, radioResourceConfigDedicated);
+    m_owner->DoNotifySecondaryCellConnected(rnti, mmWaveCellId);
 }
 
+template <class C>
+void
+MemberLteAsSapProvider<C>::NotifySecondaryCellHandover(
+    uint16_t oldRnti,
+    uint16_t newRnti,
+    uint16_t mmWaveCellId,
+    LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated)
+{
+    m_owner->DoNotifySecondaryCellHandover(oldRnti,
+                                           newRnti,
+                                           mmWaveCellId,
+                                           radioResourceConfigDedicated);
+}
 
 /**
  * Template for the implementation of the LteAsSapUser as a member
@@ -273,87 +284,97 @@ MemberLteAsSapProvider<C>::NotifySecondaryCellHandover (uint16_t oldRnti, uint16
 template <class C>
 class MemberLteAsSapUser : public LteAsSapUser
 {
-public:
-  /**
-   * Constructor
-   *
-   * \param owner the owner class
-   */
-  MemberLteAsSapUser (C* owner);
+  public:
+    /**
+     * Constructor
+     *
+     * \param owner the owner class
+     */
+    MemberLteAsSapUser(C* owner);
 
-  // inherited from LteAsSapUser
-  virtual void NotifyConnectionSuccessful (uint16_t rnti);
-  virtual void NotifyHandoverSuccessful (uint16_t rnti, uint16_t mmWaveCellId);
-  virtual void NotifyConnectToMmWave (uint16_t mmWaveCellId);
-  virtual void NotifyConnectionFailed ();
-  virtual void RecvData (Ptr<Packet> packet);
-  virtual void NotifyConnectionReleased ();
-  virtual void NotifySecondaryCellHandoverStarted (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated);
+    // inherited from LteAsSapUser
+    virtual void NotifyConnectionSuccessful(uint16_t rnti);
+    virtual void NotifyHandoverSuccessful(uint16_t rnti, uint16_t mmWaveCellId);
+    virtual void NotifyConnectToMmWave(uint16_t mmWaveCellId);
+    virtual void NotifyConnectionFailed();
+    virtual void RecvData(Ptr<Packet> packet);
+    virtual void NotifyConnectionReleased();
+    virtual void NotifySecondaryCellHandoverStarted(
+        uint16_t oldRnti,
+        uint16_t newRnti,
+        uint16_t mmWaveCellId,
+        LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated);
 
-private:
-  MemberLteAsSapUser ();
-  C* m_owner; ///< the owner class
+  private:
+    MemberLteAsSapUser();
+    C* m_owner; ///< the owner class
 };
 
 template <class C>
-MemberLteAsSapUser<C>::MemberLteAsSapUser (C* owner)
-  : m_owner (owner)
+MemberLteAsSapUser<C>::MemberLteAsSapUser(C* owner)
+    : m_owner(owner)
 {
 }
 
 template <class C>
-MemberLteAsSapUser<C>::MemberLteAsSapUser ()
+MemberLteAsSapUser<C>::MemberLteAsSapUser()
 {
-}
-
-template <class C>
-void
-MemberLteAsSapUser<C>::NotifyConnectionSuccessful (uint16_t rnti)
-{
-  m_owner->DoNotifyConnectionSuccessful (rnti);
 }
 
 template <class C>
 void
-MemberLteAsSapUser<C>::NotifyHandoverSuccessful (uint16_t rnti, uint16_t mmWaveCellId)
+MemberLteAsSapUser<C>::NotifyConnectionSuccessful(uint16_t rnti)
 {
-  m_owner->DoNotifyHandoverSuccessful (rnti, mmWaveCellId);
+    m_owner->DoNotifyConnectionSuccessful(rnti);
 }
 
 template <class C>
 void
-MemberLteAsSapUser<C>::NotifyConnectToMmWave (uint16_t mmWaveCellId)
+MemberLteAsSapUser<C>::NotifyHandoverSuccessful(uint16_t rnti, uint16_t mmWaveCellId)
 {
-  m_owner->DoNotifyConnectToMmWave (mmWaveCellId);
+    m_owner->DoNotifyHandoverSuccessful(rnti, mmWaveCellId);
 }
 
 template <class C>
 void
-MemberLteAsSapUser<C>::NotifyConnectionFailed ()
+MemberLteAsSapUser<C>::NotifyConnectToMmWave(uint16_t mmWaveCellId)
 {
-  m_owner->DoNotifyConnectionFailed ();
+    m_owner->DoNotifyConnectToMmWave(mmWaveCellId);
 }
 
 template <class C>
 void
-MemberLteAsSapUser<C>::RecvData (Ptr<Packet> packet)
+MemberLteAsSapUser<C>::NotifyConnectionFailed()
 {
-  m_owner->DoRecvData (packet);
+    m_owner->DoNotifyConnectionFailed();
 }
 
 template <class C>
 void
-MemberLteAsSapUser<C>::NotifyConnectionReleased ()
+MemberLteAsSapUser<C>::RecvData(Ptr<Packet> packet)
 {
-  m_owner->DoNotifyConnectionReleased ();
+    m_owner->DoRecvData(packet);
 }
-
 
 template <class C>
 void
-MemberLteAsSapUser<C>::NotifySecondaryCellHandoverStarted (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated)
+MemberLteAsSapUser<C>::NotifyConnectionReleased()
 {
-  m_owner->DoNotifySecondaryCellHandoverStarted (oldRnti, newRnti, mmWaveCellId, radioResourceConfigDedicated);
+    m_owner->DoNotifyConnectionReleased();
+}
+
+template <class C>
+void
+MemberLteAsSapUser<C>::NotifySecondaryCellHandoverStarted(
+    uint16_t oldRnti,
+    uint16_t newRnti,
+    uint16_t mmWaveCellId,
+    LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated)
+{
+    m_owner->DoNotifySecondaryCellHandoverStarted(oldRnti,
+                                                  newRnti,
+                                                  mmWaveCellId,
+                                                  radioResourceConfigDedicated);
 }
 
 } // namespace ns3

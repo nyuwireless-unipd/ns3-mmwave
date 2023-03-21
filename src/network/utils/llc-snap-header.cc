@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2005 INRIA
  *
@@ -19,84 +18,89 @@
  */
 
 #include "llc-snap-header.h"
+
 #include "ns3/assert.h"
 #include "ns3/log.h"
+
 #include <string>
 
-namespace ns3 {
-
-NS_LOG_COMPONENT_DEFINE ("LlcSnalHeader");
-
-NS_OBJECT_ENSURE_REGISTERED (LlcSnapHeader);
-
-LlcSnapHeader::LlcSnapHeader ()
+namespace ns3
 {
-  NS_LOG_FUNCTION (this);
+
+NS_LOG_COMPONENT_DEFINE("LlcSnalHeader");
+
+NS_OBJECT_ENSURE_REGISTERED(LlcSnapHeader);
+
+LlcSnapHeader::LlcSnapHeader()
+{
+    NS_LOG_FUNCTION(this);
 }
 
 void
-LlcSnapHeader::SetType (uint16_t type)
+LlcSnapHeader::SetType(uint16_t type)
 {
-  NS_LOG_FUNCTION (this);
-  m_etherType = type;
+    NS_LOG_FUNCTION(this);
+    m_etherType = type;
 }
+
 uint16_t
-LlcSnapHeader::GetType (void)
+LlcSnapHeader::GetType()
 {
-  NS_LOG_FUNCTION (this);
-  return m_etherType;
+    NS_LOG_FUNCTION(this);
+    return m_etherType;
 }
 
 uint32_t
-LlcSnapHeader::GetSerializedSize (void) const
+LlcSnapHeader::GetSerializedSize() const
 {
-  NS_LOG_FUNCTION (this);
-  return LLC_SNAP_HEADER_LENGTH;
+    NS_LOG_FUNCTION(this);
+    return LLC_SNAP_HEADER_LENGTH;
 }
 
 TypeId
-LlcSnapHeader::GetTypeId (void)
+LlcSnapHeader::GetTypeId()
 {
-  static TypeId tid = TypeId ("ns3::LlcSnapHeader")
-    .SetParent<Header> ()
-    .SetGroupName("Network")
-    .AddConstructor<LlcSnapHeader> ()
-  ;
-  return tid;
+    static TypeId tid = TypeId("ns3::LlcSnapHeader")
+                            .SetParent<Header>()
+                            .SetGroupName("Network")
+                            .AddConstructor<LlcSnapHeader>();
+    return tid;
 }
+
 TypeId
-LlcSnapHeader::GetInstanceTypeId (void) const
+LlcSnapHeader::GetInstanceTypeId() const
 {
-  return GetTypeId ();
-}
-void
-LlcSnapHeader::Print (std::ostream &os) const
-{
-  NS_LOG_FUNCTION (this << &os);
-  os << "type 0x";
-  os.setf (std::ios::hex, std::ios::basefield);
-  os << m_etherType;
-  os.setf (std::ios::dec, std::ios::basefield);
+    return GetTypeId();
 }
 
 void
-LlcSnapHeader::Serialize (Buffer::Iterator start) const
+LlcSnapHeader::Print(std::ostream& os) const
 {
-  NS_LOG_FUNCTION (this << &start);
-  Buffer::Iterator i = start;
-  uint8_t buf[] = { 0xaa, 0xaa, 0x03, 0, 0, 0};
-  i.Write (buf, 6);
-  i.WriteHtonU16 (m_etherType);
+    NS_LOG_FUNCTION(this << &os);
+    os << "type 0x";
+    os.setf(std::ios::hex, std::ios::basefield);
+    os << m_etherType;
+    os.setf(std::ios::dec, std::ios::basefield);
 }
+
+void
+LlcSnapHeader::Serialize(Buffer::Iterator start) const
+{
+    NS_LOG_FUNCTION(this << &start);
+    Buffer::Iterator i = start;
+    uint8_t buf[] = {0xaa, 0xaa, 0x03, 0, 0, 0};
+    i.Write(buf, 6);
+    i.WriteHtonU16(m_etherType);
+}
+
 uint32_t
-LlcSnapHeader::Deserialize (Buffer::Iterator start)
+LlcSnapHeader::Deserialize(Buffer::Iterator start)
 {
-  NS_LOG_FUNCTION (this << &start);
-  Buffer::Iterator i = start;
-  i.Next (5+1);
-  m_etherType = i.ReadNtohU16 ();
-  return GetSerializedSize ();
+    NS_LOG_FUNCTION(this << &start);
+    Buffer::Iterator i = start;
+    i.Next(5 + 1);
+    m_etherType = i.ReadNtohU16();
+    return GetSerializedSize();
 }
-
 
 } // namespace ns3

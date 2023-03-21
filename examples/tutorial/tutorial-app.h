@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -18,10 +17,11 @@
 #define TUTORIAL_APP_H
 
 #include "ns3/core-module.h"
-#include "ns3/network-module.h"
 #include "ns3/internet-module.h"
+#include "ns3/network-module.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 class Application;
 
@@ -30,43 +30,47 @@ class Application;
  */
 class TutorialApp : public Application
 {
-public:
-  TutorialApp ();
-  virtual ~TutorialApp ();
+  public:
+    TutorialApp();
+    ~TutorialApp() override;
 
-  /**
-   * Register this type.
-   * \return The TypeId.
-   */
-  static TypeId GetTypeId (void);
+    /**
+     * Register this type.
+     * \return The TypeId.
+     */
+    static TypeId GetTypeId();
 
-  /**
-   * Setup the socket.
-   * \param socket The socket.
-   * \param address The destination address.
-   * \param packetSize The packet size to transmit.
-   * \param nPackets The number of packets to transmit.
-   * \param dataRate the datarate to use.
-   */
-  void Setup (Ptr<Socket> socket, Address address, uint32_t packetSize, uint32_t nPackets, DataRate dataRate);
+    /**
+     * Setup the socket.
+     * \param socket The socket.
+     * \param address The destination address.
+     * \param packetSize The packet size to transmit.
+     * \param nPackets The number of packets to transmit.
+     * \param dataRate the data rate to use.
+     */
+    void Setup(Ptr<Socket> socket,
+               Address address,
+               uint32_t packetSize,
+               uint32_t nPackets,
+               DataRate dataRate);
 
-private:
-  virtual void StartApplication (void);
-  virtual void StopApplication (void);
+  private:
+    void StartApplication() override;
+    void StopApplication() override;
 
-  /// Schedule a new transmission.
-  void ScheduleTx (void);
-  /// Send a packet.
-  void SendPacket (void);
+    /// Schedule a new transmission.
+    void ScheduleTx();
+    /// Send a packet.
+    void SendPacket();
 
-  Ptr<Socket>     m_socket;       //!< The tranmission socket.
-  Address         m_peer;         //!< The destination address.
-  uint32_t        m_packetSize;   //!< The packet size.
-  uint32_t        m_nPackets;     //!< The number of pacts to send.
-  DataRate        m_dataRate;     //!< The datarate to use.
-  EventId         m_sendEvent;    //!< Send event.
-  bool            m_running;      //!< True if the application is running.
-  uint32_t        m_packetsSent;  //!< The number of pacts sent.
+    Ptr<Socket> m_socket;   //!< The transmission socket.
+    Address m_peer;         //!< The destination address.
+    uint32_t m_packetSize;  //!< The packet size.
+    uint32_t m_nPackets;    //!< The number of packets to send.
+    DataRate m_dataRate;    //!< The data rate to use.
+    EventId m_sendEvent;    //!< Send event.
+    bool m_running;         //!< True if the application is running.
+    uint32_t m_packetsSent; //!< The number of packets sent.
 };
 
 } // namespace ns3

@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2009 INRIA
  *
@@ -24,7 +23,8 @@
 #include "ns3/header.h"
 #include "ns3/nstime.h"
 
-namespace ns3 {
+namespace ns3
+{
 /**
  * \ingroup applications
  *
@@ -43,37 +43,37 @@ namespace ns3 {
  */
 class SeqTsHeader : public Header
 {
-public:
-  SeqTsHeader ();
+  public:
+    SeqTsHeader();
 
-  /**
-   * \param seq the sequence number
-   */
-  void SetSeq (uint32_t seq);
-  /**
-   * \return the sequence number
-   */
-  uint32_t GetSeq (void) const;
-  /**
-   * \return the time stamp
-   */
-  Time GetTs (void) const;
+    /**
+     * \param seq the sequence number
+     */
+    void SetSeq(uint32_t seq);
+    /**
+     * \return the sequence number
+     */
+    uint32_t GetSeq() const;
+    /**
+     * \return the time stamp
+     */
+    Time GetTs() const;
 
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  virtual TypeId GetInstanceTypeId (void) const;
-  virtual void Print (std::ostream &os) const;
-  virtual uint32_t GetSerializedSize (void) const;
-  virtual void Serialize (Buffer::Iterator start) const;
-  virtual uint32_t Deserialize (Buffer::Iterator start);
+    TypeId GetInstanceTypeId() const override;
+    void Print(std::ostream& os) const override;
+    uint32_t GetSerializedSize() const override;
+    void Serialize(Buffer::Iterator start) const override;
+    uint32_t Deserialize(Buffer::Iterator start) override;
 
-private:
-  uint32_t m_seq; //!< Sequence number
-  uint64_t m_ts; //!< Timestamp
+  private:
+    uint32_t m_seq; //!< Sequence number
+    uint64_t m_ts;  //!< Timestamp
 };
 
 } // namespace ns3

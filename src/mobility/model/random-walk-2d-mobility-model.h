@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2006,2007 INRIA
  *
@@ -20,16 +19,17 @@
 #ifndef RANDOM_WALK_2D_MOBILITY_MODEL_H
 #define RANDOM_WALK_2D_MOBILITY_MODEL_H
 
-#include "ns3/object.h"
-#include "ns3/nstime.h"
-#include "ns3/event-id.h"
-#include "ns3/rectangle.h"
-#include "ns3/random-variable-stream.h"
-#include "mobility-model.h"
 #include "constant-velocity-helper.h"
+#include "mobility-model.h"
 
-namespace ns3 {
+#include "ns3/event-id.h"
+#include "ns3/nstime.h"
+#include "ns3/object.h"
+#include "ns3/random-variable-stream.h"
+#include "ns3/rectangle.h"
 
+namespace ns3
+{
 
 /**
  * \ingroup mobility
@@ -45,51 +45,52 @@ namespace ns3 {
  */
 class RandomWalk2dMobilityModel : public MobilityModel
 {
-public:
-  /**
-   * Register this type with the TypeId system.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
-  /** An enum representing the different working modes of this module. */
-  enum Mode  {
-    MODE_DISTANCE,
-    MODE_TIME
-  };
+  public:
+    /**
+     * Register this type with the TypeId system.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-private:
-  /**
-   * \brief Performs the rebound of the node if it reaches a boundary
-   * \param timeLeft The remaining time of the walk
-   */
-  void Rebound (Time timeLeft);
-  /**
-   * Walk according to position and velocity, until distance is reached,
-   * time is reached, or intersection with the bounding box
-   * \param timeLeft The remaining time of the walk
-   */
-  void DoWalk (Time timeLeft);
-  /**
-   * Perform initialization of the object before MobilityModel::DoInitialize ()
-   */
-  void DoInitializePrivate (void);
-  virtual void DoDispose (void);
-  virtual void DoInitialize (void);
-  virtual Vector DoGetPosition (void) const;
-  virtual void DoSetPosition (const Vector &position);
-  virtual Vector DoGetVelocity (void) const;
-  virtual int64_t DoAssignStreams (int64_t);
+    /** An enum representing the different working modes of this module. */
+    enum Mode
+    {
+        MODE_DISTANCE,
+        MODE_TIME
+    };
 
-  ConstantVelocityHelper m_helper; //!< helper for this object
-  EventId m_event; //!< stored event ID
-  enum Mode m_mode; //!< whether in time or distance mode
-  double m_modeDistance; //!< Change direction and speed after this distance
-  Time m_modeTime; //!< Change current direction and speed after this delay
-  Ptr<RandomVariableStream> m_speed; //!< rv for picking speed
-  Ptr<RandomVariableStream> m_direction; //!< rv for picking direction
-  Rectangle m_bounds; //!< Bounds of the area to cruise
+  private:
+    /**
+     * \brief Performs the rebound of the node if it reaches a boundary
+     * \param timeLeft The remaining time of the walk
+     */
+    void Rebound(Time timeLeft);
+    /**
+     * Walk according to position and velocity, until distance is reached,
+     * time is reached, or intersection with the bounding box
+     * \param timeLeft The remaining time of the walk
+     */
+    void DoWalk(Time timeLeft);
+    /**
+     * Perform initialization of the object before MobilityModel::DoInitialize ()
+     */
+    void DoInitializePrivate();
+    void DoDispose() override;
+    void DoInitialize() override;
+    Vector DoGetPosition() const override;
+    void DoSetPosition(const Vector& position) override;
+    Vector DoGetVelocity() const override;
+    int64_t DoAssignStreams(int64_t) override;
+
+    ConstantVelocityHelper m_helper;       //!< helper for this object
+    EventId m_event;                       //!< stored event ID
+    Mode m_mode;                           //!< whether in time or distance mode
+    double m_modeDistance;                 //!< Change direction and speed after this distance
+    Time m_modeTime;                       //!< Change current direction and speed after this delay
+    Ptr<RandomVariableStream> m_speed;     //!< rv for picking speed
+    Ptr<RandomVariableStream> m_direction; //!< rv for picking direction
+    Rectangle m_bounds;                    //!< Bounds of the area to cruise
 };
-
 
 } // namespace ns3
 

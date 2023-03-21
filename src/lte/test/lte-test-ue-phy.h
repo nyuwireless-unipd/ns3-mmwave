@@ -21,11 +21,11 @@
 #ifndef LTE_TEST_UE_PHY_H
 #define LTE_TEST_UE_PHY_H
 
+#include "ns3/lte-control-messages.h"
 #include "ns3/lte-phy.h"
 
-#include "ns3/lte-control-messages.h"
-
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup lte-test
@@ -37,63 +37,62 @@ namespace ns3 {
  */
 class LteTestUePhy : public LtePhy
 {
-public:
-  /**
-   * @warning the default constructor should not be used
-   */
-  LteTestUePhy ();
+  public:
+    /**
+     * @warning the default constructor should not be used
+     */
+    LteTestUePhy();
 
-  /**
-   * \param dlPhy the downlink LteSpectrumPhy instance
-   * \param ulPhy the uplink LteSpectrumPhy instance
-   */
-  LteTestUePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy);
+    /**
+     * \param dlPhy the downlink LteSpectrumPhy instance
+     * \param ulPhy the uplink LteSpectrumPhy instance
+     */
+    LteTestUePhy(Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy);
 
-  virtual ~LteTestUePhy ();
+    virtual ~LteTestUePhy();
 
-  virtual void DoDispose ();
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
+    virtual void DoDispose();
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId(void);
 
-  /**
-   * \brief Queue the MAC PDU to be sent
-   * \param p the MAC PDU to sent
-   */
-  virtual void DoSendMacPdu (Ptr<Packet> p);
+    /**
+     * \brief Queue the MAC PDU to be sent
+     * \param p the MAC PDU to sent
+     */
+    virtual void DoSendMacPdu(Ptr<Packet> p);
 
-  /**
-   * \brief Create the PSD for the TX
-   * \return the pointer to the PSD
-   */
-  virtual Ptr<SpectrumValue> CreateTxPowerSpectralDensity ();
+    /**
+     * \brief Create the PSD for the TX
+     * \return the pointer to the PSD
+     */
+    virtual Ptr<SpectrumValue> CreateTxPowerSpectralDensity();
 
-  virtual void GenerateCtrlCqiReport (const SpectrumValue& sinr);
+    virtual void GenerateCtrlCqiReport(const SpectrumValue& sinr);
 
-  virtual void GenerateDataCqiReport (const SpectrumValue& sinr);
+    virtual void GenerateDataCqiReport(const SpectrumValue& sinr);
 
-  virtual void ReportInterference (const SpectrumValue& interf);
+    virtual void ReportInterference(const SpectrumValue& interf);
 
-  virtual void ReportRsReceivedPower (const SpectrumValue& power);
+    virtual void ReportRsReceivedPower(const SpectrumValue& power);
 
-  /**
-   * \brief Reeive LTE Control Message
-   * \param msg the control message
-   */
-  virtual void ReceiveLteControlMessage (Ptr<LteControlMessage> msg);
+    /**
+     * \brief Reeive LTE Control Message
+     * \param msg the control message
+     */
+    virtual void ReceiveLteControlMessage(Ptr<LteControlMessage> msg);
 
-  /**
-   * \brief Get the SINR
-   * \return the SINR
-   */
-  SpectrumValue GetSinr ();
+    /**
+     * \brief Get the SINR
+     * \return the SINR
+     */
+    SpectrumValue GetSinr();
 
-private:
-  SpectrumValue m_sinr; ///< the SINR
+  private:
+    SpectrumValue m_sinr; ///< the SINR
 };
-
 
 } // namespace ns3
 

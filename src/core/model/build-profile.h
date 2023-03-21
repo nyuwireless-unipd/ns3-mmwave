@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2015 LLNL
  *
@@ -33,23 +32,24 @@
  * Build profile no-op macro.
  * \param [in] code The code to skip.
  */
-#define NS_BUILD_PROFILE_NOOP(code)            \
-  do if (false)                                \
-    {                                          \
-      code;                                    \
-    } while (false)
+#define NS_BUILD_PROFILE_NOOP(code)                                                                \
+    do                                                                                             \
+        if (false)                                                                                 \
+        {                                                                                          \
+            code;                                                                                  \
+        }                                                                                          \
+    while (false)
 
 /**
  * \ingroup debugging
  * Build profile macro to execute a code snippet.
  * \param [in] code The code to execute.
  */
-#define NS_BUILD_PROFILE_OP(code) \
-  do                                            \
-    {                                           \
-      code;                                     \
-    }  while (false)
-
+#define NS_BUILD_PROFILE_OP(code)                                                                  \
+    do                                                                                             \
+    {                                                                                              \
+        code;                                                                                      \
+    } while (false)
 
 #ifdef NS3_BUILD_PROFILE_DEBUG
 /**
@@ -57,9 +57,9 @@
  * Execute a code snippet in debug builds.
  * \param [in] code The code to execute.
  */
-#define NS_BUILD_DEBUG(code)     NS_BUILD_PROFILE_OP (code)
+#define NS_BUILD_DEBUG(code) NS_BUILD_PROFILE_OP(code)
 #else
-#define NS_BUILD_DEBUG(code)     NS_BUILD_PROFILE_NOOP (code)
+#define NS_BUILD_DEBUG(code) NS_BUILD_PROFILE_NOOP(code)
 #endif
 
 #ifdef NS3_BUILD_PROFILE_RELEASE
@@ -68,9 +68,9 @@
  * Execute a code snippet in release builds.
  * \param [in] code The code to execute.
  */
-#define NS_BUILD_RELEASE(code)   NS_BUILD_PROFILE_OP (code)
+#define NS_BUILD_RELEASE(code) NS_BUILD_PROFILE_OP(code)
 #else
-#define NS_BUILD_RELEASE(code)   NS_BUILD_PROFILE_NOOP (code)
+#define NS_BUILD_RELEASE(code) NS_BUILD_PROFILE_NOOP(code)
 #endif
 
 #ifdef NS3_BUILD_PROFILE_OPTIMIZED
@@ -79,12 +79,9 @@
  * Execute a code snippet in optimized builds.
  * \param [in] code The code to execute.
  */
-#define NS_BUILD_OPTIMIZED(code) NS_BUILD_PROFILE_OP (code)
+#define NS_BUILD_OPTIMIZED(code) NS_BUILD_PROFILE_OP(code)
 #else
-#define NS_BUILD_OPTIMIZED(code) NS_BUILD_PROFILE_NOOP (code)
+#define NS_BUILD_OPTIMIZED(code) NS_BUILD_PROFILE_NOOP(code)
 #endif
-
-
-
 
 #endif /* NS3_BUILD_PROFILE_H */

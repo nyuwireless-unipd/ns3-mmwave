@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 //
 // Copyright (c) 2009 INESC Porto
 //
@@ -20,24 +19,22 @@
 
 #include "flow-classifier.h"
 
-namespace ns3 {
+namespace ns3
+{
 
-FlowClassifier::FlowClassifier ()
-  :
-    m_lastNewFlowId (0)
+FlowClassifier::FlowClassifier()
+    : m_lastNewFlowId(0)
 {
 }
 
-FlowClassifier::~FlowClassifier ()
+FlowClassifier::~FlowClassifier()
 {
 }
 
 FlowId
-FlowClassifier::GetNewFlowId ()
+FlowClassifier::GetNewFlowId()
 {
-  return ++m_lastNewFlowId;
+    return ++m_lastNewFlowId;
 }
 
-
 } // namespace ns3
-

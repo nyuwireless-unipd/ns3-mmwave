@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2009 University of Washington
  *
@@ -22,9 +21,11 @@
 #define MAC8_ADDRESS_H
 
 #include "ns3/address.h"
+
 #include <iostream>
 
-namespace ns3 {
+namespace ns3
+{
 
 class Address;
 
@@ -41,112 +42,112 @@ class Address;
  */
 class Mac8Address
 {
-public:
-  /** Constructor */
-  Mac8Address ();
-  /**
-   * Create Mac8Address object with address addr.
-   *
-   * \param addr Byte address to assign to this address.
-   */
-  Mac8Address (uint8_t addr);
-  /** Destructor */
-  virtual ~Mac8Address ();
+  public:
+    /** Constructor */
+    Mac8Address();
+    /**
+     * Create Mac8Address object with address addr.
+     *
+     * \param addr Byte address to assign to this address.
+     */
+    Mac8Address(uint8_t addr);
+    /** Destructor */
+    virtual ~Mac8Address();
 
-  /**
-   * Convert a generic address to a Mac8Address.
-   *
-   * \param address  Address to convert to Mac8Address address.
-   * \return Mac8Address from Address.
-   */
-  static Mac8Address ConvertFrom (const Address &address);
+    /**
+     * Convert a generic address to a Mac8Address.
+     *
+     * \param address  Address to convert to Mac8Address address.
+     * \return Mac8Address from Address.
+     */
+    static Mac8Address ConvertFrom(const Address& address);
 
-  /**
-   * Check that a generic Address is compatible with Mac8Address.
-   *
-   * \param address  Address to test.
-   * \return True if address given is consistent with Mac8Address.
-   */
-  static bool IsMatchingType  (const Address &address);
+    /**
+     * Convert to a generic Address.
+     *
+     * \return The Address value.
+     */
+    Address ConvertTo() const;
 
-  /**
-   * Create a generic Address.
-   *
-   * \return The Address.
-   */
-  operator Address () const;
+    /**
+     * Check that a generic Address is compatible with Mac8Address.
+     *
+     * \param address  Address to test.
+     * \return True if address given is consistent with Mac8Address.
+     */
+    static bool IsMatchingType(const Address& address);
 
-  /**
-   * Sets address to address stored in parameter.
-   *
-   * \param pBuffer Buffer to extract address from.
-   */
-  void CopyFrom (const uint8_t *pBuffer);
+    /**
+     * Create a generic Address.
+     *
+     * \return The Address.
+     */
+    operator Address() const;
 
-  /**
-   * Writes address to buffer parameter.
-   *
-   * \param pBuffer
-   */
-  void CopyTo (uint8_t *pBuffer) const;
+    /**
+     * Sets address to address stored in parameter.
+     *
+     * \param pBuffer Buffer to extract address from.
+     */
+    void CopyFrom(const uint8_t* pBuffer);
 
-  /**
-   * Get the broadcast address (255).
-   *
-   * \return Broadcast address.
-   */
-  static Mac8Address GetBroadcast (void);
+    /**
+     * Writes address to buffer parameter.
+     *
+     * \param pBuffer
+     */
+    void CopyTo(uint8_t* pBuffer) const;
 
-  /**
-   * Allocates Mac8Address from 0-254
-   *
-   * Will wrap back to 0 if more than 254 are allocated.
-   * Excludes the broadcast address.
-   *
-   * \return The next sequential Mac8Address.
-   */
-  static Mac8Address Allocate ();
+    /**
+     * Get the broadcast address (255).
+     *
+     * \return Broadcast address.
+     */
+    static Mac8Address GetBroadcast();
 
-  /**
-   * Reset the Mac8Address allocation index.
-   *
-   * This function resets (to zero) the global integer
-   * that is used for unique address allocation.
-   * It is automatically called whenever
-   * \code
-   * SimulatorDestroy ();
-   * \endcode
-   * is called.  It may also be optionally called
-   * by user code if there is a need to force a reset
-   * of this allocation index.
-   */
-  static void ResetAllocationIndex ();
+    /**
+     * Allocates Mac8Address from 0-254
+     *
+     * Will wrap back to 0 if more than 254 are allocated.
+     * Excludes the broadcast address.
+     *
+     * \return The next sequential Mac8Address.
+     */
+    static Mac8Address Allocate();
 
-private:
-  static uint8_t m_allocationIndex; //!< Address allocation index
-  uint8_t m_address;  //!< The address.
+    /**
+     * Reset the Mac8Address allocation index.
+     *
+     * This function resets (to zero) the global integer
+     * that is used for unique address allocation.
+     * It is automatically called whenever
+     * \code
+     * SimulatorDestroy ();
+     * \endcode
+     * is called.  It may also be optionally called
+     * by user code if there is a need to force a reset
+     * of this allocation index.
+     */
+    static void ResetAllocationIndex();
 
-  /**
-   * Get the Mac8Address type.
-   *
-   * \return The type value.
-   */
-  static uint8_t GetType (void);
-  /**
-   * Convert to a generic Address.
-   *
-   * \return The Address value.
-   */
-  Address ConvertTo (void) const;
+  private:
+    static uint8_t m_allocationIndex; //!< Address allocation index
+    uint8_t m_address;                //!< The address.
 
-  friend bool operator <  (const Mac8Address &a, const Mac8Address &b);
-  friend bool operator == (const Mac8Address &a, const Mac8Address &b);
-  friend bool operator != (const Mac8Address &a, const Mac8Address &b);
-  friend std::ostream& operator<< (std::ostream& os, const Mac8Address & address);
-  friend std::istream& operator>> (std::istream& is, Mac8Address & address);
+    /**
+     * Get the Mac8Address type.
+     *
+     * \return The type value.
+     */
+    static uint8_t GetType();
 
-};  // class Mac8Address
+    friend bool operator<(const Mac8Address& a, const Mac8Address& b);
+    friend bool operator==(const Mac8Address& a, const Mac8Address& b);
+    friend bool operator!=(const Mac8Address& a, const Mac8Address& b);
+    friend std::ostream& operator<<(std::ostream& os, const Mac8Address& address);
+    friend std::istream& operator>>(std::istream& is, Mac8Address& address);
 
+}; // class Mac8Address
 
 /**
  * Address comparison, less than.
@@ -155,16 +156,16 @@ private:
  * \param b Second address to compare.
  * \return True if a < b.
  */
-bool operator < (const Mac8Address &a, const Mac8Address &b);
+bool operator<(const Mac8Address& a, const Mac8Address& b);
 
 /**
- * Address comparison, equalit.
+ * Address comparison, equality.
  *
  * \param a First address to compare.
  * \param b Second address to compare.
  * \return True if a == b.
  */
-bool operator == (const Mac8Address &a, const Mac8Address &b);
+bool operator==(const Mac8Address& a, const Mac8Address& b);
 
 /**
  * Address comparison, unequal.
@@ -173,7 +174,7 @@ bool operator == (const Mac8Address &a, const Mac8Address &b);
  * \param b Second address to compare.
  * \return True if a != b.
  */
-bool operator != (const Mac8Address &a, const Mac8Address &b);
+bool operator!=(const Mac8Address& a, const Mac8Address& b);
 
 /**
  * Write \pname{address} to stream \pname{os} as 8 bit integer.
@@ -182,7 +183,7 @@ bool operator != (const Mac8Address &a, const Mac8Address &b);
  * \param address The address
  * \return The output stream.
  */
-std::ostream& operator<< (std::ostream& os, const Mac8Address & address);
+std::ostream& operator<<(std::ostream& os, const Mac8Address& address);
 
 /**
  * Read \pname{address} from stream \pname{is} as 8 bit integer.
@@ -191,7 +192,7 @@ std::ostream& operator<< (std::ostream& os, const Mac8Address & address);
  * \param address The address variable to set.
  * \return The input stream.
  */
-std::istream& operator>> (std::istream& is, Mac8Address & address);
+std::istream& operator>>(std::istream& is, Mac8Address& address);
 
 } // namespace ns3
 

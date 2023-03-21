@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2009 INRIA
  * Copyright (c) 2016 Universita' di Firenze (added echo fields)
@@ -25,7 +24,8 @@
 #include "ns3/header.h"
 #include "ns3/nstime.h"
 
-namespace ns3 {
+namespace ns3
+{
 /**
  * \ingroup applications
  * \class SeqTsEchoHeader
@@ -36,62 +36,62 @@ namespace ns3 {
  */
 class SeqTsEchoHeader : public Header
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  /**
-   * \brief constructor
-   */
-  SeqTsEchoHeader ();
+    /**
+     * \brief constructor
+     */
+    SeqTsEchoHeader();
 
-  /**
-   * \param seq the sequence number
-   */
-  void SetSeq (uint32_t seq);
+    /**
+     * \param seq the sequence number
+     */
+    void SetSeq(uint32_t seq);
 
-  /**
-   * \return the sequence number
-   */
-  uint32_t GetSeq (void) const;
+    /**
+     * \return the sequence number
+     */
+    uint32_t GetSeq() const;
 
-  /**
-   * \return A time value set by the sender
-   */
-  Time GetTsValue (void) const;
+    /**
+     * \return A time value set by the sender
+     */
+    Time GetTsValue() const;
 
-  /**
-   * \return A time value echoing the received timestamp
-   */
-  Time GetTsEchoReply (void) const;
+    /**
+     * \return A time value echoing the received timestamp
+     */
+    Time GetTsEchoReply() const;
 
-  /**
-   * \brief Set the sender's time value
-   * \param ts Time value to set
-   */
-  void SetTsValue (Time ts);
+    /**
+     * \brief Set the sender's time value
+     * \param ts Time value to set
+     */
+    void SetTsValue(Time ts);
 
-  /**
-   * \brief Upon SeqTsEchoHeader reception, the host answers via echoing
-   * back the received timestamp
-   * \param ts received timestamp. If not called, will contain 0
-   */
-  void SetTsEchoReply (Time ts);
+    /**
+     * \brief Upon SeqTsEchoHeader reception, the host answers via echoing
+     * back the received timestamp
+     * \param ts received timestamp. If not called, will contain 0
+     */
+    void SetTsEchoReply(Time ts);
 
-  // Inherited
-  virtual TypeId GetInstanceTypeId (void) const override;
-  virtual void Print (std::ostream &os) const override;
-  virtual uint32_t GetSerializedSize (void) const override;
-  virtual void Serialize (Buffer::Iterator start) const override;
-  virtual uint32_t Deserialize (Buffer::Iterator start) override;
+    // Inherited
+    TypeId GetInstanceTypeId() const override;
+    void Print(std::ostream& os) const override;
+    uint32_t GetSerializedSize() const override;
+    void Serialize(Buffer::Iterator start) const override;
+    uint32_t Deserialize(Buffer::Iterator start) override;
 
-private:
-  uint32_t m_seq; //!< Sequence number
-  Time m_tsValue; //!< Sender's timestamp
-  Time m_tsEchoReply; //!< Receiver's timestamp
+  private:
+    uint32_t m_seq;     //!< Sequence number
+    Time m_tsValue;     //!< Sender's timestamp
+    Time m_tsEchoReply; //!< Receiver's timestamp
 };
 
 } // namespace ns3

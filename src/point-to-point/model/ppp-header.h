@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2008 University of Washington
  *
@@ -21,7 +20,8 @@
 
 #include "ns3/header.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup point-to-point
@@ -47,65 +47,61 @@ namespace ns3 {
  */
 class PppHeader : public Header
 {
-public:
+  public:
+    /**
+     * \brief Construct a PPP header.
+     */
+    PppHeader();
 
-  /**
-   * \brief Construct a PPP header.
-   */
-  PppHeader ();
+    /**
+     * \brief Destroy a PPP header.
+     */
+    ~PppHeader() override;
 
-  /**
-   * \brief Destroy a PPP header.
-   */
-  virtual ~PppHeader ();
+    /**
+     * \brief Get the TypeId
+     *
+     * \return The TypeId for this class
+     */
+    static TypeId GetTypeId();
 
-  /**
-   * \brief Get the TypeId
-   *
-   * \return The TypeId for this class
-   */
-  static TypeId GetTypeId (void);
+    /**
+     * \brief Get the TypeId of the instance
+     *
+     * \return The TypeId for this instance
+     */
+    TypeId GetInstanceTypeId() const override;
 
-  /**
-   * \brief Get the TypeId of the instance
-   *
-   * \return The TypeId for this instance
-   */
-  virtual TypeId GetInstanceTypeId (void) const;
+    void Print(std::ostream& os) const override;
+    void Serialize(Buffer::Iterator start) const override;
+    uint32_t Deserialize(Buffer::Iterator start) override;
+    uint32_t GetSerializedSize() const override;
 
+    /**
+     * \brief Set the protocol type carried by this PPP packet
+     *
+     * The type numbers to be used are defined in \RFC{3818}
+     *
+     * \param protocol the protocol type being carried
+     */
+    void SetProtocol(uint16_t protocol);
 
-  virtual void Print (std::ostream &os) const;
-  virtual void Serialize (Buffer::Iterator start) const;
-  virtual uint32_t Deserialize (Buffer::Iterator start);
-  virtual uint32_t GetSerializedSize (void) const;
+    /**
+     * \brief Get the protocol type carried by this PPP packet
+     *
+     * The type numbers to be used are defined in \RFC{3818}
+     *
+     * \return the protocol type being carried
+     */
+    uint16_t GetProtocol() const;
 
-  /**
-   * \brief Set the protocol type carried by this PPP packet
-   *
-   * The type numbers to be used are defined in \RFC{3818}
-   *
-   * \param protocol the protocol type being carried
-   */
-  void SetProtocol (uint16_t protocol);
-
-  /**
-   * \brief Get the protocol type carried by this PPP packet
-   *
-   * The type numbers to be used are defined in \RFC{3818}
-   *
-   * \return the protocol type being carried
-   */
-  uint16_t GetProtocol (void);
-
-private:
-
-  /**
-   * \brief The PPP protocol type of the payload packet
-   */
-  uint16_t m_protocol;
+  private:
+    /**
+     * \brief The PPP protocol type of the payload packet
+     */
+    uint16_t m_protocol;
 };
 
 } // namespace ns3
-
 
 #endif /* PPP_HEADER_H */

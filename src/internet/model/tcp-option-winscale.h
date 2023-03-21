@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2011 Adrian Sai-wah Tam
  *
@@ -24,7 +23,8 @@
 
 #include "ns3/tcp-option.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup tcp
@@ -49,41 +49,41 @@ namespace ns3 {
  */
 class TcpOptionWinScale : public TcpOption
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
-  virtual TypeId GetInstanceTypeId (void) const;
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
+    TypeId GetInstanceTypeId() const override;
 
-  TcpOptionWinScale ();
-  virtual ~TcpOptionWinScale ();
+    TcpOptionWinScale();
+    ~TcpOptionWinScale() override;
 
-  virtual void Print (std::ostream &os) const;
-  virtual void Serialize (Buffer::Iterator start) const;
-  virtual uint32_t Deserialize (Buffer::Iterator start);
+    void Print(std::ostream& os) const override;
+    void Serialize(Buffer::Iterator start) const override;
+    uint32_t Deserialize(Buffer::Iterator start) override;
 
-  virtual uint8_t GetKind (void) const;
-  virtual uint32_t GetSerializedSize (void) const;
+    uint8_t GetKind() const override;
+    uint32_t GetSerializedSize() const override;
 
-  /**
-   * \brief Get the scale value (uint8_t)
-   * \return The scale value
-   */
-  uint8_t GetScale (void) const;
+    /**
+     * \brief Get the scale value (uint8_t)
+     * \return The scale value
+     */
+    uint8_t GetScale() const;
 
-  /**
-   * \brief Set the scale option
-   *
-   * The scale option SHOULD be <= 14 (as \RFC{1323}).
-   *
-   * \param scale Scale factor
-   */
-  void SetScale (uint8_t scale);
+    /**
+     * \brief Set the scale option
+     *
+     * The scale option SHOULD be <= 14 (as \RFC{1323}).
+     *
+     * \param scale Scale factor
+     */
+    void SetScale(uint8_t scale);
 
-protected:
-  uint8_t m_scale; //!< Window scaling in number of bit shift
+  protected:
+    uint8_t m_scale; //!< Window scaling in number of bit shift
 };
 
 } // namespace ns3

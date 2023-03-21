@@ -1,8 +1,8 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
- *   Adapted from the release 1.0 of the 5G-LENA simulator, please refer to https://5g-lena.cttc.es/ for further details 
- *   and https://gitlab.com/cttc-lena/nr/-/tree/v1.0 for the reference code.
- * 
+ *   Adapted from the release 1.0 of the 5G-LENA simulator, please refer to https://5g-lena.cttc.es/
+ * for further details and https://gitlab.com/cttc-lena/nr/-/tree/v1.0 for the reference code.
+ *
  *   Copyright (c) 2020 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -20,70 +20,69 @@
  *
  */
 #include "mmwave-eesm-cc-t2.h"
+
 #include <ns3/log.h>
 
-namespace ns3 {
+namespace ns3
+{
 
-namespace mmwave {
+namespace mmwave
+{
 
-NS_LOG_COMPONENT_DEFINE ("MmWaveEesmCcT2");
-NS_OBJECT_ENSURE_REGISTERED (MmWaveEesmCcT2);
+NS_LOG_COMPONENT_DEFINE("MmWaveEesmCcT2");
+NS_OBJECT_ENSURE_REGISTERED(MmWaveEesmCcT2);
 
 MmWaveEesmCcT2::MmWaveEesmCcT2()
 {
-
 }
 
 MmWaveEesmCcT2::~MmWaveEesmCcT2()
 {
-
 }
 
 TypeId
-MmWaveEesmCcT2::GetTypeId (void)
+MmWaveEesmCcT2::GetTypeId(void)
 {
-  static TypeId tid = TypeId ("ns3::MmWaveEesmCcT2")
-    .SetParent<MmWaveEesmCc> ()
-    .AddConstructor<MmWaveEesmCcT2> ()
-  ;
-  return tid;
+    static TypeId tid =
+        TypeId("ns3::MmWaveEesmCcT2").SetParent<MmWaveEesmCc>().AddConstructor<MmWaveEesmCcT2>();
+    return tid;
 }
 
-const std::vector<double> *
+const std::vector<double>*
 MmWaveEesmCcT2::GetBetaTable() const
 {
-  return m_t2.m_betaTable;
+    return m_t2.m_betaTable;
 }
 
-const std::vector<double> *
+const std::vector<double>*
 MmWaveEesmCcT2::GetMcsEcrTable() const
 {
-  return m_t2.m_mcsEcrTable;
+    return m_t2.m_mcsEcrTable;
 }
 
-const MmWaveEesmErrorModel::SimulatedBlerFromSINR *
+const MmWaveEesmErrorModel::SimulatedBlerFromSINR*
 MmWaveEesmCcT2::GetSimulatedBlerFromSINR() const
 {
-  return m_t2.m_simulatedBlerFromSINR;
+    return m_t2.m_simulatedBlerFromSINR;
 }
 
-const std::vector<uint8_t> *
+const std::vector<uint8_t>*
 MmWaveEesmCcT2::GetMcsMTable() const
 {
-  return m_t2.m_mcsMTable;
+    return m_t2.m_mcsMTable;
 }
 
-const std::vector<double> *
+const std::vector<double>*
 MmWaveEesmCcT2::GetSpectralEfficiencyForMcs() const
 {
-  return m_t2.m_spectralEfficiencyForMcs;
+    return m_t2.m_spectralEfficiencyForMcs;
 }
 
-const std::vector<double> *
+const std::vector<double>*
 MmWaveEesmCcT2::GetSpectralEfficiencyForCqi() const
 {
-  return m_t2.m_spectralEfficiencyForCqi;
+    return m_t2.m_spectralEfficiencyForCqi;
 }
 
-} // namespace ns3
 } // namespace mmwave
+} // namespace ns3

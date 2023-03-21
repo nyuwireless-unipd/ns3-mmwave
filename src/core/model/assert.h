@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2006 INRIA, 2010 NICTA
  *
@@ -51,9 +50,9 @@
 
 #ifdef NS3_ASSERT_ENABLE
 
-#include <iostream>
-
 #include "fatal-error.h"
+
+#include <iostream>
 
 /**
  * \ingroup assert
@@ -64,16 +63,15 @@
  *
  * \param [in] condition Condition to verify.
  */
-#define NS_ASSERT(condition)                          \
-  do {                                                \
-      if (!(condition))                               \
-        {                                             \
-          std::cerr << "assert failed. cond=\""       \
-                    << # condition << "\", ";         \
-          NS_FATAL_ERROR_NO_MSG ();                   \
-        }                                             \
-    }  while (false)
-
+#define NS_ASSERT(condition)                                                                       \
+    do                                                                                             \
+    {                                                                                              \
+        if (!(condition))                                                                          \
+        {                                                                                          \
+            std::cerr << "NS_ASSERT failed, cond=\"" << #condition << "\", ";                      \
+            NS_FATAL_ERROR_NO_MSG();                                                               \
+        }                                                                                          \
+    } while (false)
 
 /**
  * \ingroup assert
@@ -85,26 +83,32 @@
  * \param [in] condition Condition to verify.
  * \param [in] message Message to output
  */
-#define NS_ASSERT_MSG(condition, message)             \
-  do {                                                \
-      if (!(condition))                               \
-        {                                             \
-          std::cerr << "assert failed. cond=\"" <<    \
-            # condition << "\", ";                    \
-          NS_FATAL_ERROR (message);                   \
-        }                                             \
+#define NS_ASSERT_MSG(condition, message)                                                          \
+    do                                                                                             \
+    {                                                                                              \
+        if (!(condition))                                                                          \
+        {                                                                                          \
+            std::cerr << "NS_ASSERT failed, cond=\"" << #condition << "\", ";                      \
+            NS_FATAL_ERROR(message);                                                               \
+        }                                                                                          \
     } while (false)
 
 #else /* NS3_ASSERT_ENABLE */
 
-#define NS_ASSERT(condition)                          \
-  do {                                                \
-      (void)sizeof (condition);                       \
+// NOTE: The no-op macros are not inserted into the final code.
+// However, the use of sizeof() allows the compiler to silently check if the condition is
+// syntactically valid.
+
+#define NS_ASSERT(condition)                                                                       \
+    do                                                                                             \
+    {                                                                                              \
+        (void)sizeof(condition);                                                                   \
     } while (false)
 
-#define NS_ASSERT_MSG(condition, message)             \
-  do {                                                \
-      (void)sizeof (condition);                       \
+#define NS_ASSERT_MSG(condition, message)                                                          \
+    do                                                                                             \
+    {                                                                                              \
+        (void)sizeof(condition);                                                                   \
     } while (false)
 
 #endif /* NS3_ASSERT_ENABLE */

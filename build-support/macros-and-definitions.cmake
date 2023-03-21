@@ -59,6 +59,18 @@ endif()
 
 if(APPLE)
   add_definitions(-D__APPLE__)
+  # cmake-format: off
+  # Configure find_program to search for AppBundles only if programs are not found in PATH.
+  # This prevents Doxywizard from being launched when the Doxygen.app is installed.
+  # https://gitlab.kitware.com/cmake/cmake/-/blob/master/Modules/FindDoxygen.cmake
+  # cmake-format: on
+  set(CMAKE_FIND_APPBUNDLE "LAST")
+endif()
+
+if(WIN32)
+  set(NS3_PRECOMPILE_HEADERS OFF
+      CACHE BOOL "Precompile module headers to speed up compilation" FORCE
+  )
 endif()
 
 set(cat_command cat)
@@ -86,6 +98,13 @@ else()
         "${PROJECT_SOURCE_DIR}/${NS3_OUTPUT_DIRECTORY}"
     )
   endif()
+
+  # Transform backward slash into forward slash Not the best way to do it since
+  # \ is a scape thing and can be used before whitespaces
+  string(REPLACE "\\" "/" absolute_ns3_output_directory
+                 "${absolute_ns3_output_directory}"
+  )
+
   if(NOT (EXISTS ${absolute_ns3_output_directory}))
     message(
       STATUS
@@ -122,6 +141,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_OUTPUT_DIRECTORY})
 set(CMAKE_HEADER_OUTPUT_DIRECTORY ${CMAKE_OUTPUT_DIRECTORY}/include/ns3)
 set(THIRD_PARTY_DIRECTORY ${PROJECT_SOURCE_DIR}/3rd-party)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+link_directories(${CMAKE_OUTPUT_DIRECTORY}/lib)
 
 # Get installation folder default values for each platform and include package
 # configuration macro
@@ -221,6 +241,44 @@ if(${CLANG} AND APPLE)
   set(STATIC_LINK_FLAGS)
 endif()
 
+if(${NS3_FAST_LINKERS})
+  # Search for faster linkers mold and lld, and use them if available
+  mark_as_advanced(MOLD LLD)
+  find_program(MOLD mold)
+  find_program(LLD ld.lld)
+
+  # USING_FAST_LINKER will be defined if a fast linker is being used and its
+  # content will correspond to the fast linker name
+
+  # Mold support was added in GCC 12.1.0
+  if(NOT USING_FAST_LINKER
+     AND NOT (${MOLD} STREQUAL "MOLD-NOTFOUND")
+     AND LINUX
+     AND ${GCC}
+     AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.1.0)
+  )
+    set(USING_FAST_LINKER MOLD)
+    add_link_options("-fuse-ld=mold")
+  endif()
+
+  if(NOT USING_FAST_LINKER AND NOT (${LLD} STREQUAL "LLD-NOTFOUND")
+     AND (${GCC} OR ${CLANG})
+  )
+    set(USING_FAST_LINKER LLD)
+    add_link_options("-fuse-ld=lld")
+    if(WIN32)
+      # Clear unsupported linker flags on Windows
+      set(LIB_AS_NEEDED_PRE)
+    endif()
+  endif()
+endif()
+
+# Include CMake files used for compiler checks
+include(CheckIncludeFile) # Used to check a single C header at a time
+include(CheckIncludeFileCXX) # Used to check a single C++ header at a time
+include(CheckIncludeFiles) # Used to check multiple headers at once
+include(CheckFunctionExists)
+
 macro(SUBDIRLIST result curdir)
   file(GLOB children RELATIVE ${curdir} ${curdir}/*)
   set(dirlist "")
@@ -244,6 +302,7 @@ macro(clear_global_cached_variables)
   unset(ns3-contrib-libs CACHE)
   unset(ns3-example-folders CACHE)
   unset(ns3-execs CACHE)
+  unset(ns3-execs-clean CACHE)
   unset(ns3-execs-py CACHE)
   unset(ns3-external-libs CACHE)
   unset(ns3-headers-to-module-map CACHE)
@@ -257,6 +316,7 @@ macro(clear_global_cached_variables)
     ns3-contrib-libs
     ns3-example-folders
     ns3-execs
+    ns3-execs-clean
     ns3-execs-py
     ns3-external-libs
     ns3-headers-to-module-map
@@ -265,6 +325,9 @@ macro(clear_global_cached_variables)
     ns3-python-bindings-modules
   )
 endmacro()
+
+# Include CMake file with common find_program HINTS
+include(build-support/3rd-party/find-program-hints.cmake)
 
 # function used to search for package and program dependencies than store list
 # of missing dependencies in the list whose name is stored in missing_deps
@@ -284,7 +347,9 @@ function(check_deps package_deps program_deps missing_deps)
     # here or it won't check other dependencies
     string(TOUPPER ${program} upper_${program})
     mark_as_advanced(${upper_${program}})
-    find_program(${upper_${program}} ${program})
+    find_program(
+      ${upper_${program}} ${program} HINTS ${3RD_PARTY_FIND_PROGRAM_HINTS}
+    )
     if("${${upper_${program}}}" STREQUAL "${upper_${program}}-NOTFOUND")
       list(APPEND local_missing_deps ${program})
     endif()
@@ -385,7 +450,7 @@ macro(process_options)
   if(${NS3_CLANG_FORMAT})
     find_program(CLANG_FORMAT clang-format)
     if("${CLANG_FORMAT}" STREQUAL "CLANG_FORMAT-NOTFOUND")
-      message(${HIGHLIGHTED_STATUS} "Proceeding without clang-format")
+      message(FATAL_ERROR "Clang-format was not found")
     else()
       file(
         GLOB_RECURSE
@@ -400,7 +465,7 @@ macro(process_options)
         scratch/*.h
       )
       add_custom_target(
-        clang-format COMMAND clang-format -style=file -i
+        clang-format COMMAND ${CLANG_FORMAT} -style=file -i
                              ${ALL_CXX_SOURCE_FILES}
       )
       unset(ALL_CXX_SOURCE_FILES)
@@ -408,14 +473,28 @@ macro(process_options)
   endif()
 
   if(${NS3_CLANG_TIDY})
-    find_program(CLANG_TIDY clang-tidy)
+    find_program(
+      CLANG_TIDY NAMES clang-tidy clang-tidy-14 clang-tidy-15 clang-tidy-16
+    )
     if("${CLANG_TIDY}" STREQUAL "CLANG_TIDY-NOTFOUND")
-      message(${HIGHLIGHTED_STATUS}
-              "Proceeding without clang-tidy static analysis"
-      )
+      message(FATAL_ERROR "Clang-tidy was not found")
     else()
-      set(CMAKE_CXX_CLANG_TIDY "clang-tidy")
+      if((${CMAKE_VERSION} VERSION_LESS "3.12.0") AND ${NS3_CCACHE}
+         AND (NOT ("${CCACHE}" STREQUAL "CCACHE-NOTFOUND"))
+      )
+        # CMake <3.12 puts CMAKE_CXX_COMPILER_LAUNCHER in the incorrect place
+        # and CCache ends up being unable to cache anything if calling
+        # clang-tidy https://gitlab.kitware.com/cmake/cmake/-/issues/18266
+        message(
+          FATAL_ERROR
+            "The current CMake ${CMAKE_VERSION} won't ccache objects correctly when running with clang-tidy."
+            "Update CMake to at least version 3.12, or disable either ccache or clang-tidy to continue."
+        )
+      endif()
+      set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY}")
     endif()
+  else()
+    unset(CMAKE_CXX_CLANG_TIDY)
   endif()
 
   if(${NS3_CLANG_TIMETRACE})
@@ -426,6 +505,7 @@ macro(process_options)
         ClangBuildAnalyzer
         GIT_REPOSITORY "https://github.com/aras-p/ClangBuildAnalyzer.git"
         GIT_TAG "47406981a1c5a89e8f8c62802b924c3e163e7cb4"
+        CMAKE_ARGS -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
         INSTALL_COMMAND cmake -E copy_if_different ClangBuildAnalyzer
                         ${PROJECT_BINARY_DIR}
       )
@@ -458,6 +538,7 @@ macro(process_options)
   else()
     file(GLOB_RECURSE MODULES_CMAKE_FILES src/**/CMakeLists.txt
          contrib/**/CMakeLists.txt examples/**/CMakeLists.txt
+         scratch/**/CMakeLists.txt
     )
     file(
       GLOB
@@ -635,6 +716,20 @@ macro(process_options)
   )
   list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/build-support/3rd-party")
 
+  set(ENABLE_EIGEN False)
+  if(${NS3_EIGEN})
+    find_package(Eigen3 QUIET)
+
+    if(${EIGEN3_FOUND})
+      set(ENABLE_EIGEN True)
+      add_definitions(-DHAVE_EIGEN3)
+      add_definitions(-DEIGEN_MPL2_ONLY)
+      include_directories(${EIGEN3_INCLUDE_DIR})
+    else()
+      message(${HIGHLIGHTED_STATUS} "Eigen was not found")
+    endif()
+  endif()
+
   # GTK3 Don't search for it if you don't have it installed, as it take an
   # insane amount of time
   if(${NS3_GTK3})
@@ -674,6 +769,11 @@ macro(process_options)
               "Disable Brite, Click, Gtk, GSL, Mpi, Openflow and SQLite"
               " if you want a standalone static ns-3 library."
     )
+    if(WIN32)
+      message(FATAL_ERROR "Static builds are unsupported on Windows"
+                          "\nSocket libraries cannot be linked statically"
+      )
+    endif()
   else()
     find_package(LibXml2 QUIET)
     if(NOT ${LIBXML2_FOUND})
@@ -697,25 +797,35 @@ macro(process_options)
   set(Python3_EXECUTABLE)
   set(Python3_FOUND FALSE)
   set(Python3_INCLUDE_DIRS)
-  if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
-    find_package(Python3 COMPONENTS Interpreter Development)
-  else()
-    # cmake-format: off
-    set(Python_ADDITIONAL_VERSIONS 3.1 3.2 3.3 3.4 3.5 3.6 3.7 3.8 3.9)
-    # cmake-format: on
-    find_package(PythonInterp)
-    find_package(PythonLibs)
+  if(${NS3_PYTHON_BINDINGS})
+    if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+      find_package(Python3 COMPONENTS Interpreter Development)
+    else()
+      # cmake-format: off
+      set(Python_ADDITIONAL_VERSIONS 3.1 3.2 3.3 3.4 3.5 3.6 3.7 3.8 3.9)
+      # cmake-format: on
+      find_package(PythonInterp)
+      find_package(PythonLibs)
 
-    # Move deprecated results into the FindPython3 resulting variables
-    set(Python3_Interpreter_FOUND ${PYTHONINTERP_FOUND})
-    set(Python3_Development_FOUND ${PYTHONLIBS_FOUND})
-    if(${PYTHONINTERP_FOUND})
-      set(Python3_EXECUTABLE ${PYTHON_EXECUTABLE})
-      set(Python3_FOUND TRUE)
+      # Move deprecated results into the FindPython3 resulting variables
+      set(Python3_Interpreter_FOUND ${PYTHONINTERP_FOUND})
+      set(Python3_Development_FOUND ${PYTHONLIBS_FOUND})
+      if(${PYTHONINTERP_FOUND})
+        set(Python3_EXECUTABLE ${PYTHON_EXECUTABLE})
+        set(Python3_FOUND TRUE)
+      endif()
+      if(${PYTHONLIBS_FOUND})
+        set(Python3_LIBRARIES ${PYTHON_LIBRARIES})
+        set(Python3_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS})
+      endif()
     endif()
-    if(${PYTHONLIBS_FOUND})
-      set(Python3_LIBRARIES ${PYTHON_LIBRARIES})
-      set(Python3_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS})
+  else()
+    # If Python was not set yet, use the version found by check_deps
+    check_deps("" "python3" python3_deps)
+    if(python3_deps)
+      message(FATAL_ERROR "Python3 was not found")
+    else()
+      set(Python3_EXECUTABLE ${PYTHON3})
     endif()
   endif()
 
@@ -776,6 +886,66 @@ macro(process_options)
       configure_file(
         bindings/python/ns__init__.py ${destination_dir}/__init__.py COPYONLY
       )
+
+      # And create an install target for the bindings
+      if(NOT NS3_BINDINGS_INSTALL_DIR)
+        # If the installation directory for the python bindings is not set,
+        # suggest the user site-packages directory
+        execute_process(
+          COMMAND python3 -m site --user-site
+          OUTPUT_VARIABLE SUGGESTED_BINDINGS_INSTALL_DIR
+        )
+        string(STRIP "${SUGGESTED_BINDINGS_INSTALL_DIR}"
+                     SUGGESTED_BINDINGS_INSTALL_DIR
+        )
+        message(
+          ${HIGHLIGHTED_STATUS}
+          "NS3_BINDINGS_INSTALL_DIR was not set. The python bindings won't be installed with ./ns3 install."
+        )
+        message(
+          ${HIGHLIGHTED_STATUS}
+          "Set NS3_BINDINGS_INSTALL_DIR=\"${SUGGESTED_BINDINGS_INSTALL_DIR}\" to install it to the default location."
+        )
+      else()
+        install(FILES bindings/python/ns__init__.py
+                DESTINATION ${NS3_BINDINGS_INSTALL_DIR}/ns RENAME __init__.py
+        )
+        add_custom_target(
+          uninstall_bindings COMMAND rm -R ${NS3_BINDINGS_INSTALL_DIR}/ns
+        )
+        add_dependencies(uninstall uninstall_bindings)
+      endif()
+    endif()
+  endif()
+
+  if(${NS3_NINJA_TRACING})
+    if(${CMAKE_GENERATOR} STREQUAL Ninja)
+      include(ExternalProject)
+      ExternalProject_Add(
+        NinjaTracing
+        GIT_REPOSITORY "https://github.com/nico/ninjatracing.git"
+        GIT_TAG "f9d21e973cfdeafa913b83a927fef56258f70b9a"
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+      )
+      ExternalProject_Get_Property(NinjaTracing SOURCE_DIR)
+      set(embed_time_trace)
+      if(${NS3_CLANG_TIMETRACE} AND ${CLANG})
+        set(embed_time_trace --embed-time-trace)
+      endif()
+      add_custom_target(
+        ninjaTrace
+        COMMAND
+          ${Python3_EXECUTABLE} ${SOURCE_DIR}/ninjatracing -a
+          ${embed_time_trace} ${PROJECT_BINARY_DIR}/.ninja_log >
+          ${PROJECT_SOURCE_DIR}/ninja_performance_trace.json
+        DEPENDS NinjaTracing
+      )
+      unset(embed_time_trace)
+      unset(SOURCE_DIR)
+    else()
+      message(FATAL_ERROR "Ninjatracing requires the Ninja generator")
     endif()
   endif()
 
@@ -803,6 +973,7 @@ macro(process_options)
   endif()
 
   if(${ENABLE_TESTS})
+    add_custom_target(test-runner-examples-as-tests)
     add_custom_target(all-test-targets)
 
     # Create a custom target to run test.py --no-build Target is also used to
@@ -855,25 +1026,11 @@ macro(process_options)
     endif()
   endif()
 
-  if(${NS3_GNUPLOT})
-    find_package(Gnuplot-ios) # Not sure what package would contain the correct
-                              # header/library
-    if(NOT ${GNUPLOT_FOUND})
-      message(${HIGHLIGHTED_STATUS}
-              "GNUPLOT was not found. Continuing without it."
-      )
-    else()
-      message(STATUS "GNUPLOT was found.")
-      include_directories(${GNUPLOT_INCLUDE_DIRS})
-      link_directories(${GNUPLOT_LIBRARY})
-    endif()
-  endif()
-
   # checking for documentation dependencies and creating targets
 
   # First we check for doxygen dependencies
   mark_as_advanced(DOXYGEN)
-  check_deps("" "doxygen;dot;dia" doxygen_docs_missing_deps)
+  check_deps("" "doxygen;dot;dia;python3" doxygen_docs_missing_deps)
   if(doxygen_docs_missing_deps)
     message(
       ${HIGHLIGHTED_STATUS}
@@ -901,63 +1058,13 @@ macro(process_options)
     add_custom_target(doxygen-no-build COMMAND ${doxygen_missing_msg})
   else()
     # We checked this already exists, but we need the path to the executable
-    find_package(Doxygen QUIET)
-
-    # Get introspected doxygen
-    add_custom_target(
-      run-print-introspected-doxygen
-      COMMAND
-        ${CMAKE_OUTPUT_DIRECTORY}/utils/ns${NS3_VER}-print-introspected-doxygen${build_profile_suffix}
-        > ${PROJECT_SOURCE_DIR}/doc/introspected-doxygen.h
-      COMMAND
-        ${CMAKE_OUTPUT_DIRECTORY}/utils/ns${NS3_VER}-print-introspected-doxygen${build_profile_suffix}
-        --output-text > ${PROJECT_SOURCE_DIR}/doc/ns3-object.txt
-      DEPENDS print-introspected-doxygen
-    )
-    add_custom_target(
-      run-introspected-command-line
-      COMMAND ${CMAKE_COMMAND} -E env NS_COMMANDLINE_INTROSPECTION=..
-              ${Python3_EXECUTABLE} ./test.py --no-build --constrain=example
-      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-      DEPENDS all-test-targets # all-test-targets only exists if ENABLE_TESTS is
-                               # set to ON
-    )
-
-    file(
-      WRITE ${CMAKE_BINARY_DIR}/introspected-command-line-preamble.h
-      "/* This file is automatically generated by
-  CommandLine::PrintDoxygenUsage() from the CommandLine configuration
-  in various example programs.  Do not edit this file!  Edit the
-  CommandLine configuration in those files instead.
-  */\n"
-    )
-    add_custom_target(
-      assemble-introspected-command-line
-      # works on CMake 3.18 or newer > COMMAND ${CMAKE_COMMAND} -E cat
-      # ${PROJECT_SOURCE_DIR}/testpy-output/*.command-line >
-      # ${PROJECT_SOURCE_DIR}/doc/introspected-command-line.h
-      COMMAND ${cat_command}
-              ${CMAKE_BINARY_DIR}/introspected-command-line-preamble.h
-              ${PROJECT_SOURCE_DIR}/testpy-output/*.command-line
-              > ${PROJECT_SOURCE_DIR}/doc/introspected-command-line.h 2> NULL
-      DEPENDS run-introspected-command-line
-    )
+    set(DOXYGEN_EXECUTABLE ${DOXYGEN})
 
     add_custom_target(
       update_doxygen_version
-      COMMAND ${PROJECT_SOURCE_DIR}/doc/ns3_html_theme/get_version.sh
+      COMMAND bash ${PROJECT_SOURCE_DIR}/doc/ns3_html_theme/get_version.sh
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     )
-
-    add_custom_target(
-      doxygen
-      COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_SOURCE_DIR}/doc/doxygen.conf
-      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-      DEPENDS update_doxygen_version run-print-introspected-doxygen
-              assemble-introspected-command-line
-      USES_TERMINAL
-    )
-
     add_custom_target(
       doxygen-no-build
       COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_SOURCE_DIR}/doc/doxygen.conf
@@ -965,6 +1072,69 @@ macro(process_options)
       DEPENDS update_doxygen_version
       USES_TERMINAL
     )
+    # The `doxygen` target only really works if we have tests enabled, so emit a
+    # warning to use `doxygen-no-build` instead.
+    if((NOT ${ENABLE_TESTS}) AND (NOT ${ENABLE_EXAMPLES}))
+      # cmake-format: off
+      set(doxygen_target_requires_tests_msg
+              echo The \\'doxygen\\' target called by \\'./ns3 docs doxygen\\' or \\'./ns3 docs all\\' commands
+              require examples and tests to generate introspected documentation.
+              Enable examples and tests, or use \\'doxygen-no-build\\'.
+              )
+      # cmake-format: on
+      add_custom_target(doxygen COMMAND ${doxygen_target_requires_tests_msg})
+      unset(doxygen_target_requires_tests_msg)
+    else()
+      # Get introspected doxygen
+      add_custom_target(
+        run-print-introspected-doxygen
+        COMMAND
+          ${CMAKE_OUTPUT_DIRECTORY}/utils/ns${NS3_VER}-print-introspected-doxygen${build_profile_suffix}
+          > ${PROJECT_SOURCE_DIR}/doc/introspected-doxygen.h
+        COMMAND
+          ${CMAKE_OUTPUT_DIRECTORY}/utils/ns${NS3_VER}-print-introspected-doxygen${build_profile_suffix}
+          --output-text > ${PROJECT_SOURCE_DIR}/doc/ns3-object.txt
+        DEPENDS print-introspected-doxygen
+      )
+      add_custom_target(
+        run-introspected-command-line
+        COMMAND ${CMAKE_COMMAND} -E env NS_COMMANDLINE_INTROSPECTION=..
+                ${Python3_EXECUTABLE} ./test.py --no-build --constrain=example
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS all-test-targets # all-test-targets only exists if ENABLE_TESTS
+                                 # is set to ON
+      )
+
+      file(
+        WRITE ${CMAKE_BINARY_DIR}/introspected-command-line-preamble.h
+        "/* This file is automatically generated by
+  CommandLine::PrintDoxygenUsage() from the CommandLine configuration
+  in various example programs.  Do not edit this file!  Edit the
+  CommandLine configuration in those files instead.
+  */\n"
+      )
+      add_custom_target(
+        assemble-introspected-command-line
+        # works on CMake 3.18 or newer > COMMAND ${CMAKE_COMMAND} -E cat
+        # ${PROJECT_SOURCE_DIR}/testpy-output/*.command-line >
+        # ${PROJECT_SOURCE_DIR}/doc/introspected-command-line.h
+        COMMAND
+          ${cat_command}
+          ${CMAKE_BINARY_DIR}/introspected-command-line-preamble.h
+          ${PROJECT_SOURCE_DIR}/testpy-output/*.command-line >
+          ${PROJECT_SOURCE_DIR}/doc/introspected-command-line.h 2> NULL
+        DEPENDS run-introspected-command-line
+      )
+
+      add_custom_target(
+        doxygen
+        COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_SOURCE_DIR}/doc/doxygen.conf
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS update_doxygen_version run-print-introspected-doxygen
+                assemble-introspected-command-line
+        USES_TERMINAL
+      )
+    endif()
   endif()
 
   # Now we check for sphinx dependencies
@@ -997,14 +1167,45 @@ macro(process_options)
     add_custom_target(sphinx_models COMMAND ${sphinx_missing_msg})
     add_custom_target(sphinx_tutorial COMMAND ${sphinx_missing_msg})
     add_custom_target(sphinx_contributing COMMAND ${sphinx_missing_msg})
+    add_custom_target(sphinx_installation COMMAND ${sphinx_missing_msg})
   else()
     add_custom_target(sphinx COMMENT "Building sphinx documents")
+    mark_as_advanced(MAKE)
+    find_program(MAKE NAMES make mingw32-make)
+    if(${MAKE} STREQUAL "MAKE-NOTFOUND")
+      message(
+        FATAL_ERROR "Make was not found but it is required by Sphinx docs"
+      )
+    elseif(${MAKE} MATCHES "mingw32-make")
+      # This is a super wild hack for MinGW
+      #
+      # For some reason make is shipped as mingw32-make instead of make, but
+      # tons of software rely on it being called make
+      #
+      # We could technically create an alias, using doskey make=mingw32-make,
+      # but we need to redefine that for every new shell or make registry
+      # changes to make it permanent
+      #
+      # Symlinking requires administrative permissions for some reason, so we
+      # just copy the entire thing
+      get_filename_component(make_directory ${MAKE} DIRECTORY)
+      get_filename_component(make_parent_directory ${make_directory} DIRECTORY)
+      if(NOT (EXISTS ${make_directory}/make.exe))
+        file(COPY ${MAKE} DESTINATION ${make_parent_directory})
+        file(RENAME ${make_parent_directory}/mingw32-make.exe
+             ${make_directory}/make.exe
+        )
+      endif()
+      set(MAKE ${make_directory}/make.exe)
+    else()
+
+    endif()
 
     function(sphinx_target targetname)
       # cmake-format: off
       add_custom_target(
         sphinx_${targetname}
-        COMMAND make SPHINXOPTS=-N -k html singlehtml latexpdf
+        COMMAND ${MAKE} SPHINXOPTS=-N -k html singlehtml latexpdf
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/doc/${targetname}
       )
       # cmake-format: on
@@ -1014,6 +1215,7 @@ macro(process_options)
     sphinx_target(models)
     sphinx_target(tutorial)
     sphinx_target(contributing)
+    sphinx_target(installation)
   endif()
   # end of checking for documentation dependencies and creating targets
 
@@ -1024,9 +1226,8 @@ macro(process_options)
   if(${NS3_INT64X64} MATCHES "INT128")
     check_cxx_source_compiles(
       "#include <stdint.h>
-       int main(int argc, char **argv)
+       int main()
          {
-            (void)argc; (void)argv;
             if ((uint128_t *) 0) return 0;
             if (sizeof (uint128_t)) return 0;
             return 1;
@@ -1035,9 +1236,8 @@ macro(process_options)
     )
     check_cxx_source_compiles(
       "#include <stdint.h>
-       int main(int argc, char **argv)
+       int main()
          {
-           (void)argc; (void)argv;
            if ((__uint128_t *) 0) return 0;
            if (sizeof (__uint128_t)) return 0;
            return 1;
@@ -1077,11 +1277,6 @@ macro(process_options)
   if(${NS3_INT64X64} MATCHES "CAIRO")
     set(INT64X64_USE_CAIRO TRUE)
   endif()
-
-  include(CheckIncludeFile) # Used to check a single C header at a time
-  include(CheckIncludeFileCXX) # Used to check a single C++ header at a time
-  include(CheckIncludeFiles) # Used to check multiple headers at once
-  include(CheckFunctionExists)
 
   # Check for required headers and functions, set flags if they're found or warn
   # if they're not found
@@ -1125,7 +1320,7 @@ macro(process_options)
   set(PLATFORM_UNSUPPORTED_POST "features. Continuing without them.")
   # Remove from libs_to_build all incompatible libraries or the ones that
   # dependencies couldn't be installed
-  if(APPLE OR WSLv1)
+  if(APPLE OR WSLv1 OR WIN32)
     set(ENABLE_TAP OFF)
     set(ENABLE_EMU OFF)
     list(REMOVE_ITEM libs_to_build fd-net-device)
@@ -1173,9 +1368,41 @@ macro(process_options)
 
   set(PRECOMPILE_HEADERS_ENABLED OFF)
   if(${NS3_PRECOMPILE_HEADERS})
-    if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0")
-      set(PRECOMPILE_HEADERS_ENABLED ON)
-      message(STATUS "Precompiled headers were enabled")
+    if(${NS3_CLANG_TIDY})
+      message(
+        ${HIGHLIGHTED_STATUS}
+        "Clang-tidy is incompatible with precompiled headers. Continuing without them."
+      )
+    elseif(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0")
+      # If ccache is not enable or was not found, we can continue with
+      # precompiled headers
+      if((NOT ${NS3_CCACHE}) OR ("${CCACHE}" STREQUAL "CCACHE-NOTFOUND"))
+        set(PRECOMPILE_HEADERS_ENABLED ON)
+        message(STATUS "Precompiled headers were enabled")
+      else()
+        # If ccache was found, we need to check if it is ccache >= 4
+        execute_process(COMMAND ${CCACHE} -V OUTPUT_VARIABLE CCACHE_OUT)
+        # Extract ccache version
+        if(CCACHE_OUT MATCHES "ccache version ([0-9\.]*)")
+          # If an incompatible version is found, do not enable precompiled
+          # headers
+          if("${CMAKE_MATCH_1}" VERSION_LESS "4.0.0")
+            set(PRECOMPILE_HEADERS_ENABLED OFF)
+            message(
+              ${HIGHLIGHTED_STATUS}
+              "Precompiled headers are incompatible with ccache ${CMAKE_MATCH_1} and will be disabled."
+            )
+          else()
+            set(PRECOMPILE_HEADERS_ENABLED ON)
+            message(STATUS "Precompiled headers were enabled.")
+          endif()
+        else()
+          message(
+            FATAL_ERROR
+              "Failed to extract the ccache version while enabling precompiled headers."
+          )
+        endif()
+      endif()
     else()
       message(
         STATUS
@@ -1216,10 +1443,15 @@ macro(process_options)
         <unordered_map>
         <vector>
     )
-    add_library(stdlib_pch OBJECT ${PROJECT_SOURCE_DIR}/build-support/empty.cc)
-    target_precompile_headers(
-      stdlib_pch PUBLIC "${precompiled_header_libraries}"
+    add_library(
+      stdlib_pch${build_profile_suffix} OBJECT
+      ${PROJECT_SOURCE_DIR}/build-support/empty.cc
     )
+    target_precompile_headers(
+      stdlib_pch${build_profile_suffix} PUBLIC
+      "${precompiled_header_libraries}"
+    )
+    add_library(stdlib_pch ALIAS stdlib_pch${build_profile_suffix})
 
     add_executable(
       stdlib_pch_exec ${PROJECT_SOURCE_DIR}/build-support/empty-main.cc
@@ -1256,12 +1488,26 @@ macro(process_options)
     )
     add_subdirectory(${netanim_SOURCE_DIR} ${netanim_BINARY_DIR})
   endif()
+
+  if(${NS3_FETCH_OPTIONAL_COMPONENTS})
+    include(
+      build-support/custom-modules/ns3-fetch-optional-modules-dependencies.cmake
+    )
+  endif()
 endmacro()
 
 function(set_runtime_outputdirectory target_name output_directory target_prefix)
+  # Prevent duplicate '/' in EXECUTABLE_DIRECTORY_PATH, since it gets translated
+  # to doubled underlines and will cause the ns3 script to fail
+  string(REPLACE "//" "/" output_directory "${output_directory}")
+
   set(ns3-exec-outputname ns${NS3_VER}-${target_name}${build_profile_suffix})
   set(ns3-execs "${output_directory}${ns3-exec-outputname};${ns3-execs}"
       CACHE INTERNAL "list of c++ executables"
+  )
+  set(ns3-execs-clean "${target_prefix}${target_name};${ns3-execs-clean}"
+      CACHE INTERNAL
+            "list of c++ executables without version prefix and build suffix"
   )
 
   set_target_properties(
@@ -1308,6 +1554,91 @@ function(set_runtime_outputdirectory target_name output_directory target_prefix)
   endif()
 endfunction(set_runtime_outputdirectory)
 
+function(get_scratch_prefix prefix)
+  # /path/to/ns-3-dev/scratch/nested-subdir
+  set(temp ${CMAKE_CURRENT_SOURCE_DIR})
+  # remove /path/to/ns-3-dev/ to get scratch/nested-subdir
+  string(REPLACE "${PROJECT_SOURCE_DIR}/" "" temp "${temp}")
+  # replace path separators with underlines
+  string(REPLACE "/" "_" temp "${temp}")
+  # save the prefix value to the passed variable
+  set(${prefix} ${temp}_ PARENT_SCOPE)
+endfunction()
+
+function(build_exec)
+  # Argument parsing
+  set(options IGNORE_PCH STANDALONE)
+  set(oneValueArgs EXECNAME EXECNAME_PREFIX EXECUTABLE_DIRECTORY_PATH
+                   INSTALL_DIRECTORY_PATH
+  )
+  set(multiValueArgs SOURCE_FILES HEADER_FILES LIBRARIES_TO_LINK DEFINITIONS)
+  cmake_parse_arguments(
+    "BEXEC" "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
+  )
+
+  # Resolve nested scratch prefixes without user intervention
+  if("${CMAKE_CURRENT_SOURCE_DIR}" MATCHES "scratch"
+     AND "${BEXEC_EXECNAME_PREFIX}" STREQUAL ""
+  )
+    get_scratch_prefix(BEXEC_EXECNAME_PREFIX)
+  endif()
+
+  add_executable(
+    ${BEXEC_EXECNAME_PREFIX}${BEXEC_EXECNAME} "${BEXEC_SOURCE_FILES}"
+  )
+
+  target_compile_definitions(
+    ${BEXEC_EXECNAME_PREFIX}${BEXEC_EXECNAME} PUBLIC ${BEXEC_DEFINITIONS}
+  )
+
+  if(${PRECOMPILE_HEADERS_ENABLED} AND (NOT ${BEXEC_IGNORE_PCH}))
+    target_precompile_headers(
+      ${BEXEC_EXECNAME_PREFIX}${BEXEC_EXECNAME} REUSE_FROM stdlib_pch_exec
+    )
+  endif()
+
+  if(${NS3_STATIC} AND (NOT BEXEC_STANDALONE))
+    target_link_libraries(
+      ${BEXEC_EXECNAME_PREFIX}${BEXEC_EXECNAME} ${LIB_AS_NEEDED_PRE_STATIC}
+      ${lib-ns3-static}
+    )
+  elseif(${NS3_MONOLIB} AND (NOT BEXEC_STANDALONE))
+    target_link_libraries(
+      ${BEXEC_EXECNAME_PREFIX}${BEXEC_EXECNAME} ${LIB_AS_NEEDED_PRE}
+      ${lib-ns3-monolib} ${LIB_AS_NEEDED_POST}
+    )
+  else()
+    target_link_libraries(
+      ${BEXEC_EXECNAME_PREFIX}${BEXEC_EXECNAME} ${LIB_AS_NEEDED_PRE}
+      "${BEXEC_LIBRARIES_TO_LINK}" ${LIB_AS_NEEDED_POST}
+    )
+  endif()
+
+  set_runtime_outputdirectory(
+    "${BEXEC_EXECNAME}" "${BEXEC_EXECUTABLE_DIRECTORY_PATH}/"
+    "${BEXEC_EXECNAME_PREFIX}"
+  )
+
+  if(BEXEC_INSTALL_DIRECTORY_PATH)
+    install(TARGETS ${BEXEC_EXECNAME_PREFIX}${BEXEC_EXECNAME}
+            EXPORT ns3ExportTargets
+            RUNTIME DESTINATION ${BEXEC_INSTALL_DIRECTORY_PATH}
+    )
+    get_property(
+      filename TARGET ${BEXEC_EXECNAME_PREFIX}${BEXEC_EXECNAME}
+      PROPERTY RUNTIME_OUTPUT_NAME
+    )
+    add_custom_target(
+      uninstall_${BEXEC_EXECNAME_PREFIX}${BEXEC_EXECNAME}
+      COMMAND
+        rm ${CMAKE_INSTALL_PREFIX}/${BEXEC_INSTALL_DIRECTORY_PATH}/${filename}
+    )
+    add_dependencies(
+      uninstall uninstall_${BEXEC_EXECNAME_PREFIX}${BEXEC_EXECNAME}
+    )
+  endif()
+endfunction(build_exec)
+
 function(scan_python_examples path)
   # Skip python examples search in case the bindings are disabled
   if(NOT ${ENABLE_PYTHON_BINDINGS})
@@ -1327,8 +1658,6 @@ endfunction()
 
 add_custom_target(copy_all_headers)
 function(copy_headers_before_building_lib libname outputdir headers visibility)
-  # cmake-format: off
-  set(batch_symlinks)
   foreach(header ${headers})
     # Copy header to output directory on changes -> too darn slow
     # configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${header} ${outputdir}/
@@ -1338,43 +1667,25 @@ function(copy_headers_before_building_lib libname outputdir headers visibility)
       header_name ${CMAKE_CURRENT_SOURCE_DIR}/${header} NAME
     )
 
+    # If output directory does not exist, create it
+    if(NOT (EXISTS ${outputdir}))
+      file(MAKE_DIRECTORY ${outputdir})
+    endif()
+
     # If header already exists, skip symlinking/stub header creation
     if(EXISTS ${outputdir}/${header_name})
       continue()
     endif()
 
-    # CMake 3.13 cannot create symlinks on Windows, so we use stub headers as a
-    # fallback
-    if(WIN32 AND (${CMAKE_VERSION} VERSION_LESS "3.13.0"))
-      # Create a stub header in the output directory, including the real header
-      # inside their respective module
-
-      file(WRITE ${outputdir}/${header_name}
-           "#include \"${CMAKE_CURRENT_SOURCE_DIR}/${header}\"\n"
-      )
-    else()
-      # Create a symlink in the output directory to the original header Calling
-      # execute_process for each symlink is too slow too, so we create a batch
-      # with all headers execute_process(COMMAND ${CMAKE_COMMAND} -E
-      # create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/${header}
-      # ${outputdir}/${header_name})
-      set(batch_symlinks
-          ${batch_symlinks}
-          COMMAND
-          ${CMAKE_COMMAND}
-          -E
-          create_symlink
-          ${CMAKE_CURRENT_SOURCE_DIR}/${header}
-          ${outputdir}/${header_name}
-      )
-    endif()
+    # Create a stub header in the output directory, including the real header
+    # inside their respective module
+    get_filename_component(
+      ABSOLUTE_HEADER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${header}" ABSOLUTE
+    )
+    file(WRITE ${outputdir}/${header_name}
+         "#include \"${ABSOLUTE_HEADER_PATH}\"\n"
+    )
   endforeach()
-
-  # Create all symlinks in a single call if there is a symlink to be done
-  if(batch_symlinks)
-    execute_process(${batch_symlinks})
-  endif()
-  # cmake-format: on
 endfunction(copy_headers_before_building_lib)
 
 function(remove_lib_prefix prefixed_library library)
@@ -1427,48 +1738,45 @@ include(build-support/custom-modules/ns3-contributions.cmake)
 
 # Macro to build examples in ns-3-dev/examples/
 macro(build_example)
-  set(options)
+  set(options IGNORE_PCH)
   set(oneValueArgs NAME)
   set(multiValueArgs SOURCE_FILES HEADER_FILES LIBRARIES_TO_LINK)
   cmake_parse_arguments(
     "EXAMPLE" "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
   )
 
+  # Filter examples out if they don't contain one of the filtered in modules
+  set(filtered_in ON)
+  if(NS3_FILTER_MODULE_EXAMPLES_AND_TESTS)
+    set(filtered_in OFF)
+    foreach(filtered_module NS3_FILTER_MODULE_EXAMPLES_AND_TESTS)
+      if(${filtered_module} IN_LIST EXAMPLE_LIBRARIES_TO_LINK)
+        set(filtered_in ON)
+      endif()
+    endforeach()
+  endif()
+
   check_for_missing_libraries(
     missing_dependencies "${EXAMPLE_LIBRARIES_TO_LINK}"
   )
 
-  if(NOT missing_dependencies)
-    # Create shared library with sources and headers
-    add_executable(
-      ${EXAMPLE_NAME} "${EXAMPLE_SOURCE_FILES}" "${EXAMPLE_HEADER_FILES}"
-    )
-
-    if(${NS3_STATIC})
-      target_link_libraries(
-        ${EXAMPLE_NAME} ${LIB_AS_NEEDED_PRE_STATIC} ${lib-ns3-static}
-      )
-    elseif(${NS3_MONOLIB})
-      target_link_libraries(
-        ${EXAMPLE_NAME} ${LIB_AS_NEEDED_PRE} ${lib-ns3-monolib}
-        ${LIB_AS_NEEDED_POST}
-      )
-    else()
-      # Link the shared library with the libraries passed
-      target_link_libraries(
-        ${EXAMPLE_NAME} ${LIB_AS_NEEDED_PRE} ${EXAMPLE_LIBRARIES_TO_LINK}
-        ${optional_visualizer_lib} ${LIB_AS_NEEDED_POST}
-      )
+  if((NOT missing_dependencies) AND ${filtered_in})
+    # Convert boolean into text to forward argument
+    if(${EXAMPLE_IGNORE_PCH})
+      set(IGNORE_PCH IGNORE_PCH)
     endif()
-
-    if(${PRECOMPILE_HEADERS_ENABLED})
-      target_precompile_headers(${EXAMPLE_NAME} REUSE_FROM stdlib_pch_exec)
-    endif()
-
-    set_runtime_outputdirectory(
-      ${EXAMPLE_NAME}
-      ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/${examplefolder}/ ""
+    # Create example library with sources and headers
+    # cmake-format: off
+    build_exec(
+      EXECNAME ${EXAMPLE_NAME}
+      SOURCE_FILES ${EXAMPLE_SOURCE_FILES}
+      HEADER_FILES ${EXAMPLE_HEADER_FILES}
+      LIBRARIES_TO_LINK ${EXAMPLE_LIBRARIES_TO_LINK} ${optional_visualizer_lib}
+      EXECUTABLE_DIRECTORY_PATH
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/${examplefolder}/
+      ${IGNORE_PCH}
     )
+    # cmake-format: on
   endif()
 endmacro()
 
@@ -1570,8 +1878,14 @@ function(recursive_dependency module_name)
   endforeach()
 endfunction()
 
-macro(filter_enabled_and_disabled_modules libs_to_build contrib_libs_to_build
-      NS3_ENABLED_MODULES NS3_DISABLED_MODULES ns3rc_enabled_modules
+macro(
+  filter_enabled_and_disabled_modules
+  libs_to_build
+  contrib_libs_to_build
+  NS3_ENABLED_MODULES
+  NS3_DISABLED_MODULES
+  ns3rc_enabled_modules
+  ns3rc_disabled_modules
 )
   mark_as_advanced(ns3-all-enabled-modules)
 
@@ -1618,7 +1932,14 @@ macro(filter_enabled_and_disabled_modules libs_to_build contrib_libs_to_build
     endif()
   endif()
 
-  if(${NS3_DISABLED_MODULES})
+  if(${NS3_DISABLED_MODULES} OR ${ns3rc_disabled_modules})
+    # List of disabled modules passed by the command line overwrites list read
+    # from ns3rc
+
+    if(${NS3_DISABLED_MODULES})
+      set(ns3rc_disabled_modules ${${NS3_DISABLED_MODULES}})
+    endif()
+
     set(all_libs ${${libs_to_build}};${${contrib_libs_to_build}})
 
     # We then use the recursive dependency finding to get all dependencies of
@@ -1631,7 +1952,7 @@ macro(filter_enabled_and_disabled_modules libs_to_build contrib_libs_to_build
     endforeach()
 
     # Now we can begin removing libraries that require disabled dependencies
-    set(disabled_libs "${${NS3_DISABLED_MODULES}}")
+    set(disabled_libs "${${ns3rc_disabled_modules}}")
     foreach(libo ${all_libs})
       foreach(lib ${all_libs})
         foreach(disabled_lib ${disabled_libs})
@@ -1677,61 +1998,98 @@ macro(filter_enabled_and_disabled_modules libs_to_build contrib_libs_to_build
 endmacro()
 
 # Parse .ns3rc
-function(parse_ns3rc enabled_modules examples_enabled tests_enabled)
-  set(ns3rc ${PROJECT_SOURCE_DIR}/.ns3rc)
-  # Set parent scope variables with default values (all modules, no examples nor
-  # tests)
-  set(${enabled_modules} "" PARENT_SCOPE)
-  set(${examples_enabled} "FALSE" PARENT_SCOPE)
-  set(${tests_enabled} "FALSE" PARENT_SCOPE)
-  if(EXISTS ${ns3rc})
-    # If ns3rc exists in ns-3-dev, read it
-    file(READ ${ns3rc} ns3rc_contents)
+macro(parse_ns3rc enabled_modules disabled_modules examples_enabled
+      tests_enabled
+)
+  # Try to find .ns3rc
+  find_file(NS3RC .ns3rc PATHS /etc $ENV{HOME} $ENV{USERPROFILE}
+                               ${PROJECT_SOURCE_DIR} NO_CACHE
+  )
 
-    # Match modules_enabled list
-    if(ns3rc_contents MATCHES "modules_enabled.*\\[(.*).*\\]")
-      set(${enabled_modules} ${CMAKE_MATCH_1})
-      if(${enabled_modules} MATCHES "all_modules")
-        # If all modules, just clean the filter and all modules will get built
-        # by default
-        set(${enabled_modules})
-      else()
-        # If modules are listed, remove quotes and replace commas with
-        # semicolons transforming a string into a cmake list
-        string(REPLACE "," ";" ${enabled_modules} "${${enabled_modules}}")
-        string(REPLACE "'" "" ${enabled_modules} "${${enabled_modules}}")
-        string(REPLACE "\"" "" ${enabled_modules} "${${enabled_modules}}")
-        string(REPLACE " " "" ${enabled_modules} "${${enabled_modules}}")
-        string(REPLACE "\n" ";" ${enabled_modules} "${${enabled_modules}}")
-        list(SORT ${enabled_modules})
+  # Set variables with default values (all modules, no examples nor tests)
+  set(${enabled_modules} "")
+  set(${disabled_modules} "")
+  set(${examples_enabled} "FALSE")
+  set(${tests_enabled} "FALSE")
 
-        # Remove possibly empty entry
-        list(REMOVE_ITEM ${enabled_modules} "")
-        foreach(element ${${enabled_modules}})
-          # Inspect each element for comments
-          if(${element} MATCHES "#.*")
-            list(REMOVE_ITEM ${enabled_modules} ${element})
-          endif()
-        endforeach()
-      endif()
+  if(NOT (${NS3RC} STREQUAL "NS3RC-NOTFOUND"))
+    message(${HIGHLIGHTED_STATUS}
+            "Configuration file .ns3rc being used : ${NS3RC}"
+    )
+    file(READ ${NS3RC} ns3rc_contents)
+    # Check if ns3rc file is CMake or Python based and act accordingly
+    if(ns3rc_contents MATCHES "ns3rc_*")
+      include(${NS3RC})
+    else()
+      parse_python_ns3rc(
+        "${ns3rc_contents}" ${enabled_modules} ${examples_enabled}
+        ${tests_enabled} ${NS3RC}
+      )
     endif()
-
-    # Match examples_enabled flag
-    if(ns3rc_contents MATCHES "examples_enabled = (True|False)")
-      set(${examples_enabled} ${CMAKE_MATCH_1})
-    endif()
-
-    # Match tests_enabled flag
-    if(ns3rc_contents MATCHES "tests_enabled = (True|False)")
-      set(${tests_enabled} ${CMAKE_MATCH_1})
-    endif()
-
-    # Save variables to parent scope
-    set(${enabled_modules} "${${enabled_modules}}" PARENT_SCOPE)
-    set(${examples_enabled} "${${examples_enabled}}" PARENT_SCOPE)
-    set(${tests_enabled} "${${tests_enabled}}" PARENT_SCOPE)
   endif()
-endfunction(parse_ns3rc)
+endmacro(parse_ns3rc)
+
+function(parse_python_ns3rc ns3rc_contents enabled_modules examples_enabled
+         tests_enabled ns3rc_location
+)
+  # Save .ns3rc backup
+  file(WRITE ${ns3rc_location}.backup ${ns3rc_contents})
+
+  # Match modules_enabled list
+  if(ns3rc_contents MATCHES "modules_enabled.*\\[(.*).*\\]")
+    set(${enabled_modules} ${CMAKE_MATCH_1})
+    if(${enabled_modules} MATCHES "all_modules")
+      # If all modules, just clean the filter and all modules will get built by
+      # default
+      set(${enabled_modules})
+    else()
+      # If modules are listed, remove quotes and replace commas with semicolons
+      # transforming a string into a cmake list
+      string(REPLACE "," ";" ${enabled_modules} "${${enabled_modules}}")
+      string(REPLACE "'" "" ${enabled_modules} "${${enabled_modules}}")
+      string(REPLACE "\"" "" ${enabled_modules} "${${enabled_modules}}")
+      string(REPLACE " " "" ${enabled_modules} "${${enabled_modules}}")
+      string(REPLACE "\n" ";" ${enabled_modules} "${${enabled_modules}}")
+      list(SORT ${enabled_modules})
+
+      # Remove possibly empty entry
+      list(REMOVE_ITEM ${enabled_modules} "")
+      foreach(element ${${enabled_modules}})
+        # Inspect each element for comments
+        if(${element} MATCHES "#.*")
+          list(REMOVE_ITEM ${enabled_modules} ${element})
+        endif()
+      endforeach()
+    endif()
+  endif()
+
+  string(REPLACE "True" "ON" ns3rc_contents ${ns3rc_contents})
+  string(REPLACE "False" "OFF" ns3rc_contents ${ns3rc_contents})
+
+  # Match examples_enabled flag
+  if(ns3rc_contents MATCHES "examples_enabled = (ON|OFF)")
+    set(${examples_enabled} ${CMAKE_MATCH_1})
+  endif()
+
+  # Match tests_enabled flag
+  if(ns3rc_contents MATCHES "tests_enabled = (ON|OFF)")
+    set(${tests_enabled} ${CMAKE_MATCH_1})
+  endif()
+
+  # Save variables to parent scope
+  set(${enabled_modules} "${${enabled_modules}}" PARENT_SCOPE)
+  set(${examples_enabled} "${${examples_enabled}}" PARENT_SCOPE)
+  set(${tests_enabled} "${${tests_enabled}}" PARENT_SCOPE)
+
+  # Save updated .ns3rc file
+  message(
+    ${HIGHLIGHTED_STATUS}
+    "The python-based .ns3rc file format is deprecated and was updated to the CMake format"
+  )
+  configure_file(
+    ${PROJECT_SOURCE_DIR}/build-support/.ns3rc-template ${ns3rc_location} @ONLY
+  )
+endfunction(parse_python_ns3rc)
 
 function(log_find_searched_paths)
   # Parse arguments
@@ -1808,9 +2166,17 @@ function(find_external_library)
   set(library_dirs)
   set(libraries)
 
+  # Include parent directories in the search paths to handle Bake cases
+  get_filename_component(parent_project_dir ${PROJECT_SOURCE_DIR} DIRECTORY)
+  get_filename_component(
+    grandparent_project_dir ${parent_project_dir} DIRECTORY
+  )
+  set(project_parent_dirs ${parent_project_dir} ${grandparent_project_dir})
+
   # Paths and suffixes where libraries will be searched on
   set(library_search_paths
       ${search_paths}
+      ${project_parent_dirs}
       ${CMAKE_OUTPUT_DIRECTORY} # Search for libraries in ns-3-dev/build
       ${CMAKE_INSTALL_PREFIX} # Search for libraries in the install directory
                               # (e.g. /usr/)
@@ -1922,8 +2288,9 @@ function(find_external_library)
   endforeach()
 
   set(header_search_paths
-      ${parent_dirs}
       ${search_paths}
+      ${parent_dirs}
+      ${project_parent_dirs}
       ${CMAKE_OUTPUT_DIRECTORY} # Search for headers in
       # ns-3-dev/build
       ${CMAKE_INSTALL_PREFIX} # Search for headers in the install

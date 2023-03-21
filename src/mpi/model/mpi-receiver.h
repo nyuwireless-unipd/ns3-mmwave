@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -29,7 +28,8 @@
 #include "ns3/object.h"
 #include "ns3/packet.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \ingroup mpi
@@ -46,29 +46,30 @@ namespace ns3 {
  */
 class MpiReceiver : public Object
 {
-public:
-  /**
-   *  Register this type.
-   *  \return The object TypeId.
-   */
-  static TypeId GetTypeId (void);
-  virtual ~MpiReceiver ();
+  public:
+    /**
+     * Register this type.
+     * \return The object TypeId.
+     */
+    static TypeId GetTypeId();
+    ~MpiReceiver() override;
 
-  /**
-   * \brief Direct an incoming packet to the device Receive() method
-   * \param p Packet to receive
-   */
-  void Receive (Ptr<Packet> p);
-  /**
-   * \brief Set the receive callback to get packets to net devices
-   * \param callback the callback itself
-   */
-  void SetReceiveCallback (Callback<void, Ptr<Packet> > callback);
-private:
-  virtual void DoDispose (void);
+    /**
+     * \brief Direct an incoming packet to the device Receive() method
+     * \param p Packet to receive
+     */
+    void Receive(Ptr<Packet> p);
+    /**
+     * \brief Set the receive callback to get packets to net devices
+     * \param callback the callback itself
+     */
+    void SetReceiveCallback(Callback<void, Ptr<Packet>> callback);
 
-  /** Callback to send received packets to. */
-  Callback<void, Ptr<Packet> > m_rxCallback;
+  private:
+    void DoDispose() override;
+
+    /** Callback to send received packets to. */
+    Callback<void, Ptr<Packet>> m_rxCallback;
 };
 
 } // namespace ns3

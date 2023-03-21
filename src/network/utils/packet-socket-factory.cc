@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2007 Emmanuelle Laprise
  *
@@ -18,36 +17,39 @@
  * Author: Emmanuelle Laprise <emmanuelle.laprise@bluekazoo.ca>
  */
 #include "packet-socket-factory.h"
-#include "ns3/node.h"
-#include "ns3/log.h"
+
 #include "packet-socket.h"
 
-namespace ns3 {
+#include "ns3/log.h"
+#include "ns3/node.h"
 
-NS_LOG_COMPONENT_DEFINE ("PacketSocketFactory");
+namespace ns3
+{
 
-NS_OBJECT_ENSURE_REGISTERED (PacketSocketFactory);
+NS_LOG_COMPONENT_DEFINE("PacketSocketFactory");
+
+NS_OBJECT_ENSURE_REGISTERED(PacketSocketFactory);
 
 TypeId
-PacketSocketFactory::GetTypeId (void)
+PacketSocketFactory::GetTypeId()
 {
-  static TypeId tid = TypeId ("ns3::PacketSocketFactory")
-    .SetParent<SocketFactory> ()
-    .SetGroupName("Network");
-  return tid;
+    static TypeId tid =
+        TypeId("ns3::PacketSocketFactory").SetParent<SocketFactory>().SetGroupName("Network");
+    return tid;
 }
 
-PacketSocketFactory::PacketSocketFactory ()
+PacketSocketFactory::PacketSocketFactory()
 {
-  NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION(this);
 }
 
-Ptr<Socket> PacketSocketFactory::CreateSocket (void)
+Ptr<Socket>
+PacketSocketFactory::CreateSocket()
 {
-  NS_LOG_FUNCTION (this);
-  Ptr<Node> node = GetObject<Node> ();
-  Ptr<PacketSocket> socket = CreateObject<PacketSocket> ();
-  socket->SetNode (node);
-  return socket;
+    NS_LOG_FUNCTION(this);
+    Ptr<Node> node = GetObject<Node>();
+    Ptr<PacketSocket> socket = CreateObject<PacketSocket>();
+    socket->SetNode(node);
+    return socket;
 }
 } // namespace ns3

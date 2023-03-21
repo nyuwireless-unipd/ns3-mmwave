@@ -2,6 +2,7 @@
  * \file
  * Main page of the Doxygen-generated documentation.
  */
+
 /**
  * \mainpage ns-3 Documentation
  *
@@ -17,7 +18,8 @@
  *
  * \section install-sec Building the Documentation
  *
- * Building ns-3 Doxygen requires Doxygen version 1.8 at a minimum, but version 1.9 is recommended to minimize warnings.
+ * Building ns-3 Doxygen requires Doxygen version 1.8 at a minimum, but version 1.9 is recommended
+ * to minimize warnings.
  *
  * Type "./ns3 docs doxygen" or "./ns3 docs doxygen-no-build" to build the
  *  documentation.  The doc/ directory contains
@@ -69,12 +71,12 @@
  *     - wimax
  *
  */
+
 /**
  * \namespace ns3
  * \brief Every class exported by the ns3 library is enclosed in the
  * ns3 namespace.
  */
-
 
 /**
  * \name Macros defined by the build system.
@@ -107,3 +109,12 @@
 #define NS3_LOG_ENABLE
 
 /**@}*/
+
+/**
+ * \page EnvironVar All Environment Variables
+ *
+ * All environment variables used by ns-3 are documented by module.
+ *
+ * \section environcore Core Environment Variables
+ * See \ref core-environ
+ */

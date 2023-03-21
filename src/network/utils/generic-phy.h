@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c)  2010 CTTC
  *
@@ -23,8 +22,10 @@
 
 #include <ns3/callback.h>
 
-namespace ns3 {
+namespace ns3
+{
 
+class Packet;
 
 /**
  * This method allows the MAC to instruct the PHY to start a
@@ -35,7 +36,7 @@ namespace ns3 {
  * true if the PHY refuses to start the TX. If false, the MAC layer
  * will expect that GenericPhyTxEndCallback is invoked at some point later.
  */
-typedef Callback< bool, Ptr<Packet> > GenericPhyTxStartCallback;
+typedef Callback<bool, Ptr<Packet>> GenericPhyTxStartCallback;
 
 /**
  * this method is invoked by the PHY to notify the MAC that the
@@ -43,7 +44,7 @@ typedef Callback< bool, Ptr<Packet> > GenericPhyTxStartCallback;
  *
  * @param packet the Packet whose TX has been completed.
  */
-typedef Callback< void, Ptr<const Packet> > GenericPhyTxEndCallback;
+typedef Callback<void, Ptr<const Packet>> GenericPhyTxEndCallback;
 
 /**
  * This method is used by the PHY to notify the MAC that a RX
@@ -51,13 +52,13 @@ typedef Callback< void, Ptr<const Packet> > GenericPhyTxEndCallback;
  * recognized by the PHY.
  *
  */
-typedef Callback< void > GenericPhyRxStartCallback;
+typedef Callback<void> GenericPhyRxStartCallback;
 
 /**
  * This method is used by the PHY to notify the MAC that a
  * previously started RX attempt has terminated without success.
  */
-typedef Callback< void > GenericPhyRxEndErrorCallback;
+typedef Callback<void> GenericPhyRxEndErrorCallback;
 
 /**
  * This method is used by the PHY to notify the MAC that a
@@ -65,9 +66,8 @@ typedef Callback< void > GenericPhyRxEndErrorCallback;
  *
  * @param packet the received Packet
  */
-typedef Callback< void, Ptr<Packet> > GenericPhyRxEndOkCallback;
+typedef Callback<void, Ptr<Packet>> GenericPhyRxEndOkCallback;
 
 } // namespace ns3
-
 
 #endif /* GENERIC_PHY_H */

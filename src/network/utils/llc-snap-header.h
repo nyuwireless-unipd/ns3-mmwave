@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2005 INRIA
  *
@@ -21,14 +20,16 @@
 #ifndef LLC_SNAP_HEADER_H
 #define LLC_SNAP_HEADER_H
 
-#include <stdint.h>
-#include <string>
 #include "ns3/header.h"
 
-namespace ns3 {
+#include <stdint.h>
+#include <string>
+
+namespace ns3
+{
 
 /**
- * The length in octects of the LLC/SNAP header
+ * The length in octets of the LLC/SNAP header
  */
 static const uint16_t LLC_SNAP_HEADER_LENGTH = 8;
 
@@ -37,36 +38,38 @@ static const uint16_t LLC_SNAP_HEADER_LENGTH = 8;
  *
  * \brief Header for the LLC/SNAP encapsulation
  *
- * For a list of EtherTypes, see http://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.xhtml
+ * For a list of EtherTypes, see
+ * http://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.xhtml
  */
 class LlcSnapHeader : public Header
 {
-public:
-  LlcSnapHeader ();
+  public:
+    LlcSnapHeader();
 
-  /**
-   * \brief Set the Ethertype.
-   * \param type the Ethertype
-   */
-  void SetType (uint16_t type);
-  /**
-   * \brief Return the Ethertype.
-   * \return Ethertype
-   */
-  uint16_t GetType (void);
+    /**
+     * \brief Set the Ethertype.
+     * \param type the Ethertype
+     */
+    void SetType(uint16_t type);
+    /**
+     * \brief Return the Ethertype.
+     * \return Ethertype
+     */
+    uint16_t GetType();
 
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
-  virtual TypeId GetInstanceTypeId (void) const;
-  virtual void Print (std::ostream &os) const;
-  virtual uint32_t GetSerializedSize (void) const;
-  virtual void Serialize (Buffer::Iterator start) const;
-  virtual uint32_t Deserialize (Buffer::Iterator start);
-private:
-  uint16_t m_etherType; //!< the Ethertype
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
+    TypeId GetInstanceTypeId() const override;
+    void Print(std::ostream& os) const override;
+    uint32_t GetSerializedSize() const override;
+    void Serialize(Buffer::Iterator start) const override;
+    uint32_t Deserialize(Buffer::Iterator start) override;
+
+  private:
+    uint16_t m_etherType; //!< the Ethertype
 };
 
 } // namespace ns3

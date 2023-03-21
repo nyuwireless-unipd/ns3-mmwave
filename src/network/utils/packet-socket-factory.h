@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2007 Emmanuelle Laprise
  *
@@ -22,7 +21,8 @@
 
 #include "ns3/socket-factory.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 class Socket;
 
@@ -34,21 +34,21 @@ class Socket;
  */
 class PacketSocketFactory : public SocketFactory
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  PacketSocketFactory ();
+    PacketSocketFactory();
 
-  /**
-   * Creates a PacketSocket and returns a pointer to it.
-   *
-   * \return a pointer to the created socket
-   */
-  virtual Ptr<Socket> CreateSocket (void);
+    /**
+     * Creates a PacketSocket and returns a pointer to it.
+     *
+     * \return a pointer to the created socket
+     */
+    Ptr<Socket> CreateSocket() override;
 };
 
 } // namespace ns3

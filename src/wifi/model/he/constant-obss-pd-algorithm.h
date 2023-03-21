@@ -1,4 +1,3 @@
-/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2018 University of Washington
  *
@@ -23,7 +22,8 @@
 
 #include "obss-pd-algorithm.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \brief Constant OBSS PD algorithm
@@ -41,19 +41,19 @@ namespace ns3 {
  */
 class ConstantObssPdAlgorithm : public ObssPdAlgorithm
 {
-public:
-  ConstantObssPdAlgorithm ();
+  public:
+    ConstantObssPdAlgorithm();
 
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  void ConnectWifiNetDevice (const Ptr<WifiNetDevice> device) override;
-  void ReceiveHeSigA (HeSigAParameters params) override;
+    void ConnectWifiNetDevice(const Ptr<WifiNetDevice> device) override;
+    void ReceiveHeSigA(HeSigAParameters params) override;
 };
 
-} //namespace ns3
+} // namespace ns3
 
 #endif /* CONSTANT_OBSS_PD_ALGORITHM_H */

@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2011 Bucknell University
  *
@@ -21,10 +20,12 @@
 #ifndef DATA_COLLECTION_OBJECT_H
 #define DATA_COLLECTION_OBJECT_H
 
-#include <string>
 #include "ns3/object.h"
 
-namespace ns3 {
+#include <string>
+
+namespace ns3
+{
 
 /**
  * \ingroup aggregator
@@ -36,46 +37,45 @@ namespace ns3 {
  */
 class DataCollectionObject : public Object
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId ();
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  DataCollectionObject ();
-  virtual ~DataCollectionObject ();
+    DataCollectionObject();
+    ~DataCollectionObject() override;
 
-  /// Set the status of an individual object.
-  void Enable (void);
-  /// Unset the status of an individual object.
-  void Disable (void);
+    /// Set the status of an individual object.
+    void Enable();
+    /// Unset the status of an individual object.
+    void Disable();
 
-  /**
-   * Check the status of an individual object.
-   * \return true if the object is enabled
-   */
-  virtual bool IsEnabled (void) const;
+    /**
+     * Check the status of an individual object.
+     * \return true if the object is enabled
+     */
+    virtual bool IsEnabled() const;
 
-  /**
-   * Get the object's name.
-   * \return the object's name
-   */
-  std::string GetName (void) const;
+    /**
+     * Get the object's name.
+     * \return the object's name
+     */
+    std::string GetName() const;
 
-  /**
-   * Set the object's name.
-   * \param name the object's name
-   */
-  void SetName (std::string name);
+    /**
+     * Set the object's name.
+     * \param name the object's name
+     */
+    void SetName(std::string name);
 
-protected:
-  /// Object's activation state.
-  bool m_enabled;
+  protected:
+    /// Object's activation state.
+    bool m_enabled;
 
-  /// Name of the object within the data collection framework
-  std::string m_name;
-
+    /// Name of the object within the data collection framework
+    std::string m_name;
 };
 
 } // namespace ns3

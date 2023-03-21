@@ -1,8 +1,8 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
- *   Adapted from the release 1.0 of the 5G-LENA simulator, please refer to https://5g-lena.cttc.es/ for further details 
- *   and https://gitlab.com/cttc-lena/nr/-/tree/v1.0 for the reference code.
- * 
+ *   Adapted from the release 1.0 of the 5G-LENA simulator, please refer to https://5g-lena.cttc.es/
+ * for further details and https://gitlab.com/cttc-lena/nr/-/tree/v1.0 for the reference code.
+ *
  *   Copyright (c) 2020 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -22,12 +22,15 @@
 #ifndef SRC_MMWAVE_EESM_T1_H
 #define SRC_MMWAVE_EESM_T1_H
 
-#include <vector>
 #include "mmwave-eesm-error-model.h"
 
-namespace ns3 {
+#include <vector>
 
-namespace mmwave {
+namespace ns3
+{
+
+namespace mmwave
+{
 
 /**
  * \ingroup error-models
@@ -48,20 +51,21 @@ namespace mmwave {
  */
 struct MmWaveEesmT1
 {
-  /**
-   * \brief MmWaveEesmT1 constructor. Initialize the pointers
-   */
-  MmWaveEesmT1 ();
+    /**
+     * \brief MmWaveEesmT1 constructor. Initialize the pointers
+     */
+    MmWaveEesmT1();
 
-  const std::vector<double> *m_betaTable {nullptr};  //!< Beta table
-  const std::vector<double> *m_mcsEcrTable {nullptr}; //!< MCS-ECR table
-  const MmWaveEesmErrorModel::SimulatedBlerFromSINR *m_simulatedBlerFromSINR {nullptr}; //!< BLER from SINR table
-  const std::vector<uint8_t> *m_mcsMTable {nullptr}; //!< MCS-M table
-  const std::vector<double> *m_spectralEfficiencyForMcs {nullptr}; //!< Spectral-efficiency for MCS
-  const std::vector<double> *m_spectralEfficiencyForCqi {nullptr}; //!< Spectral-efficiency for CQI
+    const std::vector<double>* m_betaTable{nullptr};   //!< Beta table
+    const std::vector<double>* m_mcsEcrTable{nullptr}; //!< MCS-ECR table
+    const MmWaveEesmErrorModel::SimulatedBlerFromSINR* m_simulatedBlerFromSINR{
+        nullptr};                                                   //!< BLER from SINR table
+    const std::vector<uint8_t>* m_mcsMTable{nullptr};               //!< MCS-M table
+    const std::vector<double>* m_spectralEfficiencyForMcs{nullptr}; //!< Spectral-efficiency for MCS
+    const std::vector<double>* m_spectralEfficiencyForCqi{nullptr}; //!< Spectral-efficiency for CQI
 };
 
-} // namespace ns3
 } // namespace mmwave
+} // namespace ns3
 
 #endif // SRC_MMWAVE_EESM_T1_H

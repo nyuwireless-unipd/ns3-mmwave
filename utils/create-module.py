@@ -34,66 +34,71 @@ build_lib(
 '''
 
 
-MODEL_CC_TEMPLATE = '''/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-
+MODEL_CC_TEMPLATE = '''\
 #include "{MODULE}.h"
 
-namespace ns3 {{
+namespace ns3
+{{
 
 /* ... */
 
-
 }}
-
 '''
 
 
-
-MODEL_H_TEMPLATE = '''/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+MODEL_H_TEMPLATE = '''\
 #ifndef {INCLUDE_GUARD}
 #define {INCLUDE_GUARD}
 
-namespace ns3 {{
+// Add a doxygen group for this module.
+// If you have more than one file, this should be in only one of them.
+/**
+ * \defgroup {MODULE} Description of the {MODULE}
+ */
+
+namespace ns3
+{{
+
+// Each class should be documented using Doxygen,
+// and have an \ingroup {MODULE} directive
 
 /* ... */
 
 }}
 
 #endif /* {INCLUDE_GUARD} */
-
 '''
 
 
-
-HELPER_CC_TEMPLATE = '''/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-
+HELPER_CC_TEMPLATE = '''\
 #include "{MODULE}-helper.h"
 
-namespace ns3 {{
+namespace ns3
+{{
 
 /* ... */
 
-
 }}
-
 '''
 
 
-
-HELPER_H_TEMPLATE = '''/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+HELPER_H_TEMPLATE = '''\
 #ifndef {INCLUDE_GUARD}
 #define {INCLUDE_GUARD}
 
 #include "ns3/{MODULE}.h"
 
-namespace ns3 {{
+namespace ns3
+{{
+
+// Each class should be documented using Doxygen,
+// and have an \ingroup {MODULE} directive
 
 /* ... */
 
 }}
 
 #endif /* {INCLUDE_GUARD} */
-
 '''
 
 
@@ -106,36 +111,38 @@ build_lib_example(
 
 '''
 
-EXAMPLE_CC_TEMPLATE = '''/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-
+EXAMPLE_CC_TEMPLATE = '''\
 #include "ns3/core-module.h"
 #include "ns3/{MODULE}-helper.h"
 
+/**
+ * \\file
+ *
+ * Explain here what the example does.
+ */
+
 using namespace ns3;
 
-
 int
-main (int argc, char *argv[])
+main(int argc, char* argv[])
 {{
-  bool verbose = true;
+    bool verbose = true;
 
-  CommandLine cmd (__FILE__);
-  cmd.AddValue ("verbose", "Tell application to log if true", verbose);
+    CommandLine cmd(__FILE__);
+    cmd.AddValue("verbose", "Tell application to log if true", verbose);
 
-  cmd.Parse (argc,argv);
+    cmd.Parse(argc, argv);
 
-  /* ... */
+    /* ... */
 
-  Simulator::Run ();
-  Simulator::Destroy ();
-  return 0;
+    Simulator::Run();
+    Simulator::Destroy();
+    return 0;
 }}
-
-
 '''
 
 
-TEST_CC_TEMPLATE = '''/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+TEST_CC_TEMPLATE = '''\
 
 // Include a header file from your module to test.
 #include "ns3/{MODULE}.h"
@@ -147,26 +154,38 @@ TEST_CC_TEMPLATE = '''/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil;
 // to use the using directive to access the ns3 namespace directly
 using namespace ns3;
 
+// Add a doxygen group for tests.
+// If you have more than one test, this should be in only one of them.
+/**
+ * \defgroup {MODULE}-tests Tests for {MODULE}
+ * \ingroup {MODULE}
+ * \ingroup tests
+ */
+
 // This is an example TestCase.
+/**
+ * \ingroup {MODULE}-tests
+ * Test case for feature 1
+ */
 class {CAPITALIZED}TestCase1 : public TestCase
 {{
-public:
-  {CAPITALIZED}TestCase1 ();
-  virtual ~{CAPITALIZED}TestCase1 ();
+  public:
+    {CAPITALIZED}TestCase1();
+    virtual ~{CAPITALIZED}TestCase1();
 
-private:
-  virtual void DoRun (void);
+  private:
+    void DoRun() override;
 }};
 
 // Add some help text to this case to describe what it is intended to test
-{CAPITALIZED}TestCase1::{CAPITALIZED}TestCase1 ()
-  : TestCase ("{CAPITALIZED} test case (does nothing)")
+{CAPITALIZED}TestCase1::{CAPITALIZED}TestCase1()
+    : TestCase("{CAPITALIZED} test case (does nothing)")
 {{
 }}
 
 // This destructor does nothing but we include it as a reminder that
 // the test case should clean up after itself
-{CAPITALIZED}TestCase1::~{CAPITALIZED}TestCase1 ()
+{CAPITALIZED}TestCase1::~{CAPITALIZED}TestCase1()
 {{
 }}
 
@@ -175,34 +194,41 @@ private:
 // TestCase must implement
 //
 void
-{CAPITALIZED}TestCase1::DoRun (void)
+{CAPITALIZED}TestCase1::DoRun()
 {{
-  // A wide variety of test macros are available in src/core/test.h
-  NS_TEST_ASSERT_MSG_EQ (true, true, "true doesn\'t equal true for some reason");
-  // Use this one for floating point comparisons
-  NS_TEST_ASSERT_MSG_EQ_TOL (0.01, 0.01, 0.001, "Numbers are not equal within tolerance");
+    // A wide variety of test macros are available in src/core/test.h
+    NS_TEST_ASSERT_MSG_EQ(true, true, "true doesn\'t equal true for some reason");
+    // Use this one for floating point comparisons
+    NS_TEST_ASSERT_MSG_EQ_TOL(0.01, 0.01, 0.001, "Numbers are not equal within tolerance");
 }}
 
 // The TestSuite class names the TestSuite, identifies what type of TestSuite,
 // and enables the TestCases to be run.  Typically, only the constructor for
 // this class must be defined
-//
+
+/**
+ * \ingroup {MODULE}-tests
+ * TestSuite for module {MODULE}
+ */
 class {CAPITALIZED}TestSuite : public TestSuite
 {{
-public:
-  {CAPITALIZED}TestSuite ();
+  public:
+    {CAPITALIZED}TestSuite();
 }};
 
-{CAPITALIZED}TestSuite::{CAPITALIZED}TestSuite ()
-  : TestSuite ("{MODULE}", UNIT)
+{CAPITALIZED}TestSuite::{CAPITALIZED}TestSuite()
+    : TestSuite("{MODULE}", UNIT)
 {{
-  // TestDuration for TestCase can be QUICK, EXTENSIVE or TAKES_FOREVER
-  AddTestCase (new {CAPITALIZED}TestCase1, TestCase::QUICK);
+    // TestDuration for TestCase can be QUICK, EXTENSIVE or TAKES_FOREVER
+    AddTestCase(new {CAPITALIZED}TestCase1, TestCase::QUICK);
 }}
 
 // Do not forget to allocate an instance of this TestSuite
+/**
+ * \ingroup {MODULE}-tests
+ * Static variable for test initialization
+ */
 static {CAPITALIZED}TestSuite s{COMPOUND}TestSuite;
-
 '''
 
 

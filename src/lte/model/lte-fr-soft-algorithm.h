@@ -23,139 +23,140 @@
 #define LTE_FR_SOFT_ALGORITHM_H
 
 #include <ns3/lte-ffr-algorithm.h>
-#include <ns3/lte-ffr-sap.h>
 #include <ns3/lte-ffr-rrc-sap.h>
+#include <ns3/lte-ffr-sap.h>
 #include <ns3/lte-rrc-sap.h>
+
 #include <map>
 
-namespace ns3 {
-
+namespace ns3
+{
 
 /**
  * \brief Soft Frequency Reuse algorithm implementation
  */
 class LteFrSoftAlgorithm : public LteFfrAlgorithm
 {
-public:
-  /**
-   * \brief Creates a trivial ffr algorithm instance.
-   */
-  LteFrSoftAlgorithm ();
+  public:
+    /**
+     * \brief Creates a trivial ffr algorithm instance.
+     */
+    LteFrSoftAlgorithm();
 
-  virtual ~LteFrSoftAlgorithm ();
+    virtual ~LteFrSoftAlgorithm();
 
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId ();
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  // inherited from LteFfrAlgorithm
-  virtual void SetLteFfrSapUser (LteFfrSapUser* s);
-  virtual LteFfrSapProvider* GetLteFfrSapProvider ();
+    // inherited from LteFfrAlgorithm
+    virtual void SetLteFfrSapUser(LteFfrSapUser* s);
+    virtual LteFfrSapProvider* GetLteFfrSapProvider();
 
-  virtual void SetLteFfrRrcSapUser (LteFfrRrcSapUser* s);
-  virtual LteFfrRrcSapProvider* GetLteFfrRrcSapProvider ();
+    virtual void SetLteFfrRrcSapUser(LteFfrRrcSapUser* s);
+    virtual LteFfrRrcSapProvider* GetLteFfrRrcSapProvider();
 
-  /// let the forwarder class access the protected and private members
-  friend class MemberLteFfrSapProvider<LteFrSoftAlgorithm>;
-  /// let the forwarder class access the protected and private members
-  friend class MemberLteFfrRrcSapProvider<LteFrSoftAlgorithm>;
+    /// let the forwarder class access the protected and private members
+    friend class MemberLteFfrSapProvider<LteFrSoftAlgorithm>;
+    /// let the forwarder class access the protected and private members
+    friend class MemberLteFfrRrcSapProvider<LteFrSoftAlgorithm>;
 
-protected:
-  // inherited from Object
-  virtual void DoInitialize ();
-  virtual void DoDispose ();
+  protected:
+    // inherited from Object
+    virtual void DoInitialize();
+    virtual void DoDispose();
 
-  virtual void Reconfigure ();
+    virtual void Reconfigure();
 
-  // FFR SAP PROVIDER IMPLEMENTATION
-  virtual std::vector <bool> DoGetAvailableDlRbg ();
-  virtual bool DoIsDlRbgAvailableForUe (int i, uint16_t rnti);
-  virtual std::vector <bool> DoGetAvailableUlRbg ();
-  virtual bool DoIsUlRbgAvailableForUe (int i, uint16_t rnti);
-  virtual void DoReportDlCqiInfo (const struct FfMacSchedSapProvider::SchedDlCqiInfoReqParameters& params);
-  virtual void DoReportUlCqiInfo (const struct FfMacSchedSapProvider::SchedUlCqiInfoReqParameters& params);
-  virtual void DoReportUlCqiInfo ( std::map <uint16_t, std::vector <double> > ulCqiMap );
-  virtual uint8_t DoGetTpc (uint16_t rnti);
-  virtual uint8_t DoGetMinContinuousUlBandwidth ();
+    // FFR SAP PROVIDER IMPLEMENTATION
+    virtual std::vector<bool> DoGetAvailableDlRbg();
+    virtual bool DoIsDlRbgAvailableForUe(int i, uint16_t rnti);
+    virtual std::vector<bool> DoGetAvailableUlRbg();
+    virtual bool DoIsUlRbgAvailableForUe(int i, uint16_t rnti);
+    virtual void DoReportDlCqiInfo(
+        const struct FfMacSchedSapProvider::SchedDlCqiInfoReqParameters& params);
+    virtual void DoReportUlCqiInfo(
+        const struct FfMacSchedSapProvider::SchedUlCqiInfoReqParameters& params);
+    virtual void DoReportUlCqiInfo(std::map<uint16_t, std::vector<double>> ulCqiMap);
+    virtual uint8_t DoGetTpc(uint16_t rnti);
+    virtual uint8_t DoGetMinContinuousUlBandwidth();
 
-  // FFR SAP RRC PROVIDER IMPLEMENTATION
-  virtual void DoReportUeMeas (uint16_t rnti, LteRrcSap::MeasResults measResults);
-  virtual void DoRecvLoadInformation (EpcX2Sap::LoadInformationParams params);
+    // FFR SAP RRC PROVIDER IMPLEMENTATION
+    virtual void DoReportUeMeas(uint16_t rnti, LteRrcSap::MeasResults measResults);
+    virtual void DoRecvLoadInformation(EpcX2Sap::LoadInformationParams params);
 
-private:
-  /**
-   * Set downlink configuration
-   *
-   * \param cellId the cell ID
-   * \param bandwidth the bandwidth
-   */
-  void SetDownlinkConfiguration (uint16_t cellId, uint8_t bandwidth);
-  /**
-   * Set uplink configuration
-   *
-   * \param cellId the cell ID
-   * \param bandwidth the bandwidth
-   */
-  void SetUplinkConfiguration (uint16_t cellId, uint8_t bandwidth);
-  /**
-   * Initialize downlink RBG maps
-   */
-  void InitializeDownlinkRbgMaps ();
-  /**
-   * Initialize uplink RBG maps
-   */
-  void InitializeUplinkRbgMaps ();
+  private:
+    /**
+     * Set downlink configuration
+     *
+     * \param cellId the cell ID
+     * \param bandwidth the bandwidth
+     */
+    void SetDownlinkConfiguration(uint16_t cellId, uint8_t bandwidth);
+    /**
+     * Set uplink configuration
+     *
+     * \param cellId the cell ID
+     * \param bandwidth the bandwidth
+     */
+    void SetUplinkConfiguration(uint16_t cellId, uint8_t bandwidth);
+    /**
+     * Initialize downlink RBG maps
+     */
+    void InitializeDownlinkRbgMaps();
+    /**
+     * Initialize uplink RBG maps
+     */
+    void InitializeUplinkRbgMaps();
 
-  // FFR SAP
-  LteFfrSapUser* m_ffrSapUser; ///< FFR SAP user
-  LteFfrSapProvider* m_ffrSapProvider; ///< FFR SAP provider
+    // FFR SAP
+    LteFfrSapUser* m_ffrSapUser;         ///< FFR SAP user
+    LteFfrSapProvider* m_ffrSapProvider; ///< FFR SAP provider
 
-  // FFR RRF SAP
-  LteFfrRrcSapUser* m_ffrRrcSapUser; ///< FFR RRC SAP user
-  LteFfrRrcSapProvider* m_ffrRrcSapProvider; ///< FFR RRC SAP provider
+    // FFR RRF SAP
+    LteFfrRrcSapUser* m_ffrRrcSapUser;         ///< FFR RRC SAP user
+    LteFfrRrcSapProvider* m_ffrRrcSapProvider; ///< FFR RRC SAP provider
 
-  bool m_isEdgeSubBandForCenterUe; ///< is edge subband for center UE?
+    bool m_isEdgeSubBandForCenterUe; ///< is edge subband for center UE?
 
-  uint8_t m_dlEdgeSubBandOffset; ///< DL edge subband offset
-  uint8_t m_dlEdgeSubBandwidth; ///< DL edge subbandwidth
+    uint8_t m_dlEdgeSubBandOffset; ///< DL edge subband offset
+    uint8_t m_dlEdgeSubBandwidth;  ///< DL edge subbandwidth
 
-  uint8_t m_ulEdgeSubBandOffset; ///< UL edge subband offset
-  uint8_t m_ulEdgeSubBandwidth; ///< UL edge subbandwidth
+    uint8_t m_ulEdgeSubBandOffset; ///< UL edge subband offset
+    uint8_t m_ulEdgeSubBandwidth;  ///< UL edge subbandwidth
 
-  std::vector <bool> m_dlRbgMap; ///< DL RBG map
-  std::vector <bool> m_ulRbgMap; ///< UL RBG map
+    std::vector<bool> m_dlRbgMap; ///< DL RBG map
+    std::vector<bool> m_ulRbgMap; ///< UL RBG map
 
-  std::vector <bool> m_dlEdgeRbgMap; ///< DL edge RBG map
-  std::vector <bool> m_ulEdgeRbgMap; ///< UL edge RBG map
+    std::vector<bool> m_dlEdgeRbgMap; ///< DL edge RBG map
+    std::vector<bool> m_ulEdgeRbgMap; ///< UL edge RBG map
 
-  /// SubBand enumeration
-  enum SubBand
-  {
-    AreaUnset,
-    CellCenter,
-    CellEdge
-  };
+    /// SubBand enumeration
+    enum SubBand
+    {
+        AreaUnset,
+        CellCenter,
+        CellEdge
+    };
 
-  std::map< uint16_t, uint8_t > m_ues; ///< UEs
-  std::vector<uint16_t> m_edgeUes; ///< Edge UEs
+    std::map<uint16_t, uint8_t> m_ues; ///< UEs
+    std::vector<uint16_t> m_edgeUes;   ///< Edge UEs
 
-  uint8_t m_edgeSubBandThreshold; ///< Edge subband threshold 
+    uint8_t m_edgeSubBandThreshold; ///< Edge subband threshold
 
-  uint8_t m_centerPowerOffset; ///< center power offset
-  uint8_t m_edgePowerOffset; ///< edge power offset
+    uint8_t m_centerPowerOffset; ///< center power offset
+    uint8_t m_edgePowerOffset;   ///< edge power offset
 
-  uint8_t m_centerAreaTpc; ///< center area tpc
-  uint8_t m_edgeAreaTpc; ///< edge area tpc
+    uint8_t m_centerAreaTpc; ///< center area tpc
+    uint8_t m_edgeAreaTpc;   ///< edge area tpc
 
-  /// The expected measurement identity
-  uint8_t m_measId;
+    /// The expected measurement identity
+    uint8_t m_measId;
 
 }; // end of class LteFrSoftAlgorithm
 
-
 } // end of namespace ns3
-
 
 #endif /* LTE_FR_SOFT_ALGORITHM_H */

@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2014 Universita' di Firenze
  *
@@ -23,10 +22,12 @@
 
 #include "ns3/application.h"
 #include "ns3/event-id.h"
-#include "ns3/ptr.h"
 #include "ns3/packet-socket-address.h"
+#include "ns3/ptr.h"
+#include "ns3/traced-callback.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 class Socket;
 class Packet;
@@ -51,61 +52,60 @@ class Packet;
  */
 class PacketSocketClient : public Application
 {
-public:
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 
-  PacketSocketClient ();
+    PacketSocketClient();
 
-  virtual ~PacketSocketClient ();
+    ~PacketSocketClient() override;
 
-  /**
-   * \brief set the remote address and protocol to be used
-   * \param addr remote address
-   */
-  void SetRemote (PacketSocketAddress addr);
+    /**
+     * \brief set the remote address and protocol to be used
+     * \param addr remote address
+     */
+    void SetRemote(PacketSocketAddress addr);
 
-  /**
-   * \brief Query the priority value of this socket
-   * \return The priority value
-   */
-  uint8_t GetPriority (void) const;
+    /**
+     * \brief Query the priority value of this socket
+     * \return The priority value
+     */
+    uint8_t GetPriority() const;
 
-protected:
-  virtual void DoDispose (void);
+  protected:
+    void DoDispose() override;
 
-private:
+  private:
+    void StartApplication() override;
+    void StopApplication() override;
 
-  virtual void StartApplication (void);
-  virtual void StopApplication (void);
+    /**
+     * \brief Manually set the socket priority
+     * \param priority The socket priority (in the range 0..6)
+     */
+    void SetPriority(uint8_t priority);
 
-  /**
-   * \brief Manually set the socket priority
-   * \param priority The socket priority (in the range 0..6)
-   */
-  void SetPriority (uint8_t priority);
+    /**
+     * \brief Send a packet
+     */
+    void Send();
 
-  /**
-   * \brief Send a packet
-   */
-  void Send (void);
+    uint32_t m_maxPackets; //!< Maximum number of packets the application will send
+    Time m_interval;       //!< Packet inter-send time
+    uint32_t m_size;       //!< Size of the sent packet
+    uint8_t m_priority;    //!< Priority of the sent packets
 
-  uint32_t m_maxPackets; //!< Maximum number of packets the application will send
-  Time m_interval;       //!< Packet inter-send time
-  uint32_t m_size;       //!< Size of the sent packet
-  uint8_t m_priority;    //!< Priority of the sent packets
+    uint32_t m_sent;                   //!< Counter for sent packets
+    Ptr<Socket> m_socket;              //!< Socket
+    PacketSocketAddress m_peerAddress; //!< Remote peer address
+    bool m_peerAddressSet;             //!< Sanity check
+    EventId m_sendEvent;               //!< Event to send the next packet
 
-  uint32_t m_sent;       //!< Counter for sent packets
-  Ptr<Socket> m_socket;  //!< Socket
-  PacketSocketAddress m_peerAddress; //!< Remote peer address
-  bool m_peerAddressSet; //!< Sanity check
-  EventId m_sendEvent;   //!< Event to send the next packet
-
-  /// Traced Callback: sent packets, source address.
-  TracedCallback<Ptr<const Packet>, const Address &> m_txTrace;
+    /// Traced Callback: sent packets, source address.
+    TracedCallback<Ptr<const Packet>, const Address&> m_txTrace;
 };
 
 } // namespace ns3

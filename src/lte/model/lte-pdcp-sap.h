@@ -23,7 +23,8 @@
 
 #include "ns3/packet.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * Service Access Point (SAP) offered by the PDCP entity to the RRC entity
@@ -34,29 +35,28 @@ namespace ns3 {
  */
 class LtePdcpSapProvider
 {
-public:
-  virtual ~LtePdcpSapProvider ();
+  public:
+    virtual ~LtePdcpSapProvider();
 
-  /**
-   * Parameters for LtePdcpSapProvider::TransmitPdcpSdu
-   */
-  struct TransmitPdcpSduParameters
-  {
-    Ptr<Packet> pdcpSdu;  /**< the RRC PDU */
-    uint16_t    rnti; /**< the C-RNTI identifying the UE */
-    uint8_t     lcid; /**< the logical channel id corresponding to the sending RLC instance */
-  };
+    /**
+     * Parameters for LtePdcpSapProvider::TransmitPdcpSdu
+     */
+    struct TransmitPdcpSduParameters
+    {
+        Ptr<Packet> pdcpSdu; /**< the RRC PDU */
+        uint16_t rnti;       /**< the C-RNTI identifying the UE */
+        uint8_t lcid; /**< the logical channel id corresponding to the sending RLC instance */
+    };
 
-  /**
-   * Send a RRC PDU to the RDCP for transmission
-   * This method is to be called
-   * when upper RRC entity has a RRC PDU ready to send   
-   * 
-   * \param params 
-   */
-  virtual void TransmitPdcpSdu (TransmitPdcpSduParameters params) = 0;
+    /**
+     * Send a RRC PDU to the RDCP for transmission
+     * This method is to be called
+     * when upper RRC entity has a RRC PDU ready to send
+     *
+     * \param params
+     */
+    virtual void TransmitPdcpSdu(TransmitPdcpSduParameters params) = 0;
 };
-
 
 /**
  * Service Access Point (SAP) offered by the PDCP entity to the RRC entity
@@ -67,103 +67,102 @@ public:
  */
 class LtePdcpSapUser
 {
-public:
-  virtual ~LtePdcpSapUser ();
+  public:
+    virtual ~LtePdcpSapUser();
 
-  /**
-   * Parameters for LtePdcpSapUser::ReceivePdcpSdu
-   */
-  struct ReceivePdcpSduParameters
-  {
-    Ptr<Packet> pdcpSdu;  /**< the RRC PDU */
-    uint16_t    rnti; /**< the C-RNTI identifying the UE */
-    uint8_t     lcid; /**< the logical channel id corresponding to the sending RLC instance */
-  };
+    /**
+     * Parameters for LtePdcpSapUser::ReceivePdcpSdu
+     */
+    struct ReceivePdcpSduParameters
+    {
+        Ptr<Packet> pdcpSdu; /**< the RRC PDU */
+        uint16_t rnti;       /**< the C-RNTI identifying the UE */
+        uint8_t lcid; /**< the logical channel id corresponding to the sending RLC instance */
+    };
 
-  /**
-  * Called by the PDCP entity to notify the RRC entity of the reception of a new RRC PDU
-  *
-  * \param params
-  */
-  virtual void ReceivePdcpSdu (ReceivePdcpSduParameters params) = 0;
+    /**
+     * Called by the PDCP entity to notify the RRC entity of the reception of a new RRC PDU
+     *
+     * \param params
+     */
+    virtual void ReceivePdcpSdu(ReceivePdcpSduParameters params) = 0;
 };
-
 
 /// LtePdcpSpecificLtePdcpSapProvider class
 template <class C>
 class LtePdcpSpecificLtePdcpSapProvider : public LtePdcpSapProvider
 {
-public:
-  /**
-   * Constructor
-   * 
-   * \param pdcp PDCP
-   */
-  LtePdcpSpecificLtePdcpSapProvider (C* pdcp);
+  public:
+    /**
+     * Constructor
+     *
+     * \param pdcp PDCP
+     */
+    LtePdcpSpecificLtePdcpSapProvider(C* pdcp);
 
-  // Interface implemented from LtePdcpSapProvider
-  virtual void TransmitPdcpSdu (TransmitPdcpSduParameters params);
+    // Interface implemented from LtePdcpSapProvider
+    virtual void TransmitPdcpSdu(TransmitPdcpSduParameters params);
 
-private:
-  LtePdcpSpecificLtePdcpSapProvider ();
-  C* m_pdcp; ///< the PDCP
+  private:
+    LtePdcpSpecificLtePdcpSapProvider();
+    C* m_pdcp; ///< the PDCP
 };
 
 template <class C>
-LtePdcpSpecificLtePdcpSapProvider<C>::LtePdcpSpecificLtePdcpSapProvider (C* pdcp)
-  : m_pdcp (pdcp)
+LtePdcpSpecificLtePdcpSapProvider<C>::LtePdcpSpecificLtePdcpSapProvider(C* pdcp)
+    : m_pdcp(pdcp)
 {
 }
 
 template <class C>
-LtePdcpSpecificLtePdcpSapProvider<C>::LtePdcpSpecificLtePdcpSapProvider ()
+LtePdcpSpecificLtePdcpSapProvider<C>::LtePdcpSpecificLtePdcpSapProvider()
 {
 }
 
 template <class C>
-void LtePdcpSpecificLtePdcpSapProvider<C>::TransmitPdcpSdu (TransmitPdcpSduParameters params)
+void
+LtePdcpSpecificLtePdcpSapProvider<C>::TransmitPdcpSdu(TransmitPdcpSduParameters params)
 {
-  m_pdcp->DoTransmitPdcpSdu (params.pdcpSdu);
+    m_pdcp->DoTransmitPdcpSdu(params.pdcpSdu);
 }
-
 
 /// LtePdcpSpecificLtePdcpSapUser class
 template <class C>
 class LtePdcpSpecificLtePdcpSapUser : public LtePdcpSapUser
 {
-public:
-  /**
-   * Constructor
-   *
-   * \param rrc RRC
-   */
-  LtePdcpSpecificLtePdcpSapUser (C* rrc);
+  public:
+    /**
+     * Constructor
+     *
+     * \param rrc RRC
+     */
+    LtePdcpSpecificLtePdcpSapUser(C* rrc);
 
-  // Interface implemented from LtePdcpSapUser
-  virtual void ReceivePdcpSdu (ReceivePdcpSduParameters params);
+    // Interface implemented from LtePdcpSapUser
+    virtual void ReceivePdcpSdu(ReceivePdcpSduParameters params);
 
-private:
-  LtePdcpSpecificLtePdcpSapUser ();
-  C* m_rrc; ///< RRC
+  private:
+    LtePdcpSpecificLtePdcpSapUser();
+    C* m_rrc; ///< RRC
 };
 
 template <class C>
-LtePdcpSpecificLtePdcpSapUser<C>::LtePdcpSpecificLtePdcpSapUser (C* rrc)
-  : m_rrc (rrc)
+LtePdcpSpecificLtePdcpSapUser<C>::LtePdcpSpecificLtePdcpSapUser(C* rrc)
+    : m_rrc(rrc)
 {
 }
 
 template <class C>
-LtePdcpSpecificLtePdcpSapUser<C>::LtePdcpSpecificLtePdcpSapUser ()
+LtePdcpSpecificLtePdcpSapUser<C>::LtePdcpSpecificLtePdcpSapUser()
 {
 }
 
 template <class C>
-void LtePdcpSpecificLtePdcpSapUser<C>::ReceivePdcpSdu (ReceivePdcpSduParameters params)
+void
+LtePdcpSpecificLtePdcpSapUser<C>::ReceivePdcpSdu(ReceivePdcpSduParameters params)
 {
-  m_rrc->DoReceivePdcpSdu (params);
+    m_rrc->DoReceivePdcpSdu(params);
 }
-
 
 } // namespace ns3
 

@@ -1,6 +1,4 @@
 # -*- Mode: python; coding: utf-8 -*-
-from __future__ import division, print_function
-#from __future__ import with_statement
 from ctypes import c_double
 
 LAYOUT_ALGORITHM = 'neato' # ['neato'|'dot'|'twopi'|'circo'|'fdp'|'nop']
@@ -25,34 +23,48 @@ import math
 import os
 import sys
 
-if sys.version_info > (3,):
-    long = int
+try:
+    import threading
+except ImportError:
+    import dummy_threading as threading
+
+try:
+    import pygraphviz
+except ImportError:
+    print("Pygraphviz is required by the visualizer module and could not be found")
+    exit(1)
+
+try:
+    import cairo
+except ImportError:
+    print("Pycairo is required by the visualizer module and could not be found")
+    exit(1)
 
 try:
     import gi
+except ImportError:
+    print("PyGObject is required by the visualizer module and could not be found")
+    exit(1)
+
+try:
+    import svgitem
+except ImportError:
+    svgitem = None
+
+try:
     gi.require_version('GooCanvas', '2.0')
     gi.require_version('Gtk', '3.0')
     gi.require_version('Gdk', '3.0')
+    gi.require_foreign("cairo")
     from gi.repository import GObject
     from gi.repository import GLib
-    import cairo
-    gi.require_foreign("cairo")
-    import pygraphviz
     from gi.repository import Gtk
     from gi.repository import Gdk
     from gi.repository import Pango
     from gi.repository import GooCanvas
-    import threading
     from . import hud
-
-    #import time
-    try:
-        import svgitem
-    except ImportError:
-        svgitem = None
 except ImportError as e:
     _import_error = e
-    import dummy_threading as threading
 else:
     _import_error = None
 
@@ -101,10 +113,10 @@ class Node(PyVizObject):
     #  label
     ## @var _label_canvas_item
     #  label canvas
-    ## @var selected
-    #  selected property
     ## @var highlighted
     #  highlighted property
+    ## @var selected
+    #  selected property
 
     ## signal emitted whenever a tooltip is about to be shown for the node
     ## the first signal parameter is a python list of strings, to which
@@ -289,7 +301,10 @@ class Node(PyVizObject):
         @param event: event
         @return none
         """
+
+        ## highlighted property
         self.highlighted = True
+
     def on_leave_notify_event(self, view, target, event):
         """!
         On Leave event handle.
@@ -1051,14 +1066,12 @@ class Visualizer(GObject.GObject):
         hbox.pack_start(screenshot_button, False, False, 4)
 
         def load_button_icon(button, icon_name):
-            try:
-                import gnomedesktop
-            except ImportError:
-                sys.stderr.write("Could not load icon %s due to missing gnomedesktop Python module\n" % icon_name)
-            else:
-                icon = gnomedesktop.find_icon(Gtk.IconTheme.get_default(), icon_name, 16, 0)
-                if icon is not None:
-                    button.props.image = GObject.new(Gtk.Image, file=icon, visible=True)
+            if not Gtk.IconTheme.get_default().has_icon(icon_name):
+                print(f"Could not load icon {icon_name}", file=sys.stderr)
+                return
+            image = Gtk.Image.new_from_icon_name(icon_name, Gtk.IconSize.BUTTON)
+            button.set_image(image)
+            button.props.always_show_image = True
 
         load_button_icon(screenshot_button, "applets-screenshooter")
         screenshot_button.connect("clicked", self._take_screenshot)
@@ -1075,10 +1088,10 @@ class Visualizer(GObject.GObject):
 
         # Play button
         self.play_button = GObject.new(Gtk.ToggleButton,
-                                       image=GObject.new(Gtk.Image, stock=Gtk.STOCK_MEDIA_PLAY, visible=True),
                                        label="Simulate (F3)",
                                        relief=Gtk.ReliefStyle.NONE, focus_on_click=False,
-                                       use_stock=True, visible=True)
+                                       visible=True)
+        load_button_icon(self.play_button, "media-playback-start")
         accel_group = Gtk.AccelGroup()
         self.window.add_accel_group(accel_group)
         self.play_button.add_accelerator("clicked", accel_group,
@@ -1129,7 +1142,7 @@ class Visualizer(GObject.GObject):
 
             for devI in range(node.GetNDevices()):
                 device = node.GetDevice(devI)
-                device_traits = lookup_netdevice_traits(type(device))
+                device_traits = lookup_netdevice_traits(type(device.__deref__()))
                 if device_traits.is_wireless:
                     continue
                 if device_traits.is_virtual:
@@ -1240,7 +1253,7 @@ class Visualizer(GObject.GObject):
     def center_on_node(self, node):
         if isinstance(node, ns.Node):
             node = self.nodes[node.GetId()]
-        elif isinstance(node, (int, long)):
+        elif isinstance(node, int):
             node = self.nodes[node]
         elif isinstance(node, Node):
             pass
@@ -1635,7 +1648,7 @@ class Visualizer(GObject.GObject):
     def popup_node_menu(self, node, event):
         menu = Gtk.Menu()
         self.emit("populate-node-menu", node, menu)
-        menu.popup(None, None, None, None, event.button, event.time)
+        menu.popup_at_pointer(event)
 
     def _update_ipython_selected_node(self):
         # If we are running under ipython -gthread, make this new
@@ -1660,7 +1673,7 @@ class Visualizer(GObject.GObject):
     def select_node(self, node):
         if isinstance(node, ns.Node):
             node = self.nodes[node.GetId()]
-        elif isinstance(node, (int, long)):
+        elif isinstance(node, int):
             node = self.nodes[node]
         elif isinstance(node, Node):
             pass
@@ -1716,11 +1729,10 @@ class Visualizer(GObject.GObject):
         return False
 
     def _get_export_file_name(self):
-        sel = Gtk.FileChooserDialog("Save...", self.canvas.get_toplevel(),
-                                    Gtk.FileChooserAction.SAVE,
-                                    (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                                     Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
-        sel.set_default_response(Gtk.ResponseType.OK)
+        sel = Gtk.FileChooserNative.new("Save...", self.canvas.get_toplevel(),
+                                        Gtk.FileChooserAction.SAVE,
+                                        "_Save",
+                                        "_Cancel")
         sel.set_local_only(True)
         sel.set_do_overwrite_confirmation(True)
         sel.set_current_name("Unnamed.pdf")
@@ -1741,7 +1753,7 @@ class Visualizer(GObject.GObject):
         sel.add_filter(filter)
 
         resp = sel.run()
-        if resp != Gtk.ResponseType.OK:
+        if resp != Gtk.ResponseType.ACCEPT:
             sel.destroy()
             return None
 

@@ -38,10 +38,9 @@ using namespace ns3;
  */
 class LteInterferenceFrTestSuite : public TestSuite
 {
-public:
-  LteInterferenceFrTestSuite ();
+  public:
+    LteInterferenceFrTestSuite();
 };
-
 
 /**
  * \ingroup lte-test
@@ -52,26 +51,30 @@ public:
  */
 class LteInterferenceHardFrTestCase : public TestCase
 {
-public:
-  /**
-   * Constructor
-   *
-   * \param name the reference name
-   * \param d1 distance between ENB and UE
-   * \param d2 distnace between ENB and other UE
-   * \param dlSinr the DL SINR
-   * \param ulSinr the UL SINR
-   */
-  LteInterferenceHardFrTestCase (std::string name, double d1, double d2, double dlSinr, double ulSinr);
-  virtual ~LteInterferenceHardFrTestCase ();
+  public:
+    /**
+     * Constructor
+     *
+     * \param name the reference name
+     * \param d1 distance between ENB and UE
+     * \param d2 distnace between ENB and other UE
+     * \param dlSinr the DL SINR
+     * \param ulSinr the UL SINR
+     */
+    LteInterferenceHardFrTestCase(std::string name,
+                                  double d1,
+                                  double d2,
+                                  double dlSinr,
+                                  double ulSinr);
+    virtual ~LteInterferenceHardFrTestCase();
 
-private:
-  virtual void DoRun (void);
+  private:
+    virtual void DoRun(void);
 
-  double m_d1; ///< distance between UE and ENB
-  double m_d2; ///< distance between UE and other ENB
-  double m_expectedDlSinrDb; ///< expected DL SINR in dB
-  // double m_expectedUlSinrDb;
+    double m_d1;               ///< distance between UE and ENB
+    double m_d2;               ///< distance between UE and other ENB
+    double m_expectedDlSinrDb; ///< expected DL SINR in dB
+                               // double m_expectedUlSinrDb;
 };
 
 /**
@@ -82,35 +85,40 @@ private:
  */
 class LteInterferenceStrictFrTestCase : public TestCase
 {
-public:
-  /**
-   * Constructor
-   *
-   * \param name the reference name
-   * \param d1 distance between ENB and UE
-   * \param d2 distnace between ENB and other UE
-   * \param commonDlSinr the DL SINR
-   * \param commonUlSinr the UL SINR
-   * \param edgeDlSinr the DL SINR
-   * \param edgeUlSinr the UL SINR
-   * \param rspqThreshold RSPQ threshold
-   */
-  LteInterferenceStrictFrTestCase (std::string name, double d1, double d2,
-                                   double commonDlSinr, double commonUlSinr, double edgeDlSinr, double edgeUlSinr,
-                                   uint32_t rspqThreshold);
-  virtual ~LteInterferenceStrictFrTestCase ();
+  public:
+    /**
+     * Constructor
+     *
+     * \param name the reference name
+     * \param d1 distance between ENB and UE
+     * \param d2 distnace between ENB and other UE
+     * \param commonDlSinr the DL SINR
+     * \param commonUlSinr the UL SINR
+     * \param edgeDlSinr the DL SINR
+     * \param edgeUlSinr the UL SINR
+     * \param rspqThreshold RSPQ threshold
+     */
+    LteInterferenceStrictFrTestCase(std::string name,
+                                    double d1,
+                                    double d2,
+                                    double commonDlSinr,
+                                    double commonUlSinr,
+                                    double edgeDlSinr,
+                                    double edgeUlSinr,
+                                    uint32_t rspqThreshold);
+    virtual ~LteInterferenceStrictFrTestCase();
 
-private:
-  virtual void DoRun (void);
+  private:
+    virtual void DoRun(void);
 
-  double m_d1; ///< distance between UE and ENB
-  double m_d2; ///< distance between UE and other ENB
-  double m_commonDlSinrDb; ///< expected common DL SINR in dB
-  // double m_commonUlSinrDb;
-  double m_edgeDlSinrDb; ///< expected edge DL SINR in dB
-  // double m_edgeUlSinrDb;
+    double m_d1;             ///< distance between UE and ENB
+    double m_d2;             ///< distance between UE and other ENB
+    double m_commonDlSinrDb; ///< expected common DL SINR in dB
+    // double m_commonUlSinrDb;
+    double m_edgeDlSinrDb; ///< expected edge DL SINR in dB
+    // double m_edgeUlSinrDb;
 
-  uint32_t m_rspqThreshold; ///< RSPQ threshold
+    uint32_t m_rspqThreshold; ///< RSPQ threshold
 };
 
 #endif /* LTE_TEST_INTERFERENCE_FR_H */

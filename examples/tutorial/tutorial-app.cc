@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -15,92 +14,97 @@
  */
 
 #include "tutorial-app.h"
+
 #include "ns3/applications-module.h"
 
 using namespace ns3;
 
-TutorialApp::TutorialApp ()
-  : m_socket (0),
-    m_peer (),
-    m_packetSize (0),
-    m_nPackets (0),
-    m_dataRate (0),
-    m_sendEvent (),
-    m_running (false),
-    m_packetsSent (0)
+TutorialApp::TutorialApp()
+    : m_socket(nullptr),
+      m_peer(),
+      m_packetSize(0),
+      m_nPackets(0),
+      m_dataRate(0),
+      m_sendEvent(),
+      m_running(false),
+      m_packetsSent(0)
 {
 }
 
-TutorialApp::~TutorialApp ()
+TutorialApp::~TutorialApp()
 {
-  m_socket = 0;
+    m_socket = nullptr;
 }
 
 /* static */
-TypeId TutorialApp::GetTypeId (void)
+TypeId
+TutorialApp::GetTypeId()
 {
-  static TypeId tid = TypeId ("TutorialApp")
-    .SetParent<Application> ()
-    .SetGroupName ("Tutorial")
-    .AddConstructor<TutorialApp> ()
-    ;
-  return tid;
+    static TypeId tid = TypeId("TutorialApp")
+                            .SetParent<Application>()
+                            .SetGroupName("Tutorial")
+                            .AddConstructor<TutorialApp>();
+    return tid;
 }
 
 void
-TutorialApp::Setup (Ptr<Socket> socket, Address address, uint32_t packetSize, uint32_t nPackets, DataRate dataRate)
+TutorialApp::Setup(Ptr<Socket> socket,
+                   Address address,
+                   uint32_t packetSize,
+                   uint32_t nPackets,
+                   DataRate dataRate)
 {
-  m_socket = socket;
-  m_peer = address;
-  m_packetSize = packetSize;
-  m_nPackets = nPackets;
-  m_dataRate = dataRate;
+    m_socket = socket;
+    m_peer = address;
+    m_packetSize = packetSize;
+    m_nPackets = nPackets;
+    m_dataRate = dataRate;
 }
 
 void
-TutorialApp::StartApplication (void)
+TutorialApp::StartApplication()
 {
-  m_running = true;
-  m_packetsSent = 0;
-  m_socket->Bind ();
-  m_socket->Connect (m_peer);
-  SendPacket ();
+    m_running = true;
+    m_packetsSent = 0;
+    m_socket->Bind();
+    m_socket->Connect(m_peer);
+    SendPacket();
 }
 
 void
-TutorialApp::StopApplication (void)
+TutorialApp::StopApplication()
 {
-  m_running = false;
+    m_running = false;
 
-  if (m_sendEvent.IsRunning ())
+    if (m_sendEvent.IsRunning())
     {
-      Simulator::Cancel (m_sendEvent);
+        Simulator::Cancel(m_sendEvent);
     }
 
-  if (m_socket)
+    if (m_socket)
     {
-      m_socket->Close ();
-    }
-}
-
-void
-TutorialApp::SendPacket (void)
-{
-  Ptr<Packet> packet = Create<Packet> (m_packetSize);
-  m_socket->Send (packet);
-
-  if (++m_packetsSent < m_nPackets)
-    {
-      ScheduleTx ();
+        m_socket->Close();
     }
 }
 
 void
-TutorialApp::ScheduleTx (void)
+TutorialApp::SendPacket()
 {
-  if (m_running)
+    Ptr<Packet> packet = Create<Packet>(m_packetSize);
+    m_socket->Send(packet);
+
+    if (++m_packetsSent < m_nPackets)
     {
-      Time tNext (Seconds (m_packetSize * 8 / static_cast<double> (m_dataRate.GetBitRate ())));
-      m_sendEvent = Simulator::Schedule (tNext, &TutorialApp::SendPacket, this);
+        ScheduleTx();
+    }
+}
+
+void
+TutorialApp::ScheduleTx()
+{
+    if (m_running)
+    {
+        Time tNext(Seconds(m_packetSize * 8 / static_cast<double>(m_dataRate.GetBitRate())));
+        m_sendEvent = Simulator::Schedule(tNext, &TutorialApp::SendPacket, this);
     }
 }

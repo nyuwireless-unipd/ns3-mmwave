@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2012 University of Washington
  *
@@ -23,12 +22,12 @@
 #ifndef ASCII_FILE_H
 #define ASCII_FILE_H
 
-#include <string>
 #include <fstream>
 #include <stdint.h>
+#include <string>
 
-namespace ns3 {
-
+namespace ns3
+{
 
 /**
  * \brief A class representing an ascii file.
@@ -37,56 +36,54 @@ namespace ns3 {
  */
 class AsciiFile
 {
-public:
-  AsciiFile ();
-  ~AsciiFile ();
+  public:
+    AsciiFile();
+    ~AsciiFile();
 
-  /**
-   * \return true if the 'fail' bit is set in the underlying iostream, false otherwise.
-   */
-  bool Fail (void) const;
-  /**
-   * \return true if the 'eof' bit is set in the underlying iostream, false otherwise.
-   */
-  bool Eof (void) const;
+    /**
+     * \return true if the 'fail' bit is set in the underlying iostream, false otherwise.
+     */
+    bool Fail() const;
+    /**
+     * \return true if the 'eof' bit is set in the underlying iostream, false otherwise.
+     */
+    bool Eof() const;
 
-  /**
-   * Create a new ascii file or open an existing ascii file.
-   *
-   * \param filename String containing the name of the file.
-   * \param mode the access mode for the file.
-   */
-  void Open (std::string const &filename, std::ios::openmode mode);
+    /**
+     * Create a new ascii file or open an existing ascii file.
+     *
+     * \param filename String containing the name of the file.
+     * \param mode the access mode for the file.
+     */
+    void Open(const std::string& filename, std::ios::openmode mode);
 
-  /**
-   * Close the underlying file.
-   */
-  void Close (void);
+    /**
+     * Close the underlying file.
+     */
+    void Close();
 
-  /**
-   * \brief Read next line from file
-   *
-   * \param line    [out] line from file
-   *
-   */
-  void Read (std::string& line);
+    /**
+     * \brief Read next line from file
+     *
+     * \param line    [out] line from file
+     *
+     */
+    void Read(std::string& line);
 
-  /**
-   * \brief Compare two ASCII files line-by-line
-   *
-   * \return true if files are different, false otherwise
-   *
-   * \param  f1         First ASCII file name
-   * \param  f2         Second ASCII file name
-   * \param  lineNumber   [out] Line number of first different line.
-   */
-  static bool Diff (std::string const & f1,
-                    std::string const & f2,
-                    uint64_t & lineNumber);
+    /**
+     * \brief Compare two ASCII files line-by-line
+     *
+     * \return true if files are different, false otherwise
+     *
+     * \param  f1         First ASCII file name
+     * \param  f2         Second ASCII file name
+     * \param  lineNumber   [out] Line number of first different line.
+     */
+    static bool Diff(const std::string& f1, const std::string& f2, uint64_t& lineNumber);
 
-private:
-  std::string    m_filename; //!< output file name
-  std::fstream   m_file;     //!< output file
+  private:
+    std::string m_filename; //!< output file name
+    std::fstream m_file;    //!< output file
 };
 
 } // namespace ns3

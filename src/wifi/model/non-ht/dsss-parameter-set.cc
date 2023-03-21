@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2016 Sébastien Deronne
  *
@@ -20,74 +19,44 @@
 
 #include "dsss-parameter-set.h"
 
-namespace ns3 {
+namespace ns3
+{
 
-DsssParameterSet::DsssParameterSet ()
-  : m_currentChannel (0),
-    m_dsssSupported (0)
+DsssParameterSet::DsssParameterSet()
+    : m_currentChannel(0)
 {
 }
 
 WifiInformationElementId
-DsssParameterSet::ElementId () const
+DsssParameterSet::ElementId() const
 {
-  return IE_DSSS_PARAMETER_SET;
+    return IE_DSSS_PARAMETER_SET;
 }
 
 void
-DsssParameterSet::SetDsssSupported (uint8_t dsssSupported)
+DsssParameterSet::SetCurrentChannel(uint8_t currentChannel)
 {
-  m_dsssSupported = dsssSupported;
-}
-
-void
-DsssParameterSet::SetCurrentChannel (uint8_t currentChannel)
-{
-  m_currentChannel = currentChannel;
-}
-
-uint8_t
-DsssParameterSet::GetInformationFieldSize () const
-{
-  NS_ASSERT (m_dsssSupported);
-  return 1;
-}
-
-Buffer::Iterator
-DsssParameterSet::Serialize (Buffer::Iterator i) const
-{
-  if (!m_dsssSupported)
-    {
-      return i;
-    }
-  return WifiInformationElement::Serialize (i);
+    m_currentChannel = currentChannel;
 }
 
 uint16_t
-DsssParameterSet::GetSerializedSize () const
+DsssParameterSet::GetInformationFieldSize() const
 {
-  if (!m_dsssSupported)
-    {
-      return 0;
-    }
-  return WifiInformationElement::GetSerializedSize ();
+    return 1;
 }
 
 void
-DsssParameterSet::SerializeInformationField (Buffer::Iterator start) const
+DsssParameterSet::SerializeInformationField(Buffer::Iterator start) const
 {
-  if (m_dsssSupported)
-    {
-      start.WriteU8 (m_currentChannel);
-    }
+    start.WriteU8(m_currentChannel);
 }
 
-uint8_t
-DsssParameterSet::DeserializeInformationField (Buffer::Iterator start, uint8_t length)
+uint16_t
+DsssParameterSet::DeserializeInformationField(Buffer::Iterator start, uint16_t length)
 {
-  Buffer::Iterator i = start;
-  m_currentChannel = i.ReadU8 ();
-  return length;
+    Buffer::Iterator i = start;
+    m_currentChannel = i.ReadU8();
+    return length;
 }
 
-} //namespace ns3
+} // namespace ns3

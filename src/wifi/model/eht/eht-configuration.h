@@ -1,4 +1,3 @@
-/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2021 DERONNE SOFTWARE ENGINEERING
  *
@@ -23,7 +22,8 @@
 
 #include "ns3/object.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 /**
  * \brief EHT configuration
@@ -35,18 +35,17 @@ namespace ns3 {
  */
 class EhtConfiguration : public Object
 {
-public:
-  EhtConfiguration ();
-  virtual ~EhtConfiguration ();
+  public:
+    EhtConfiguration();
+    ~EhtConfiguration() override;
 
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
-
+    /**
+     * \brief Get the type ID.
+     * \return the object TypeId
+     */
+    static TypeId GetTypeId();
 };
 
-} //namespace ns3
+} // namespace ns3
 
 #endif /* EHT_CONFIGURATION_H */

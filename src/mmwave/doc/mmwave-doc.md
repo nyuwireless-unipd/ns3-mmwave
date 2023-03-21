@@ -86,18 +86,18 @@ associated antenna object.
 
 ### MmWaveSvdBeamforming
 
-This class implements an ideal beamforming algorithm based on the SVD 
-decomposition of the channel matrix. The beamforming vectors 
-are computed using the power method described in [[ZP2017]](#1), Section 5. This is 
-an ideal method, in the sense that it assumes the perfect knowledge of the 
+This class implements an ideal beamforming algorithm based on the SVD
+decomposition of the channel matrix. The beamforming vectors
+are computed using the power method described in [[ZP2017]](#1), Section 5. This is
+an ideal method, in the sense that it assumes the perfect knowledge of the
 channel matrix.
 
 ## Error Models
 
 The class `MmWaveErrorModel` is a base class handling the error model and the PHY layer
-abstraction. In particular, all the derived classes implement the computation of the TB BLER, 
-starting from the SNR calculated by the `MmWaveSpectrumPhy` class. This implementation has been 
-adapted from the release 1.0 of the 5G-LENA simulator [[5GLENA]](#3) presented in [[LW2020]](#2). 
+abstraction. In particular, all the derived classes implement the computation of the TB BLER,
+starting from the SNR calculated by the `MmWaveSpectrumPhy` class. This implementation has been
+adapted from the release 1.0 of the 5G-LENA simulator [[5GLENA]](#3) presented in [[LW2020]](#2).
 
 In order to configure the specific `ErrorModel` of choice, the following attributes must be
 set to the same value:
@@ -111,25 +111,25 @@ Config::SetDefault ("ns3::MmWaveAmc::ErrorModelType", TypeIdValue (MmWaveEesmIrT
 
 ### MmWaveEesmErrorModel
 
-The class `MmWaveEesmErrorModel` implements an Effective Exponential SNR Mapping 
+The class `MmWaveEesmErrorModel` implements an Effective Exponential SNR Mapping
 (EESM)-based PHY layer abstraction, based on the 3GPP NR specifications.
-In particular, LDPC coding and MCS up to 256-QAM are considered. 
+In particular, LDPC coding and MCS up to 256-QAM are considered.
 
-Different MCS Tables (T1 and T2) and HARQ methods (Incremental Redundancy (IR) 
-and Chase Combining (CC)) are provided; the corresponding SNR to BLER mappings 
-are implemented in the specific `MmWaveEesmXXTY` (XX = IR, CC; Y = 1, 2) derived 
+Different MCS Tables (T1 and T2) and HARQ methods (Incremental Redundancy (IR)
+and Chase Combining (CC)) are provided; the corresponding SNR to BLER mappings
+are implemented in the specific `MmWaveEesmXXTY` (XX = IR, CC; Y = 1, 2) derived
 class.
 
 ### MmWaveLteMiErrorModel
 
 
-The class `MmWaveLteMiErrorModel` implements a Mutual Information (MI)-based PHY layer 
+The class `MmWaveLteMiErrorModel` implements a Mutual Information (MI)-based PHY layer
 abstraction, based on the 3GPP LTE specifications and IR HARQ.
 
 ## References
 
-[ZP2020] T. Zugno, M. Polese, N. Patriciello, B. Bojović, S. Lagen, M. Zorzi, 
-   “Implementation of A Spatial Channel Model for ns-3”, Submitted to the 
+[ZP2020] T. Zugno, M. Polese, N. Patriciello, B. Bojović, S. Lagen, M. Zorzi,
+   “Implementation of A Spatial Channel Model for ns-3”, Submitted to the
    Workshop on ns-3 (WNS3 ’20).
 
 [MZ2018] Marco Mezzavilla, Menglei Zhang, Michele Polese, Russell Ford,
@@ -155,7 +155,7 @@ abstraction, based on the 3GPP LTE specifications and IR HARQ.
    Dual Connectivity and Hard Handover for LTE-5G Tight Integration,” in SIMUTools
    2016
 
-<a id="2">[Lw2020]</a> S. Lagen, K. Wanuga, H. Elkotby, S. Goyal, N. Patriciello and L. Giupponi, 
+<a id="2">[Lw2020]</a> S. Lagen, K. Wanuga, H. Elkotby, S. Goyal, N. Patriciello and L. Giupponi,
    "New radio physical layer abstraction for system-level simulations of 5G networks."
    in IEEE International Conference on Communications (ICC), Jun 2020
 

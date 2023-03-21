@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2007 INRIA
  *
@@ -62,15 +61,14 @@ class Socket;
  */
 class Ipv6RawSocketFactory : public SocketFactory
 {
-public:
-  /**
-   * \brief Get the type ID of this class.
-   * \return type ID
-   */
-  static TypeId GetTypeId (void);
+  public:
+    /**
+     * \brief Get the type ID of this class.
+     * \return type ID
+     */
+    static TypeId GetTypeId();
 };
 
 } // namespace ns3
 
 #endif /* IPV6_RAW_SOCKET_FACTORY_H */
-

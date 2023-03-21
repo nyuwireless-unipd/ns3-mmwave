@@ -1,4 +1,4 @@
-/* -*- c -*-  *NS_CHECK_STYLE_OFF*
+/* -*- c -*-
    ----------------------------------------------------------------
 
    Notice that the following BSD-style license applies to this one
@@ -55,6 +55,8 @@
    ----------------------------------------------------------------
 */
 
+// NOLINTBEGIN
+// clang-format off
 
 /* This file is for inclusion into client (your!) code.
 
@@ -972,7 +974,7 @@ typedef
 
 /* Use these to write the name of your wrapper.  NOTE: duplicates
    VG_WRAP_FUNCTION_Z{U,Z} in pub_tool_redir.h.  NOTE also: inserts
-   the default behaviour equivalance class tag "0000" into the name.
+   the default behaviour equivalence class tag "0000" into the name.
    See pub_tool_redir.h for details -- normally you don't need to
    think about this, though. */
 
@@ -5623,4 +5625,5 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 
 #endif   /* __VALGRIND_H */
 
-/* *NS_CHECK_STYLE_ON* */
+// clang-format on
+// NOLINTEND

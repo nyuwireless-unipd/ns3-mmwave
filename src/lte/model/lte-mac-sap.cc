@@ -18,30 +18,27 @@
  * Author: Nicola Baldo  <nbaldo@cttc.es>
  */
 
-
 #include "ns3/lte-mac-sap.h"
 
+namespace ns3
+{
 
-namespace ns3 {
-
-
-LteMacSapProvider::~LteMacSapProvider ()
+LteMacSapProvider::~LteMacSapProvider()
 {
 }
 
-LteMacSapUser::~LteMacSapUser ()
-{
-}
-
-void
-LteMacSapUser::NotifyDlHarqDeliveryFailure (uint8_t harqId)
+LteMacSapUser::~LteMacSapUser()
 {
 }
 
 void
-LteMacSapUser::NotifyUlHarqDeliveryFailure (uint8_t harqId)
+LteMacSapUser::NotifyDlHarqDeliveryFailure(uint8_t harqId)
 {
 }
 
+void
+LteMacSapUser::NotifyUlHarqDeliveryFailure(uint8_t harqId)
+{
+}
 
 } // namespace ns3

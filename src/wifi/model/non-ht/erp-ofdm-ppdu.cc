@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2020 Orange Labs
  *
@@ -19,41 +18,39 @@
  *         Muhammad Iqbal Rochman <muhiqbalcr@uchicago.edu>
  */
 
-#include "ns3/wifi-psdu.h"
-#include "erp-ofdm-phy.h"
 #include "erp-ofdm-ppdu.h"
+
+#include "erp-ofdm-phy.h"
+
 #include "ns3/log.h"
+#include "ns3/wifi-psdu.h"
 
-namespace ns3 {
-
-NS_LOG_COMPONENT_DEFINE ("ErpOfdmPpdu");
-
-ErpOfdmPpdu::ErpOfdmPpdu (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector,
-                          uint16_t txCenterFreq, WifiPhyBand band, uint64_t uid)
-  : OfdmPpdu (psdu, txVector, txCenterFreq, band, uid, true) //instantiate LSigHeader of OfdmPpdu
+namespace ns3
 {
-  NS_LOG_FUNCTION (this << psdu << txVector << txCenterFreq << band << uid);
+
+NS_LOG_COMPONENT_DEFINE("ErpOfdmPpdu");
+
+ErpOfdmPpdu::ErpOfdmPpdu(Ptr<const WifiPsdu> psdu,
+                         const WifiTxVector& txVector,
+                         uint16_t txCenterFreq,
+                         WifiPhyBand band,
+                         uint64_t uid)
+    : OfdmPpdu(psdu, txVector, txCenterFreq, band, uid, true) // add LSigHeader of OfdmPpdu
+{
+    NS_LOG_FUNCTION(this << psdu << txVector << txCenterFreq << band << uid);
 }
 
-ErpOfdmPpdu::~ErpOfdmPpdu ()
+void
+ErpOfdmPpdu::SetTxVectorFromLSigHeader(WifiTxVector& txVector, const LSigHeader& lSig) const
 {
-}
-
-WifiTxVector
-ErpOfdmPpdu::DoGetTxVector (void) const
-{
-  WifiTxVector txVector;
-  txVector.SetPreambleType (m_preamble);
-  NS_ASSERT (m_channelWidth == 20);
-  txVector.SetMode (ErpOfdmPhy::GetErpOfdmRate (m_lSig.GetRate ()));
-  txVector.SetChannelWidth (m_channelWidth);
-  return txVector;
+    txVector.SetMode(ErpOfdmPhy::GetErpOfdmRate(lSig.GetRate()));
+    txVector.SetChannelWidth(20);
 }
 
 Ptr<WifiPpdu>
-ErpOfdmPpdu::Copy (void) const
+ErpOfdmPpdu::Copy() const
 {
-  return Create<ErpOfdmPpdu> (GetPsdu (), GetTxVector (), m_txCenterFreq, m_band, m_uid);
+    return Ptr<WifiPpdu>(new ErpOfdmPpdu(*this), false);
 }
 
-} //namespace ns3
+} // namespace ns3

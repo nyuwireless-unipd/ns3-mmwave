@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2011 CTTC
  *
@@ -24,7 +23,8 @@
 
 #include "ns3/spectrum-signal-parameters.h"
 
-namespace ns3 {
+namespace ns3
+{
 
 class WifiPpdu;
 
@@ -35,25 +35,24 @@ class WifiPpdu;
  */
 struct WifiSpectrumSignalParameters : public SpectrumSignalParameters
 {
+    Ptr<SpectrumSignalParameters> Copy() const override;
 
-  Ptr<SpectrumSignalParameters> Copy () const override;
+    /**
+     * default constructor
+     */
+    WifiSpectrumSignalParameters();
 
-  /**
-   * default constructor
-   */
-  WifiSpectrumSignalParameters ();
+    /**
+     * copy constructor
+     *
+     * \param p the wifi spectrum signal parameters
+     */
+    WifiSpectrumSignalParameters(const WifiSpectrumSignalParameters& p);
 
-  /**
-   * copy constructor
-   *
-   * \param p the wifi spectrum signal parameters
-   */
-  WifiSpectrumSignalParameters (const WifiSpectrumSignalParameters& p);
-
-  Ptr<const WifiPpdu> ppdu;            ///< The PPDU being transmitted
-  uint16_t txCenterFreq;               ///< the center frequency of the transmitted signal in MHz
+    Ptr<const WifiPpdu> ppdu; ///< The PPDU being transmitted
+    uint16_t txWidth;         ///< The TX width in MHz
 };
 
-}  // namespace ns3
+} // namespace ns3
 
 #endif /* WIFI_SPECTRUM_SIGNAL_PARAMETERS_H */

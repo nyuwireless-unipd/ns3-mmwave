@@ -599,10 +599,33 @@ environments, i.e., indoor, outdoor urban and rural, for frequencies between
   * Path loss and shadowing models (3GPP TR 38.901, Sec. 7.4.1)
   * Autocorrelation of shadow fading (3GPP TR 38.901, Sec. 7.4.4)
   * `Channel condition models <propagation.html#threegppchannelconditionmodel>`_ (3GPP TR 38.901, Sec. 7.4.2)
+  * O2I Low/High Building penetration losses (3GPP TR 38.901, Sec. 7.4.3.1).
+    The Low/High Building penetration losses can be enabled for UEs that are in
+    O2I channel condition state.
+    For determining the O2O/O2I state in ns-3 there are two possible scenario setups:
+    1) ns-3 buildings and :cpp:class:`BuildingsChannelConditionModel` are used.
+    Then the O2I condition is calculated based on the buildings in the scenario.
+    In this case losses are considered by default, however there is the option
+    to disable them by setting the :cpp:class:`ThreeGppPropagationLossModel`
+    attribute BuildingPenetrationLossesEnabled to false.
+    2) ns-3 buildings are not used, instead one of the 3GPP stochastic channel condition
+    models is used, such as: :cpp:class:`ThreeGppRmaChannelConditionModel`,
+    :cpp:class:`ThreeGppUmaChannelConditionModel`, :cpp:class:`ThreeGppUmiStreetCanyonChannelConditionModel`.
+    These models are extended to calculate the O2O/O2I state probabilistically.
+    Additionally, it is possible to configure to calculate O2I condition
+    deterministically based on the UE height. In both cases, the O2O/O2I is updated
+    at the same time as LOS/nLOS, i.e. with the same periodicity.
+    For other 3GPP channel condition models in ns-3 there are no O2I losses because
+    both TX and RX, are either indoor or outdoor, such as in the case of indoor or
+    V2V scenarios.
+    For this case, to consider O2I Low/High Losses, the attribute of the
+    :cpp:class:`ChannelCondition` O2iThreshold (that indicates the ratio between
+    O2O and O2I states) must be set to a value different from 0. Possible values
+    are from 0 to 1, with 1 corresponding to 100% O2I conditions.
 
 *To be implemented:*
 
-  * O2I penetration loss (3GPP TR 38.901, Sec. 7.4.3)
+  * O2I Car penetration losses (3GPP TR 38.901, Sec. 7.4.3.2).
   * Spatial consistent update of the channel states (3GPP TR 38.901 Sec. 7.6.3.3)
 
 **Configuration**
@@ -624,6 +647,14 @@ otherwise an assert is raised. The addition of the shadow fading component can
 be enabled/disabled through the attribute "ShadowingEnabled".
 Other scenario-related parameters can be configured through attributes of the
 derived classes.
+
+One other attribute, "EnforceParameterRanges", can be set to true if the
+model is configured with parameters that fall outside of the applicability
+range specified in TR38.901.  By default, the simulator will only warn
+(if logging is enabled) if a value is outside of the applicability range.
+If this parameter is set to true, the simulation will abort with an
+error message (instead of just logging a warning) if the applicability range
+is exceeded.
 
 **Implementation details**
 
@@ -660,7 +691,7 @@ It is possible to configure some scenario-related parameters through the attribu
 As specified in the TR, the 2D distance between the transmitter and the receiver
 should be between 10 m and 10 km for the LOS case, or between 10 m and 5 km for
 the NLOS case, otherwise the model may not be accurate (a warning message is
-printed if the user has enabled logging on the model). Also, the height of the
+printed if the user has enabled logging on the model, or the simulation aborts, depending on whether "EnforceParameterRanges" is set to true). Also, the height of the
 base station (hBS) should be between 10 m and 150 m, while the height of the
 user terminal (hUT) should be between 1 m and 10 m.
 
@@ -673,7 +704,7 @@ between 0.5 and 100 GHz.
 
 As specified in the TR, the 2D distance between the transmitter and the receiver
 should be between 10 m and 5 km both for the LOS and NLOS cases, otherwise the model may not be
-accurate (a warning message is printed if the user has enabled logging on the model).
+accurate (a warning message is printed if the user has enabled logging on the model, or the simulation aborts, depending on whether "EnforceParameterRanges" is set to true).
 Also, the height of the base station (hBS) should be 25 m and the height of the
 user terminal (hUT) should be between 1.5 m and 22.5 m.
 
@@ -687,7 +718,7 @@ supports frequencies between 0.5 and 100 GHz.
 As specified in the TR, the 2D distance between the transmitter and the receiver
 should be between 10 m and 5 km both for the LOS and NLOS cases, otherwise the model may not be
 accurate (a warning message is printed if the user has enabled logging on
-the model). Also, the height of the base station (hBS) should be 10 m and the
+the model, or the simulation aborts, depending on whether "EnforceParameterRanges" is set to true). Also, the height of the base station (hBS) should be 10 m and the
 height of the user terminal (hUT) should be between 1.5 m and 10 m (the validity
 range is reduced because we assume that the height of the UT nodes is always
 lower that the height of the BS nodes).
@@ -702,7 +733,7 @@ frequencies between 0.5 and 100 GHz.
 As specified in the TR, the 3D distance between the transmitter and the receiver
 should be between 1 m and 150 m both for the LOS and NLOS cases, otherwise the
 model may not be accurate (a warning log message is printed if the user has
-enabled logging on the model).
+enabled logging on the model, or the simulation aborts, depending on whether "EnforceParameterRanges" is set to true).
 
 Testing
 ```````

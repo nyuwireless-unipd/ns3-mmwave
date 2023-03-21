@@ -3,38 +3,144 @@ ns-3 RELEASE NOTES
 
 This file contains ns-3 release notes (most recent releases first).
 
-All of the ns-3 documentation is accessible from the ns-3 website:
-<http://www.nsnam.org> including tutorials: <http://www.nsnam.org/tutorials.html>
+ns-3 documentation is accessible from the [ns-3 website](https://www.nsnam.org).
 
 Consult the file [CHANGES.md](CHANGES.md) for more detailed information about changed
 API and behavior across ns-3 releases.
 
-Release 3-dev
--------------
+In the following, numeric references prefixed by '#' refer to
+a [GitLab.com issue tracker](https://gitlab.com/nsnam/ns-3-dev/-/issues) number,
+and references prefixed by '!' refer to a
+[GitLab.com merge request](https://gitlab.com/nsnam/ns-3-dev/-/merge_requests) number.
+
+Release 3.38
+------------
+
+### Supported platforms
+
+This release is intended to work on systems with the following minimal
+requirements (Note: not all ns-3 features are available on all systems):
+
+- g++-9 or later, or LLVM/clang++-6 or later
+- Python 3.6 or later
+- CMake 3.10 or later
+- (macOS only) Xcode 11 or later
+- (Windows only) Msys2/MinGW64 toolchain
+
+Python API requires [Cppyy](https://cppyy.readthedocs.io/en/latest/installation.html).
+
+This release has discontinued support for g++-8 compilers.
 
 ### New user-visible features
 
-- (lr-wpan) !959 - Add PHY channel page support
-- (lr-wpan) Adds PAN descriptor, CommandPayload Header and Capability Field
-- (wifi) !984 - MultiUserScheduler can request channel access periodically
-- (lr-wpan) !991 - Adds MAC ED scan support
-- (internet) !996 - IPv6 Router Solicitations (RS) are now retransmitted up to 4 times, following RFC 5779.
-- (lr-wpan) !997 - Adds MAC ACTIVE and PASSIVE scan support
-- (wifi) CCA has been reworked to report the channel type in the CCA-BUSY indication and the per-20 MHz CCA bitmap for 802.11ax.
-- (wifi) PPDUs are transmitted on the largest primary channel that is found to be idle (according to the CCA-BUSY indication provided by the PHY) when gaining a TXOP.
+- (core) !1236 - Added some macros to silence compiler warnings. The new macros are in **warnings.h**, and their use is not suggested unless for very specific cases.
+- (core) !1269 - Added new template classes `ValArray` and `MatrixArray` for efficient storage and operations on 1D, 2D, and 3D arrays.
+- (documentation) - Added an Installation Guide to replace the ns-3 wiki's installation page
+- (internet) !1229 - Ping now supports broadcast addresses.
+- (internet) !1186 - `TcpWestwood` model has been removed, and the class has been renamed `TcpWestwoodPlus`.
+- (internet-apps) - A new Ping model that works for both IPv4 and IPv6 has been added, to replace the address family specific v4Ping and Ping6.
+- (lr-wpan) !1006 - Added RX sensitivity configuration support.
+- (lr-wpan) !1268 - Added beacon payload via MLME-SET.request primitive.
+- (netanim) Added helper function to update the size of a node
+- (network) !938 - Added class `TimestampTag` for associating a timestamp with a packet.
+- (network) !1163 - Initializing an Ipv[4,6]Address from an invalid string do not raise an exception anymore. Instead the address is marked as not initialized.
+- (spectrum) !1046 - Added the TwoRaySpectrumPropagationLossModel fast-fading class, as the outcome of the related GSoC 2022 project titled "A simplified channel and beamforming model for ns-3"
+- (wifi) Added support for 802.11be Multi-Link Operations (MLO), STR mode only
+- (wifi) Added more fields to the EHT Capabilities information element
+- (wifi) Added an initial 802.11be-based example program
+- (wifi) Added 802.11ax dual NAV (basic NAV and intra-BSS NAV)
+- (wifi) Added 802.11ax Uplink Multi-User Carrier Sense (UL MU CS) mechanism and have it used by non-AP STAs when determining if they can reply to a received Trigger Frame
+- (wifi) Added support for 802.11ax MU-RTS/CTS protection
 
 ### Bugs fixed
 
-- (wifi) Fix setting of stations' max supported channel width
-- (wifi) Fix setting TX power for HE TB PPDUs in case AP requested using the max TX power
-- (wifi) #521 - UL OFDMA support
+- (core) !1236 - Deprecation warnings are silenced while calling `NS_OBJECT_ENSURE_REGISTERED`
+- (build) #808 - Handle profile setting changes in the first ns3 run
+- (build) #815 - Configure find_program to search for programs in PATH first, then AppBundles in MacOS
+- (lr-wpan) #636 - Ext address, short address and manual assoc adjustments
+- (internet) !1229 - Fixed a bug in `Icmpv4Header::HandleEcho` when replying to broadcast-type Echo requests, and two bugs in `Ipv4RawSocketImpl::SendTo` in handling sockets bound to a specific address and directed to a broadcast-type address.
+- (internet) - `NeighborCacheHelper::PopulateNeighborCache` is now robust against missing IPv4 or IPv6 stack in nodes.
+- (network) !1229 - Fixed a bug in `Ipv4Address::IsSubnetDirectedBroadcast`
+- (wifi) Fixed multiple issues about setting the TXOP holder
+- (wifi) #861 - Bianchi validation program was not compatible with 11ax
+- (wifi) Fixed 10 MHz offset in center frequencies for 6 GHz channels
+- (wifi) Fixed setting of Duration/ID field of a Multi-STA Block Ack
+- (wifi) Fixed handling of the HE TB TXVECTOR and TRIGVECTOR parameters
+- (wifi) Prevent extraction of in-flight MPDUs due to lifetime expired
+- (wifi) Fixed getting the primary 80 MHz channel number in the 6 GHz band
+
+Release 3.37
+------------
+
+### Availability
+
+This release is available from:
+<https://www.nsnam.org/release/ns-allinone-3.37.tar.bz2>
+
+### Supported platforms
+
+This release is intended to work on systems with the following minimal
+requirements (Note: not all ns-3 features are available on all systems):
+
+- g++-8 or later, or LLVM/clang++-6 or later
+- Python 3.6 or later
+- CMake 3.10 or later
+- (macOS only) Xcode 11 or later
+- (Windows only) Msys2/MinGW64 toolchain
+
+Python API requires [Cppyy](https://cppyy.readthedocs.io/en/latest/installation.html).
+
+### New user-visible features
+
+- (internet) !996 - IPv6 Router Solicitations (RS) are now retransmitted up to 4 times, following RFC 5779.
+- (internet) Add auto-generate ARP/NDISC cache, as the outcome of GSoC 2022 project.
+- (lte) LTE handover failure is now handled for joining and leaving timeouts, RACH failure, and preamble allocation failure.
+- (lr-wpan) !991 - Adds MAC ED scan support
+- (lr-wpan) !959 - Add PHY channel page support
+- (lr-wpan) !997 - Adds MAC ACTIVE and PASSIVE scan support
+- (lr-wpan) !1072 - Adds support for association (network bootstrap)
+- (lr-wpan) !1131 - Add support for configurable tx queue and ind tx queue limits.
+- (lr-wpan) !1133 - Add a post-rx error model.
+- (lr-wpan) Adds support for PAN Id compression (IEEE 802.15.4-2006 (7.5.6.1))
+- (lr-wpan) Adds PAN descriptor, CommandPayload Header and Capability Field
+- (utils) `utils/bench-simulator` has been moved to `utils/bench-scheduler` to better reflect what it actually tests
+- (utils) `utils/bench-scheduler` has been enhanced to test multiple schedulers.
+- (wifi) !984 - MultiUserScheduler can request channel access periodically
+- (wifi) CCA has been reworked to report the channel type in the CCA-BUSY indication and the per-20 MHz CCA bitmap for 802.11ax.
+- (wifi) PPDUs are transmitted on the largest primary channel that is found to be idle (according to the CCA-BUSY indication provided by the PHY) when gaining a TXOP.
+- (wifi) Add support for fragmentation of Information Elements.
+- (wifi) Implement 802.11be Multi-link discovery and setup
+
+### Bugs fixed
+
+- (build) #676 Fix missing version defines
+- (build) #684 Fix prevents hidden source files from being processed as scratches
+- (build) #687 Display how to forward arguments to programs with the ns3 script
+- (build) #694 Fix .ns3rc search scope
+- (build) #699 Fix the ns3 script behavior for `-h`
+- (build) #700 Suppress build chatter for `./ns3 show version`
+- (build) #712 Fix build version parsing
+- (build) #713 Fix build version requirements checking to allow for custom embedded version
+- (build) #732 Fix WSLv1 check that failed in systems that included a `;` in their `/proc/version` output
+- (build) #733 Fix installation to optionally include python bindings and uninstallation to remove pkg-config files
+- (build) #734 Fix installation to include tap-creator and raw-sock-creator
+- (build) Widen the search scope of headers and libraries to better support Bake
+- (core) #756 - Fix `CsvReader::GetValueAs()` functions for `char` arguments
+- (core) Fix int64x64-cairo.h bool operator
+- (general) #758 - Fix warnings about `for` loops with variables that are "too small" to fully represent the data being looped
 - (lr-wpan) #536 - Fixes PHY not going to TRX_OFF after CSMA-CA failure (RxOnWhenIdle(false))
+- (lr-wpan) #692 - Replace raw pointers for smart pointers in Tx queue and Ind Tx queue.
+- (wifi) #521 - UL OFDMA support
+- (wifi) #696 - 802.11ax assert failed. cond="seqNumber < SEQNO_SPACE_SIZE && startingSeqNumber < SEQNO_SPACE_SIZE"
+- (wifi) #709 Adjust WifiPhy::RxSensitivity with channel width for YansWifiChannel
+- (wifi) Fix setting of stations' maximum supported channel width
+- (wifi) Fix setting TX power for HE TB PPDUs in case AP requested using the max TX power
 - (wifi) Only include QoS Null frames for TIDs for which a BA agreement exists in responses to BSRP TFs
 - (wifi) Notify RX end only for the last received HE TB PPDU
 - (wifi) Correctly compute the time to RX end to be passed to WifiPhyStateHelper::SwitchToRx()
-- (wifi) #709 Adjust WifiPhy::RxSensitivity with channel width for YansWifiChannel
 - (wifi) Align default TXOP limit for VI and VO to 802.11-2020
-- (wifi) #696 - 802.11ax assert failed. cond="seqNumber < SEQNO_SPACE_SIZE && startingSeqNumber < SEQNO_SPACE_SIZE"
+- (wifi) Fix acknowledgment in SU format for DL MU PPDUs including PSDUs of different TIDs
+- (wifi) Fix the TID of QoS Null frames in response to BSRP TF
 
 Release 3.36.1
 --------------
@@ -164,6 +270,7 @@ This release has discontinued support for g++-7 compilers.
 - (wifi) #507 - Set CS Required field according to 802.11ax specs
 - (wifi) #600 - Fix HT Operation Primary Channel setting
 - (wifi) #609 - STA checks that a Multi-STA BA is sent by the AP it is associated with
+- (lr-wpan) #742 - Add default values to non-initialized structs with primitive variables in ``LrWpanPhy``
 
 Release 3.35
 ------------
@@ -273,7 +380,7 @@ This release has been tested on the following systems:
 - (network) Improved support for bit fields in header serialization/deserialization.
 - (network) Added support for DLT_LORATAP DataLinkType to PCAP files
 - (network) More arithmetic operators are provided for DataRate objects
-- (nix-vector) Nix-Vector routing supports multiple interface addresse and can print out routing paths.
+- (nix-vector) Nix-Vector routing supports multiple interface addresses and can print out routing paths.
 - (olsr) Add support for printing OLSR headers
 - (sixlowpan) Added support for stateful (i.e., context-based) RFC6282 compression.
 - (tcp) TCP CUBIC is now the default TCP congestion control, replacing NewReno.
@@ -537,7 +644,7 @@ issue number (prefixed by '#'), or GitLab merge request number (prefixed by '!')
 - (lr-wpan) !326 - Inactive Periods Queue fix
 - (lte) #106 - Inconsistent imsi representation in LTE module
 - (lte) #196 - Remove LteSecondaryCellSelectionTestSuite from LTE module
-- (lte) #221 - Stop T310 upon receving handover command
+- (lte) #221 - Stop T310 upon receiving handover command
 - (network) #216 - Correct the return value for PacketSocket::SendTo()
 - (network) !239 - Refactor DelayJitterEstimation to more closely follow RFC 1889 and RFC 3550
 - (propagation) !269 - Fix Okumura-Hata propagation loss model for frequency > 1.5 Ghz and medium or small city
@@ -545,7 +652,7 @@ issue number (prefixed by '#'), or GitLab merge request number (prefixed by '!')
 - (wifi) - Fix frame capture when signals arrive at the exact same time and add additional tests to verify these cases
 - (wifi) - Fix MCS selection in ideal rate manager for cases with unbalanced MIMO settings and/or RX diversity
 - (wifi) - Fix SNR computations for MIMO
-- (wifi) - Fix ReportAmpduTxStatus called two times when BAR is explicitely sent upon missed BACK
+- (wifi) - Fix ReportAmpduTxStatus called two times when BAR is explicitly sent upon missed BACK
 - (wifi)  A zero value for the backoff timer might be discarded and a new value
   might be generated by an erroneous call to NotifyCollision().
 - (wifi) Bug 1909, Issue #41 - Implementation of ACK timeout
@@ -1989,8 +2096,8 @@ These platforms have been tested; others may work also:
   same way as with Ipv4PacketInfoTag. See Doxygen for current limitations in
   using Ipv[4,6]PacketInfoTag to set IP properties.
 
-- Ipv[4,6]Interfaces not respecting the minimum MTU requirements (68 octects
-  for IPv4 and 1280 octects for IPv6) will be automatically set as Down.
+- Ipv[4,6]Interfaces not respecting the minimum MTU requirements (68 octets
+  for IPv4 and 1280 octets for IPv6) will be automatically set as Down.
 
 - IPv6 addresses and routing tables are printed in a more conventional way,
   closely matching the Linux "route -A inet6" command.
@@ -2271,7 +2378,7 @@ These platforms have been tested; others may work also:
 - bug 1633 - Bake - should not report that it is downloading qt4 when it is already installed
 - bug 1635 - Small bug without Simulator::Destroy()
 - bug 1636 - Compilation error flagged as unmet dependency
-- bug 1637 - Bake calling apt-get for unpriviledged user
+- bug 1637 - Bake calling apt-get for unprivileged user
 - bug 1639 - bake.py support for linux mint
 - bug 1640 - bake needs to test for g++
 - bug 1641 - bake reports autotools dependency, but needs automake
@@ -3650,7 +3757,7 @@ wiki for more information:
   Support for several ICMP messages has been added to ns-3.  See
   src/internet-stack/icmpv4.h for details.
 - IPv6 Address Support
-  New clases to support IPv6 addresses has been added to the system.  This
+  New classes to support IPv6 addresses has been added to the system.  This
   is enabling technology for fuller IPv6 support scheduled for ns-3.4.
 - A flow-id tag has been added to the contributed code section
 - Star topologies can be created from the topology helper functions
