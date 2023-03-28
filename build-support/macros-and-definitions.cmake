@@ -856,10 +856,12 @@ macro(process_options)
       )
     endif()
   else()
-    message(
-      ${HIGHLIGHTED_STATUS}
-      "Python: an incompatible version of Python was found, python bindings will be disabled"
-    )
+    if(${NS3_PYTHON_BINDINGS})
+      message(
+        ${HIGHLIGHTED_STATUS}
+        "Python: an incompatible version of Python was found, python bindings will be disabled"
+      )
+    endif()
   endif()
 
   set(ENABLE_PYTHON_BINDINGS OFF)
@@ -901,6 +903,7 @@ macro(process_options)
         message(
           ${HIGHLIGHTED_STATUS}
           "NS3_BINDINGS_INSTALL_DIR was not set. The python bindings won't be installed with ./ns3 install."
+          "This setting is meant for packaging and redistribution."
         )
         message(
           ${HIGHLIGHTED_STATUS}
@@ -1477,7 +1480,7 @@ macro(process_options)
     include(FetchContent)
     FetchContent_Declare(
       netanim GIT_REPOSITORY https://gitlab.com/nsnam/netanim.git
-      GIT_TAG netanim-3.108
+      GIT_TAG netanim-3.109
     )
     FetchContent_Populate(netanim)
     file(COPY build-support/3rd-party/netanim-cmakelists.cmake
