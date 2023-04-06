@@ -62,6 +62,10 @@ set(source_files
 
 # GCC Variable Tracking Assignment (VTA) severely slows down compilation with the NR error model
 # since such assignment tracking is indeed useful only if a debugger is used, keep such flag only for debug builds
+# TODO: extend this to clang
+if (CMAKE_COMPILER_IS_GNUCC AND NOT CMAKE_BUILD_TYPE STREQUAL "debug")
+  add_compile_options(-fno-var-tracking-assignments)
+endif()
 #if (bld.env ['BUILD_PROFILE'] == 'optimized'):
 #    module.env.append_value('CXXFLAGS', '-fno-var-tracking-assignments')
 
