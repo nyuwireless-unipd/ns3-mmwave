@@ -1,5 +1,3 @@
-# This is a basic workflow to help you get started with Actions
-
 name: CI
 
 # Controls when the action will run. Triggers the workflow on push or pull request
@@ -12,16 +10,29 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
+  build-and-run:
+    # This workflow contains a single job called "build"
+    name: build and test gcc ${{ matrix.gcc-version }}
+      # Test on multiple versions of GCC, as they may have different errors
+    strategy:
+      matrix:
+        gcc-version: [9, 10, 11]
+
     # The type of runner that the job will run on
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
-    # Enable only the mmwave module to speedup the test
-    - name: build and run the tests
-      run: ./ns3 configure --enable-examples --enable-tests --enable-modules=mmwave,internet-apps && ./ns3 build && ./test.py
+    # Install GCC
+    - name: Set up GCC
+      uses: egor-tensin/setup-gcc@v1
+      with:
+        version: ${{ matrix.gcc-version }}
+        platform: x64
+
+    # Build and run the tests, enable only the mmwave and internet-apps (dependency) modules to speedup the test
+    - name: Build and run the tests
+      run: ./ns3 configure --enable-examples --enable-tests --build-profile=optimized --enable-modules=mmwave,internet-apps && ./ns3 build && ./test.py
