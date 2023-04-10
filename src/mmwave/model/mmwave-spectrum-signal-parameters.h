@@ -29,6 +29,7 @@
 #define MMWAVE_SPECTRUM_SIGNAL_PARAMETERS_H
 
 #include <ns3/spectrum-signal-parameters.h>
+#include <list>
 
 namespace ns3
 {
