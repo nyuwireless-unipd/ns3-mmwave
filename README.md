@@ -32,7 +32,7 @@ cd ns3-mmwave
 ## Usage example
 You can use the following command to run the `mmwave-simple-epc` example. 
 ```
-./ns3 --run mmwave-simple-epc
+./ns3 run mmwave-simple-epc
 ```
 Other examples are included in `src/mmwave/examples/`
 
