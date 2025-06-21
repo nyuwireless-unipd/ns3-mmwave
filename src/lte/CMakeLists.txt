@@ -19,6 +19,7 @@ endif()
 
 set(source_files
     ${emu_sources}
+    model/adaptive-a2-a4-rsrq-handover-algorithm.cc
     model/lte-common.cc
     model/lte-spectrum-phy.cc
     model/lte-spectrum-signal-parameters.cc
