@@ -1,38 +1,57 @@
 name: CI
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
 on:
   push:
     branches: [ new-handover ]
   pull_request:
     branches: [ new-handover ]
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build-and-run:
-    # This workflow contains a single job called "build"
-    name: build and test gcc ${{ matrix.gcc-version }}
-      # Test multiple versions of the GCC compiler
+    name: build and test ${{ matrix.compiler }}
     strategy:
       matrix:
-        gcc-version: [10, 11, 12, 13]
-
-    # The type of runner that the job will run on
+        compiler: [gcc-13, clang-18]
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v4
-
-    # Install GCC
-    - name: Set up GCC
-      uses: egor-tensin/setup-gcc@v1
+    - name: Set up compiler
+      run: |
+        if [[ "${{ matrix.compiler }}" == "gcc-13" ]]; then
+          sudo apt-get update
+          sudo apt-get install -y g++-13
+          echo "CC=gcc-13" >> $GITHUB_ENV
+          echo "CXX=g++-13" >> $GITHUB_ENV
+        elif [[ "${{ matrix.compiler }}" == "clang-18" ]]; then
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 18
+          echo "CC=clang-18" >> $GITHUB_ENV
+          echo "CXX=clang++-18" >> $GITHUB_ENV
+        fi
+    - name: Build and run
+      run: |
+        ./ns3 configure --enable-examples --enable-tests --build-profile=Release
+        ./ns3 build
+        ./ns3 run mmwave-simple-epc
+    - name: Archive build logs
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        version: ${{ matrix.gcc-version }}
-        platform: x64
-
-    # Build and run the tests, enable only the mmwave and internet-apps (dependency) modules to speedup the test
-    - name: Build and run the tests
-      run: ./ns3 configure --enable-examples --enable-tests --build-profile=optimized --enable-modules=mmwave,internet-apps && ./ns3 build && ./test.py
+        name: build-logs-${{ matrix.compiler }}
+        path: |
+          build/config-store.log
+          build/c4che/
+  static-analysis:
+    name: static analysis
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install clang-tidy
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 18
+    - name: Run clang-tidy
+      run: |
+        find src/mmwave -path src/mmwave/test -prune -o -path src/mmwave/examples -prune -o -name "*.cc" -print0 | xargs -0 clang-tidy-18 -p . --warnings-as-errors=*
