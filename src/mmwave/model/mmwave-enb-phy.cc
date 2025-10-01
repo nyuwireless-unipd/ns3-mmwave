@@ -686,7 +686,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 
         NS_LOG_LOGIC("RxPsd " << *rxPsd);
 
-        m_rxPsdMap[ue->first] = txPsd->Copy();;
+        m_rxPsdMap[ue->first] = rxPsd->Copy();
         *totalReceivedPsd += *rxPsd;
 
         // set back the bf vector to the main eNB
@@ -716,8 +716,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
     {
         SpectrumValue interference = *totalReceivedPsd - *(ue->second);
         NS_LOG_LOGIC("interference " << interference);
-        SpectrumValue sinr = *(ue->second) / (*noisePsd); // + interference);
-        // we consider the SNR only!
+        SpectrumValue sinr = *(ue->second) / (*noisePsd + interference);
         NS_LOG_LOGIC("sinr " << sinr);
         double sinrAvg = Sum(sinr) / (sinr.GetSpectrumModel()->GetNumBands());
         NS_LOG_DEBUG("Time " << Simulator::Now().GetSeconds() << " CellId " << m_cellId << " UE "
