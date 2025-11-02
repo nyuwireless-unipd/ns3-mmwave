@@ -25,6 +25,7 @@ foreach(
     NAME ${example}
     SOURCE_FILES ${example}.cc
     LIBRARIES_TO_LINK ${libmmwave}
+                      ${libnetanim}
   )
 endforeach()
 

@@ -85,6 +85,16 @@ class McEnbPdcp : public LtePdcp
     void SetEpcX2PdcpProvider(EpcX2PdcpProvider* s);
 
     /**
+     * Check if direct S1-U path should be used after handover completion
+     */
+    bool ShouldUseDirectS1U();
+
+    /**
+     * Callback when handover completes to update timing
+     */
+    void OnHandoverComplete();
+
+    /**
      *
      *
      * \return the EpcX2PDCP User, given to X2 to access PDCP Receive method
@@ -184,6 +194,14 @@ class McEnbPdcp : public LtePdcp
      */
     bool GetUseMmWaveConnection() const;
 
+    /**
+     * Trigger S1AP Path Switch Request to update SGW/PGW routing table.
+     * This implements the true core network path switching by directly
+     * updating the SGW/PGW routing table to point to the target eNB.
+     * @param targetCellId The target cell ID for the handover
+     */
+    void TriggerS1APPathSwitch(uint16_t targetCellId);
+
   protected:
     // Interface provided to upper RRC entity
     virtual void DoTransmitPdcpSdu(Ptr<Packet> p);
@@ -234,6 +252,8 @@ class McEnbPdcp : public LtePdcp
     static const uint16_t m_maxPdcpSn = 4095;
 
     bool m_useMmWaveConnection;
+
+    double m_lastHandoverTime; ///< Timestamp of last handover completion
 };
 
 } // namespace ns3

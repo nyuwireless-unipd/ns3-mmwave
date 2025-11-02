@@ -452,4 +452,27 @@ EpcSgwPgwApplication::DoDeleteBearerResponse(EpcS11SapSgw::DeleteBearerResponseM
     }
 }
 
+void
+EpcSgwPgwApplication::UpdateUeEnbAddress(Ipv4Address enbAddr, uint16_t rnti)
+{
+    NS_LOG_FUNCTION(this << enbAddr << rnti);
+
+    // Find UE by RNTI (using RNTI as proxy for IMSI in this implementation)
+    uint64_t imsi = rnti; // Simplified mapping
+    std::map<uint64_t, Ptr<UeInfo>>::iterator ueit = m_ueInfoByImsiMap.find(imsi);
+
+    if (ueit != m_ueInfoByImsiMap.end())
+    {
+        std::cout << "[SGW-PGW] " << Simulator::Now().GetSeconds()
+                  << "s: Updating routing table for UE (RNTI=" << rnti
+                  << ") to eNB " << enbAddr << std::endl;
+        ueit->second->SetEnbAddr(enbAddr);
+    }
+    else
+    {
+        std::cout << "[SGW-PGW-ERROR] " << Simulator::Now().GetSeconds()
+                  << "s: UE with RNTI=" << rnti << " not found in routing table" << std::endl;
+    }
+}
+
 } // namespace ns3

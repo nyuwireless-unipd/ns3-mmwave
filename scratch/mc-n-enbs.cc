@@ -17,14 +17,13 @@
  */
 
 #include "ns3/applications-module.h"
-#include "ns3/buildings-helper.h"
-#include "ns3/buildings-module.h"
 #include "ns3/command-line.h"
 #include "ns3/config-store-module.h"
 #include "ns3/epc-helper.h"
 #include "ns3/global-value.h"
 #include "ns3/internet-module.h"
 #include "ns3/isotropic-antenna-model.h"
+#include "ns3/three-gpp-antenna-model.h"
 #include "ns3/mmwave-helper.h"
 #include "ns3/mmwave-point-to-point-epc-helper.h"
 #include "ns3/mobility-module.h"
@@ -52,26 +51,6 @@ using namespace mmwave;
  */
 
 NS_LOG_COMPONENT_DEFINE("McTwoEnbs");
-
-void
-PrintGnuplottableBuildingListToFile(std::string filename)
-{
-    std::ofstream outFile;
-    outFile.open(filename.c_str(), std::ios_base::out | std::ios_base::trunc);
-    if (!outFile.is_open())
-    {
-        NS_LOG_ERROR("Can't open file " << filename);
-        return;
-    }
-    uint32_t index = 0;
-    for (BuildingList::Iterator it = BuildingList::Begin(); it != BuildingList::End(); ++it)
-    {
-        ++index;
-        Box box = (*it)->GetBoundaries();
-        outFile << "set object " << index << " rect from " << box.xMin << "," << box.yMin << " to "
-                << box.xMax << "," << box.yMax << " front fs empty " << std::endl;
-    }
-}
 
 void
 PrintGnuplottableUeListToFile(std::string filename)
@@ -212,56 +191,6 @@ OverlapWithAnyPrevious(Box box, std::list<Box> m_previousBlocks)
     return false;
 }
 
-std::pair<Box, std::list<Box>>
-GenerateBuildingBounds(double xArea,
-                       double yArea,
-                       double maxBuildSize,
-                       std::list<Box> m_previousBlocks)
-{
-    Ptr<UniformRandomVariable> xMinBuilding = CreateObject<UniformRandomVariable>();
-    xMinBuilding->SetAttribute("Min", DoubleValue(30));
-    xMinBuilding->SetAttribute("Max", DoubleValue(xArea));
-
-    NS_LOG_UNCOND("min " << 0 << " max " << xArea);
-
-    Ptr<UniformRandomVariable> yMinBuilding = CreateObject<UniformRandomVariable>();
-    yMinBuilding->SetAttribute("Min", DoubleValue(0));
-    yMinBuilding->SetAttribute("Max", DoubleValue(yArea));
-
-    NS_LOG_UNCOND("min " << 0 << " max " << yArea);
-
-    Box box;
-    uint32_t attempt = 0;
-    do
-    {
-        NS_ASSERT_MSG(attempt < 100,
-                      "Too many failed attempts to position non-overlapping buildings. Maybe area "
-                      "too small or too many buildings?");
-        box.xMin = xMinBuilding->GetValue();
-
-        Ptr<UniformRandomVariable> xMaxBuilding = CreateObject<UniformRandomVariable>();
-        xMaxBuilding->SetAttribute("Min", DoubleValue(box.xMin));
-        xMaxBuilding->SetAttribute("Max", DoubleValue(box.xMin + maxBuildSize));
-        box.xMax = xMaxBuilding->GetValue();
-
-        box.yMin = yMinBuilding->GetValue();
-
-        Ptr<UniformRandomVariable> yMaxBuilding = CreateObject<UniformRandomVariable>();
-        yMaxBuilding->SetAttribute("Min", DoubleValue(box.yMin));
-        yMaxBuilding->SetAttribute("Max", DoubleValue(box.yMin + maxBuildSize));
-        box.yMax = yMaxBuilding->GetValue();
-
-        ++attempt;
-    } while (OverlapWithAnyPrevious(box, m_previousBlocks));
-
-    NS_LOG_UNCOND("Building in coordinates (" << box.xMin << " , " << box.yMin << ") and ("
-                                              << box.xMax << " , " << box.yMax
-                                              << ") accepted after " << attempt << " attempts");
-    m_previousBlocks.push_back(box);
-    std::pair<Box, std::list<Box>> pairReturn = std::make_pair(box, m_previousBlocks);
-    return pairReturn;
-}
-
 static ns3::GlobalValue g_mmw1DistFromMainStreet(
     "mmw1Dist",
     "Distance from the main street of the first MmWaveEnb",
@@ -281,14 +210,9 @@ static ns3::GlobalValue g_mmWaveDistance("mmWaveDist",
                                          "Distance between MmWave eNB 1 and 2",
                                          ns3::UintegerValue(200),
                                          ns3::MakeUintegerChecker<uint32_t>());
-static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb(
-    "numBlocks",
-    "Number of buildings between MmWave eNB 1 and 2",
-    ns3::UintegerValue(8),
-    ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_interPckInterval("interPckInterval",
                                            "Interarrival time of UDP packets (us)",
-                                           ns3::UintegerValue(20),
+                                           ns3::UintegerValue(50000),
                                            ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_bufferSize("bufferSize",
                                      "RLC tx buffer size (MB)",
@@ -304,22 +228,12 @@ static ns3::GlobalValue g_mmeLatency("mmeLatency",
                                      ns3::MakeDoubleChecker<double>());
 static ns3::GlobalValue g_mobileUeSpeed("mobileSpeed",
                                         "The speed of the UE (m/s)",
-                                        ns3::DoubleValue(2),
+                                        ns3::DoubleValue(20),
                                         ns3::MakeDoubleChecker<double>());
 static ns3::GlobalValue g_rlcAmEnabled("rlcAmEnabled",
                                        "If true, use RLC AM, else use RLC UM",
                                        ns3::BooleanValue(true),
                                        ns3::MakeBooleanChecker());
-static ns3::GlobalValue g_maxXAxis(
-    "maxXAxis",
-    "The maximum X coordinate for the area in which to deploy the buildings",
-    ns3::DoubleValue(150),
-    ns3::MakeDoubleChecker<double>());
-static ns3::GlobalValue g_maxYAxis(
-    "maxYAxis",
-    "The maximum Y coordinate for the area in which to deploy the buildings",
-    ns3::DoubleValue(40),
-    ns3::MakeDoubleChecker<double>());
 static ns3::GlobalValue g_outPath("outPath",
                                   "The path of output log files",
                                   ns3::StringValue("./"),
@@ -327,7 +241,7 @@ static ns3::GlobalValue g_outPath("outPath",
 static ns3::GlobalValue g_noiseAndFilter(
     "noiseAndFilter",
     "If true, use noisy SINR samples, filtered. If false, just use the SINR measure",
-    ns3::BooleanValue(false),
+    ns3::BooleanValue(true),
     ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_handoverMode("handoverMode",
                                        "Handover mode",
@@ -335,7 +249,7 @@ static ns3::GlobalValue g_handoverMode("handoverMode",
                                        ns3::MakeUintegerChecker<uint8_t>());
 static ns3::GlobalValue g_reportTablePeriodicity("reportTablePeriodicity",
                                                  "Periodicity of RTs",
-                                                 ns3::UintegerValue(1600),
+                                                 ns3::UintegerValue(12800),
                                                  ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_outageThreshold("outageTh",
                                           "Outage threshold",
@@ -351,27 +265,35 @@ main(int argc, char* argv[])
 {
     bool harqEnabled = true;
     bool fixedTti = false;
+    // Default parameters - optimized for more handovers
+    uint16_t numEnbs = 2;  // More eNBs for more handovers
+    double enbSpacing = 300.0; // Closer spacing for more frequent handovers
+    double simTime = 10.0; // Longer simulation time
+    double ueSpeed = 30.0; // Faster speed for more handovers
+    bool enableNetAnim = true; // Auto-enable NetAnim by default
+    double ueStart = 30;
+
+    // Command line 
+    CommandLine cmd(__FILE__);
+    cmd.AddValue("numEnbs", "Number of eNBs", numEnbs);
+    cmd.AddValue("enbSpacing", "Distance between eNBs (m)", enbSpacing);
+    cmd.AddValue("simTime", "Simulation time (s)", simTime);
+    cmd.AddValue("ueSpeed", "UE speed (m/s)", ueSpeed);
+    cmd.AddValue("ueStart", "UE speed (m/s)", ueStart);
+    cmd.AddValue("netanim", "Enable NetAnim", enableNetAnim);
 
     std::list<Box> m_previousBlocks;
 
-    // Command line arguments
-    CommandLine cmd;
     cmd.Parse(argc, argv);
+
+    // NOTE: numEnbs from command line represents TOTAL eNBs (LTE + mmWave)
+    // We'll create (numEnbs-1) mmWave eNBs + 1 LTE eNB = numEnbs total
 
     UintegerValue uintegerValue;
     BooleanValue booleanValue;
     StringValue stringValue;
     DoubleValue doubleValue;
-    // EnumValue enumValue;
-    GlobalValue::GetValueByName("numBlocks", uintegerValue);
-    uint32_t numBlocks = uintegerValue.Get();
-    GlobalValue::GetValueByName("maxXAxis", doubleValue);
-    double maxXAxis = doubleValue.Get();
-    GlobalValue::GetValueByName("maxYAxis", doubleValue);
-    double maxYAxis = doubleValue.Get();
 
-    double ueInitialPosition = 90;
-    double ueFinalPosition = 110;
 
     // Variables for the RT
     int windowForTransient = 150; // number of samples for the vector to use in the filter
@@ -414,12 +336,8 @@ main(int argc, char* argv[])
     double x2Latency = doubleValue.Get();
     GlobalValue::GetValueByName("mmeLatency", doubleValue);
     double mmeLatency = doubleValue.Get();
-    GlobalValue::GetValueByName("mobileSpeed", doubleValue);
-    double ueSpeed = doubleValue.Get();
 
     double transientDuration = double(vectorTransient) / 1000000;
-    double simTime =
-        transientDuration + ((double)ueFinalPosition - (double)ueInitialPosition) / ueSpeed + 1;
 
     NS_LOG_UNCOND("rlcAmEnabled " << rlcAmEnabled << " bufferSize " << bufferSize
                                   << " interPacketInterval " << interPacketInterval << " x2Latency "
@@ -467,7 +385,16 @@ main(int argc, char* argv[])
     Config::SetDefault("ns3::MmWaveFlexTtiMaxWeightMacScheduler::SymPerSlot", UintegerValue(6));
     Config::SetDefault("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue(200.0));
     Config::SetDefault("ns3::MmWavePhyMacCommon::NumHarqProcess", UintegerValue(100));
-    Config::SetDefault("ns3::ThreeGppChannelModel::UpdatePeriod", TimeValue(MilliSeconds(100.0)));
+    // SINR Stability Fix: Increase channel coherence time to prevent rapid fluctuations
+    // Previous: 10ms caused channel regeneration between SINR measurements (12.8ms period)
+    // Channel Model UpdatePeriod:
+    // Controls how often channel parameters (fast fading) are regenerated
+    // For highway scenario with forced LOS (AlwaysLosChannelConditionModel):
+    // - Large values (500ms) provide stable SINR for handover testing
+    // - ChannelConditionModel UpdatePeriod is irrelevant since LOS is forced
+    // Note: Previous issue was LOS/NLOS transitions every 100ms causing 20-40 dB SINR jumps
+    Config::SetDefault("ns3::ThreeGppChannelModel::UpdatePeriod", TimeValue(MilliSeconds(500)));
+    Config::SetDefault("ns3::ThreeGppChannelConditionModel::UpdatePeriod", TimeValue(MilliSeconds(500)));
     Config::SetDefault("ns3::LteEnbRrc::SystemInformationPeriodicity",
                        TimeValue(MilliSeconds(5.0)));
     Config::SetDefault("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
@@ -490,6 +417,7 @@ main(int argc, char* argv[])
     Config::SetDefault("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(10.0)));
     Config::SetDefault("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue(bufferSize * 1024 * 1024));
 
+
     // handover and RT related params
     switch (hoMode)
     {
@@ -507,13 +435,22 @@ main(int argc, char* argv[])
         break;
     }
 
-    Config::SetDefault("ns3::LteEnbRrc::FixedTttValue", UintegerValue(150));
+    // Config::SetDefault("ns3::LteEnbRrc::FixedTttValue", UintegerValue(256));  // Attribute name might be incorrect
     Config::SetDefault("ns3::LteEnbRrc::CrtPeriod", IntegerValue(ReportTablePeriodicity));
+    
+    // HYSTERESIS FIX: Increase hysteresis to prevent rapid ping-pong switching
+    // Default is 3 dB - increase to 5 dB for more stability at equal distances
+    Config::SetDefault("ns3::LteEnbRrc::HoSinrDifference", DoubleValue(5.0));
+    NS_LOG_UNCOND("🔧 [HANDOVER STABILITY] Configuration:");
+    NS_LOG_UNCOND("   Hysteresis: 5.0 dB (cell must be 5 dB better to trigger handover)");
+    NS_LOG_UNCOND("   Reporting Period (CrtPeriod): " << ReportTablePeriodicity << " us");
+    NS_LOG_UNCOND("   These prevent rapid ping-pong switching between equal-strength cells");
+    // Note: HysteresisDb is implemented in handover algorithm, not as a direct Config attribute
     Config::SetDefault("ns3::LteEnbRrc::OutageThreshold", DoubleValue(outageTh));
     Config::SetDefault("ns3::MmWaveEnbPhy::UpdateSinrEstimatePeriod",
                        IntegerValue(ReportTablePeriodicity));
     Config::SetDefault("ns3::MmWaveEnbPhy::Transient", IntegerValue(vectorTransient));
-    Config::SetDefault("ns3::MmWaveEnbPhy::NoiseAndFilter", BooleanValue(noiseAndFilter));
+    Config::SetDefault("ns3::MmWaveEnbPhy::NoiseAndFilter", BooleanValue(true));  // Enable SINR filtering
 
     // set the type of RRC to use, i.e., ideal or real
     // by setting the following two attributes to true, the simulation will use
@@ -526,30 +463,45 @@ main(int argc, char* argv[])
     Config::SetDefault("ns3::McUePdcp::LteUplink", BooleanValue(lteUplink));
     std::cout << "Lte uplink " << lteUplink << "\n";
 
-    // settings for the 3GPP the channel
-    Config::SetDefault("ns3::ThreeGppChannelModel::UpdatePeriod",
-                       TimeValue(MilliSeconds(
-                           100))); // interval after which the channel for a moving user is updated,
-    Config::SetDefault("ns3::ThreeGppChannelModel::Blockage",
-                       BooleanValue(true)); // use blockage or not
-    Config::SetDefault("ns3::ThreeGppChannelModel::PortraitMode",
-                       BooleanValue(true)); // use blockage model with UT in portrait mode
-    Config::SetDefault("ns3::ThreeGppChannelModel::NumNonselfBlocking",
-                       IntegerValue(4)); // number of non-self blocking obstacles
+    // settings for the 3GPP channel - DISABLED when using Friis model
+    // Config::SetDefault("ns3::ThreeGppChannelModel::UpdatePeriod",
+    //                    TimeValue(MilliSeconds(10))); 
+    // Config::SetDefault("ns3::ThreeGppChannelModel::Blockage",
+    //                    BooleanValue(false)); 
+    // Config::SetDefault("ns3::ThreeGppChannelModel::PortraitMode",
+    //                    BooleanValue(true)); 
+    // Config::SetDefault("ns3::ThreeGppChannelModel::NumNonselfBlocking",
+    //                    IntegerValue(4)); 
+    
+    // FIX: Disable shadow fading to eliminate stochastic path loss variations
+    // This makes path loss purely distance-based and symmetric
+    Config::SetDefault("ns3::ThreeGppPropagationLossModel::ShadowingEnabled", BooleanValue(false));
+    NS_LOG_UNCOND("🔧 [CHANNEL] Shadow fading DISABLED - path loss now symmetric and deterministic");
 
-    // by default, isotropic antennas are used. To use the 3GPP radiation pattern instead, use the
-    // <ThreeGppAntennaArrayModel> beware: proper configuration of the bearing and downtilt angles
-    // is needed
+    // Highway-optimized antenna configuration
+    // For highway deployment with linear UE movement, isotropic elements provide omnidirectional
+    // coverage which is more appropriate than fixed-bearing directional antennas
+    // Note: Directional 3GPP antennas would require dynamic beamforming or sector configuration
     Config::SetDefault("ns3::PhasedArrayModel::AntennaElement",
                        PointerValue(CreateObject<IsotropicAntennaModel>()));
 
     Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper>();
+    
+    // Use 3GPP channel model (shadow fading already disabled above)
     mmwaveHelper->SetPathlossModelType("ns3::ThreeGppUmiStreetCanyonPropagationLossModel");
-    mmwaveHelper->SetChannelConditionModelType("ns3::BuildingsChannelConditionModel");
+    
+    // Force LOS condition for highway scenario (open environment)
+    mmwaveHelper->SetChannelConditionModelType("ns3::AlwaysLosChannelConditionModel");
+    NS_LOG_UNCOND("🔧 [CHANNEL] Forcing LOS condition - typical for highway open environment");
+    NS_LOG_UNCOND("📡 [CHANNEL] Using 3GPP UmiStreetCanyon model WITHOUT shadow fading");
 
-    // set the number of antennas for both UEs and eNBs
-    mmwaveHelper->SetUePhasedArrayModelAttribute("NumColumns", UintegerValue(4));
-    mmwaveHelper->SetUePhasedArrayModelAttribute("NumRows", UintegerValue(4));
+    // Highway-optimized antenna array configuration  
+    // UE: 2×2 array (4 elements) - compact for mobile devices
+    mmwaveHelper->SetUePhasedArrayModelAttribute("NumColumns", UintegerValue(2));
+    mmwaveHelper->SetUePhasedArrayModelAttribute("NumRows", UintegerValue(2));
+    
+    // eNB: 8×8 array (64 elements) - provides good beamforming gain with omnidirectional coverage
+    // Square array enables adaptive beamforming in all directions along highway
     mmwaveHelper->SetEnbPhasedArrayModelAttribute("NumColumns", UintegerValue(8));
     mmwaveHelper->SetEnbPhasedArrayModelAttribute("NumRows", UintegerValue(8));
 
@@ -564,13 +516,30 @@ main(int argc, char* argv[])
     // parse again so you can override default values from the command line
     cmd.Parse(argc, argv);
 
-    // Get SGW/PGW and create a single RemoteHost
+    // Get SGW/PGW, MME, and create a single RemoteHost
     Ptr<Node> pgw = epcHelper->GetPgwNode();
+    Ptr<Node> mme = epcHelper->GetMmeNode();
     NodeContainer remoteHostContainer;
     remoteHostContainer.Create(1);
     Ptr<Node> remoteHost = remoteHostContainer.Get(0);
     InternetStackHelper internet;
     internet.Install(remoteHostContainer);
+
+    // Set positions for core network nodes (for NetAnim visualization)
+    MobilityHelper coreMobility;
+    coreMobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+    
+    // Install mobility on MME (control plane)
+    coreMobility.Install(mme);
+    mme->GetObject<MobilityModel>()->SetPosition(Vector(0, 100, 0));  // Control plane
+    
+    // Install mobility on PGW/SGW (data plane)
+    coreMobility.Install(pgw);
+    pgw->GetObject<MobilityModel>()->SetPosition(Vector(150, 200, 0));  // Data plane
+    
+    // Install mobility on Remote Host
+    coreMobility.Install(remoteHost);
+    remoteHost->GetObject<MobilityModel>()->SetPosition(Vector(400, 200, 0));  // Internet
 
     // Create the Internet by connecting remoteHost to pgw. Setup routing too
     PointToPointHelper p2ph;
@@ -593,73 +562,80 @@ main(int argc, char* argv[])
     NodeContainer mmWaveEnbNodes;
     NodeContainer lteEnbNodes;
     NodeContainer allEnbNodes;
-    mmWaveEnbNodes.Create(2);
+    mmWaveEnbNodes.Create(numEnbs - 1);
     lteEnbNodes.Create(1);
     ueNodes.Create(1);
     allEnbNodes.Add(lteEnbNodes);
     allEnbNodes.Add(mmWaveEnbNodes);
+    
+    NS_LOG_UNCOND("=== Node Creation Summary ===");
+    NS_LOG_UNCOND("Total eNBs requested (numEnbs): " << numEnbs);
+    NS_LOG_UNCOND("LTE eNB nodes: " << lteEnbNodes.GetN());
+    NS_LOG_UNCOND("mmWave eNB nodes: " << mmWaveEnbNodes.GetN());
+    NS_LOG_UNCOND("Total eNB nodes: " << allEnbNodes.GetN());
 
-    // Positions
-    Vector mmw1Position = Vector(50, 70, 3);
-    Vector mmw2Position = Vector(150, 70, 3);
-
-    std::vector<Ptr<Building>> buildingVector;
-
-    double maxBuildingSize = 20;
-
-    for (uint32_t buildingIndex = 0; buildingIndex < numBlocks; buildingIndex++)
-    {
-        Ptr<Building> building;
-        building = Create<Building>();
-        /* returns a vecotr where:
-         * position [0]: coordinates for x min
-         * position [1]: coordinates for x max
-         * position [2]: coordinates for y min
-         * position [3]: coordinates for y max
-         */
-        std::pair<Box, std::list<Box>> pairBuildings =
-            GenerateBuildingBounds(maxXAxis, maxYAxis, maxBuildingSize, m_previousBlocks);
-        m_previousBlocks = std::get<1>(pairBuildings);
-        Box box = std::get<0>(pairBuildings);
-        Ptr<UniformRandomVariable> randomBuildingZ = CreateObject<UniformRandomVariable>();
-        randomBuildingZ->SetAttribute("Min", DoubleValue(1.6));
-        randomBuildingZ->SetAttribute("Max", DoubleValue(40));
-        double buildingHeight = randomBuildingZ->GetValue();
-
-        building->SetBoundaries(Box(box.xMin, box.xMax, box.yMin, box.yMax, 0.0, buildingHeight));
-        buildingVector.push_back(building);
-    }
-
-    // Install Mobility Model
+    // LTE anchor is colocated with first mmWave eNB for proper multi-connectivity
+    
+    // Position allocator for ALL eNBs (LTE + mmWave) - critical for proper topology
     Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator>();
-    // enbPositionAlloc->Add (Vector ((double)mmWaveDist/2 + streetWidth, mmw1Dist + 2*streetWidth,
-    // mmWaveZ));
-    enbPositionAlloc->Add(mmw1Position); // LTE BS, out of area where buildings are deployed
-    enbPositionAlloc->Add(mmw1Position);
-    enbPositionAlloc->Add(mmw2Position);
-    MobilityHelper enbmobility;
-    enbmobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-    enbmobility.SetPositionAllocator(enbPositionAlloc);
-    enbmobility.Install(allEnbNodes);
-    BuildingsHelper::Install(allEnbNodes);
+    
+    // Position 0: LTE anchor (colocated with first mmWave eNB)
+    Vector firstEnbPos = Vector(0, 0, 10);  // 10m height per 3GPP TR 38.901 UmiStreetCanyon spec
+    enbPositionAlloc->Add(firstEnbPos); // LTE anchor eNB
+    NS_LOG_UNCOND("LTE Anchor eNB at position (" << firstEnbPos.x << ", " << firstEnbPos.y << ", " << firstEnbPos.z << ")");
+    
+    // Position 0+: mmWave eNBs along highway
+    // First mmWave eNB is colocated with LTE anchor (like mc-twoenbs.cc)
+    enbPositionAlloc->Add(firstEnbPos); // mmWave eNB #0 (colocated with LTE)
+    NS_LOG_UNCOND("mmWave eNB #0 at position (" << firstEnbPos.x << ", " << firstEnbPos.y << ", " << firstEnbPos.z << ") - COLOCATED with LTE");
+    Vector mmwPos; 
+    for (uint32_t i = 1; i < mmWaveEnbNodes.GetN(); ++i) {
+#if 1
+        mmwPos = Vector(i * enbSpacing, 0, 10);  // 10m height per 3GPP TR 38.901 UmiStreetCanyon spec
+#else
+        if (i & 1 == 1) {
+            mmwPos = Vector(i * enbSpacing, 0, 10);  // 10m height per 3GPP TR 38.901 UmiStreetCanyon spec
+        }
+	else {
+            mmwPos = Vector(i * enbSpacing * -1, 0, 10);  // 10m height per 3GPP TR 38.901 UmiStreetCanyon spec
+	    ueStart = i * enbSpacing * -1;
+	}
+#endif
+        enbPositionAlloc->Add(mmwPos);
+        NS_LOG_UNCOND("mmWave eNB #" << i << " at position (" << mmwPos.x << ", " << mmwPos.y << ", " << mmwPos.z << ")");
+    }
+    
+    // Install mobility on ALL eNBs together (like mc-twoenbs.cc)
+    MobilityHelper enbMobility;
+    enbMobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+    enbMobility.SetPositionAllocator(enbPositionAlloc);
+    enbMobility.Install(allEnbNodes);
 
     MobilityHelper uemobility;
     Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator>();
-    // uePositionAlloc->Add (Vector (ueInitialPosition, -5, 0));
-    uePositionAlloc->Add(Vector(ueInitialPosition, -5, 1.6));
+    uePositionAlloc->Add(Vector(ueStart, 0, 1.6));  // Put UE on highway centerline (Y=0)
     uemobility.SetMobilityModel("ns3::ConstantVelocityMobilityModel");
     uemobility.SetPositionAllocator(uePositionAlloc);
     uemobility.Install(ueNodes);
-    BuildingsHelper::Install(ueNodes);
 
-    // ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (ueInitialPosition, -5,
-    // 0));
-    ueNodes.Get(0)->GetObject<MobilityModel>()->SetPosition(Vector(ueInitialPosition, -5, 1.6));
-    ueNodes.Get(0)->GetObject<ConstantVelocityMobilityModel>()->SetVelocity(Vector(0, 0, 0));
+    ueNodes.Get(0)->GetObject<MobilityModel>()->SetPosition(Vector(ueStart, 0, 1.6));  // Put UE on highway centerline
+    ueNodes.Get(0)->GetObject<ConstantVelocityMobilityModel>()->SetVelocity(Vector(0, 0, 0)); //Heng: TBD
 
     // Install mmWave, lte, mc Devices to the nodes
     NetDeviceContainer lteEnbDevs = mmwaveHelper->InstallLteEnbDevice(lteEnbNodes);
     NetDeviceContainer mmWaveEnbDevs = mmwaveHelper->InstallEnbDevice(mmWaveEnbNodes);
+    
+    // Debug: Print cell IDs
+    NS_LOG_UNCOND("=== CELL ID ASSIGNMENTS ===");
+    for (uint32_t i = 0; i < mmWaveEnbDevs.GetN(); ++i) {
+        Ptr<MmWaveEnbNetDevice> enbDev = DynamicCast<MmWaveEnbNetDevice>(mmWaveEnbDevs.Get(i));
+        if (enbDev) {
+            Vector pos = mmWaveEnbNodes.Get(i)->GetObject<MobilityModel>()->GetPosition();
+            NS_LOG_UNCOND("mmWave eNB #" << i << " -> Cell ID " << enbDev->GetCellId() 
+                          << " at position (" << pos.x << ", " << pos.y << ", " << pos.z << ")");
+        }
+    }
+    
     NetDeviceContainer mcUeDevs;
     mcUeDevs = mmwaveHelper->InstallMcUeDevice(ueNodes);
 
@@ -682,6 +658,38 @@ main(int argc, char* argv[])
 
     // Manual attachment
     mmwaveHelper->AttachToClosestEnb(mcUeDevs, mmWaveEnbDevs, lteEnbDevs);
+
+    // Manual registration for SINR measurement
+NS_LOG_UNCOND("=== Registering UE with all cells for SINR measurement ===");
+for (uint32_t i = 0; i < mmWaveEnbDevs.GetN(); ++i) {
+    Ptr<MmWaveEnbNetDevice> enbDev = DynamicCast<MmWaveEnbNetDevice>(mmWaveEnbDevs.Get(i));
+    Ptr<MmWaveEnbPhy> phy = enbDev->GetPhy();
+    
+    for (uint32_t u = 0; u < mcUeDevs.GetN(); ++u) {
+        Ptr<McUeNetDevice> mcUe = DynamicCast<McUeNetDevice>(mcUeDevs.Get(u));
+        uint64_t imsi = mcUe->GetImsi();
+        
+        // Add UE to this eNB's attachment map for SINR measurement
+        bool success = phy->AddUePhy(imsi, mcUeDevs.Get(u));
+        if (success) {
+            NS_LOG_UNCOND("  Cell " << enbDev->GetCellId() << " registered UE IMSI " << imsi << " ✅");
+        } else {
+            NS_LOG_UNCOND("  Cell " << enbDev->GetCellId() << " UE IMSI " << imsi << " already registered ⚠️");
+        }
+    }
+}
+
+// INVESTIGATION: Check which cell is the target eNB
+NS_LOG_UNCOND("=== Target eNB Status ===");
+for (uint32_t u = 0; u < mcUeDevs.GetN(); ++u) {
+    Ptr<McUeNetDevice> mcUe = DynamicCast<McUeNetDevice>(mcUeDevs.Get(u));
+    Ptr<MmWaveEnbNetDevice> targetEnb = mcUe->GetMmWaveTargetEnb();
+    if (targetEnb) {
+        NS_LOG_UNCOND("  UE IMSI " << mcUe->GetImsi() << " target mmWave eNB: Cell " << targetEnb->GetCellId());
+    } else {
+        NS_LOG_UNCOND("  UE IMSI " << mcUe->GetImsi() << " has NO target mmWave eNB yet");
+    }
+}
 
     // Install and start applications on UEs and remote host
     uint16_t dlPort = 1234;
@@ -746,7 +754,7 @@ main(int argc, char* argv[])
 
     // 🎬 NetAnim Configuration for S1-U Path Optimization Visualization
     // ================================================================
-    AnimationInterface anim("mc-twoenbs-s1u-optimization.xml");
+    AnimationInterface anim("mc-n-enbs-.xml");
 
     // 📡 Configure eNodeB visualizations
     // LTE eNB (Control plane anchor)
@@ -754,15 +762,13 @@ main(int argc, char* argv[])
     anim.UpdateNodeColor(lteEnbNodes.Get(0), 0, 150, 255);  // Blue - LTE anchor
     anim.UpdateNodeSize(lteEnbNodes.Get(0), 8.0, 8.0);     // Larger for visibility
 
-    // mmWave eNB #1 (Source cell)
-    anim.UpdateNodeDescription(mmWaveEnbNodes.Get(0), "mmWave-eNB#2\n(Source)");
-    anim.UpdateNodeColor(mmWaveEnbNodes.Get(0), 255, 165, 0);  // Orange - Source
-    anim.UpdateNodeSize(mmWaveEnbNodes.Get(0), 7.0, 7.0);
-
-    // mmWave eNB #2 (Target cell - S1-U optimized)
-    anim.UpdateNodeDescription(mmWaveEnbNodes.Get(1), "mmWave-eNB#3\n(Target-Optimized)");
-    anim.UpdateNodeColor(mmWaveEnbNodes.Get(1), 0, 255, 0);    // Green - Optimized target
-    anim.UpdateNodeSize(mmWaveEnbNodes.Get(1), 7.0, 7.0);
+    for (uint32_t i = 0; i < mmWaveEnbNodes.GetN(); ++i) {
+	std::ostringstream oss;
+        oss << "mmW" << (i);
+        anim.UpdateNodeDescription(mmWaveEnbNodes.Get(i), oss.str());
+        anim.UpdateNodeColor(mmWaveEnbNodes.Get(i), 0, 255, 0);    // Green - Optimized target
+        anim.UpdateNodeSize(mmWaveEnbNodes.Get(i), 7.0, 7.0);
+    }
 
     // 📱 Configure UE visualization
     anim.UpdateNodeDescription(ueNodes.Get(0), "UE\n(Mobile User)");
@@ -770,30 +776,28 @@ main(int argc, char* argv[])
     anim.UpdateNodeSize(ueNodes.Get(0), 5.0, 5.0);
 
     // 🌐 Configure Core Network nodes
-    anim.UpdateNodeDescription(pgw, "PGW/SGW\n(S1-U Source)");
-    anim.UpdateNodeColor(pgw, 128, 0, 128);                   // Purple - Core network
+    anim.UpdateNodeDescription(mme, "MME\n(Control Plane)");
+    anim.UpdateNodeColor(mme, 255, 165, 0);                   // Orange - Control plane
+    anim.UpdateNodeSize(mme, 6.0, 6.0);
+    
+    anim.UpdateNodeDescription(pgw, "PGW/SGW\n(Data Plane)");
+    anim.UpdateNodeColor(pgw, 128, 0, 128);                   // Purple - Data plane
     anim.UpdateNodeSize(pgw, 6.0, 6.0);
 
     anim.UpdateNodeDescription(remoteHost, "Remote Host\n(Internet)");
     anim.UpdateNodeColor(remoteHost, 64, 64, 64);             // Dark gray - Internet
     anim.UpdateNodeSize(remoteHost, 4.0, 4.0);
 
-    // 🏢 Configure building visualizations if present
-    if (buildingVector.size() > 0) {
-         // Buildings are automatically shown as obstacles in NetAnim
-         NS_LOG_UNCOND("🏗️  " << buildingVector.size() << " buildings configured for visualization");
-    }
-
     // 📊 Enable advanced NetAnim features for performance analysis
-    // Too big for netanimi: anim.EnablePacketMetadata();                              // Show packet details
+    // anim.EnablePacketMetadata();                              // Show packet details
     anim.EnableIpv4RouteTracking("s1u-routing-table.xml",
                                  Seconds(0),
                                  Seconds(simTime),
                                  Seconds(0.5));               // Track routing changes
 
     // 🎯 Enable packet flow tracking for S1-U optimization visualization
-    anim.EnableWifiMacCounters(Seconds(0), Seconds(simTime)); // Track WiFi/mmWave packets
-    anim.EnableWifiPhyCounters(Seconds(0), Seconds(simTime)); // Track physical layer
+    // anim.EnableWifiMacCounters(Seconds(0), Seconds(simTime)); // Track WiFi/mmWave packets
+    // anim.EnableWifiPhyCounters(Seconds(0), Seconds(simTime)); // Track physical layer
 
     // 📈 Enable performance counters for optimization analysis
     anim.SetStartTime(Seconds(0));
@@ -819,11 +823,10 @@ main(int argc, char* argv[])
     NS_LOG_UNCOND("📈 After t=0.45s: Direct S1-U flows (Green eNB ↔ Purple PGW)");
     NS_LOG_UNCOND("⚡ Optimization eliminates X2 forwarding delays!");
 
-    // set to true if you want to print the map of buildings, ues and enbs
+    // set to true if you want to print the map of ues and enbs
     bool print = false;
     if (print)
     {
-        PrintGnuplottableBuildingListToFile("buildings.txt");
         PrintGnuplottableUeListToFile("ues.txt");
         PrintGnuplottableEnbListToFile("enbs.txt");
     }

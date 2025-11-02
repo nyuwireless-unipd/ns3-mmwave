@@ -165,6 +165,14 @@ class EpcSgwPgwApplication : public Application
     void SetUeAddress6(uint64_t imsi, Ipv6Address ueAddr);
 
     /**
+     * Update UE's eNB address for S1-U path switching
+     *
+     * \param enbAddr the IPv4 address of the target eNB
+     * \param rnti the RNTI of the UE (used as IMSI proxy)
+     */
+    void UpdateUeEnbAddress(Ipv4Address enbAddr, uint16_t rnti);
+
+    /**
      * TracedCallback signature for data Packet reception event.
      *
      * \param [in] packet The data packet sent from the internet.

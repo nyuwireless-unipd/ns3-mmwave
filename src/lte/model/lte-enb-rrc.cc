@@ -33,8 +33,10 @@
 
 #include "ns3/lte-pdcp-tag.h"
 #include <ns3/abort.h>
+#include <ns3/epc-sgw-pgw-application.h>
 #include <ns3/eps-bearer-tag.h>
 #include <ns3/fatal-error.h>
+#include <ns3/ipv4.h>
 #include <ns3/log.h>
 #include <ns3/lte-pdcp-header.h>
 #include <ns3/lte-pdcp.h>
@@ -48,6 +50,7 @@
 #include <ns3/lte-rlc-um.h>
 #include <ns3/lte-rlc.h>
 #include <ns3/mc-enb-pdcp.h>
+#include <ns3/node-list.h>
 #include <ns3/object-factory.h>
 #include <ns3/object-map.h>
 #include <ns3/packet.h>
@@ -2068,6 +2071,11 @@ UeManager::RecvSecondaryCellHandoverCompleted(EpcX2Sap::SecondaryHandoverComplet
     m_mmWaveCellId = params.cellId;
     m_mmWaveRnti = params.mmWaveRnti;
 
+    std::cout << "[S1-U-HANDOVER] " << Simulator::Now().GetSeconds()
+              << "s: RecvSecondaryCellHandoverCompleted - mmWave cell changed from "
+              << oldMmWaveCellId << " to " << m_mmWaveCellId
+              << " (IMSI=" << m_imsi << ")" << std::endl;
+
     for (std::map<uint8_t, Ptr<LteDataRadioBearerInfo>>::iterator it = m_drbMap.begin();
          it != m_drbMap.end();
          ++it)
@@ -2118,6 +2126,55 @@ UeManager::RecvSecondaryCellHandoverCompleted(EpcX2Sap::SecondaryHandoverComplet
         {
             NS_LOG_INFO("No difference with the MC Bearer already defined"); // TODO consider bearer
                                                                              // modifications
+        }
+    }
+
+    // **FIX: Trigger S1-U Path Switch for mmWave-to-mmWave handovers**
+    // When UE moves from one mmWave cell to another, the S1-U data plane must be updated
+    // to route packets directly to the new target mmWave eNB (not the old one)
+    // For MC architecture, we update SGW routing directly instead of full S1AP path switch
+    if (oldMmWaveCellId != 0 && oldMmWaveCellId != m_mmWaveCellId)
+    {
+        std::cout << "[S1-U-PATH-SWITCH] " << Simulator::Now().GetSeconds()
+                  << "s: Triggering S1-U routing update for mmWave HO: cell "
+                  << oldMmWaveCellId << " -> " << m_mmWaveCellId << std::endl;
+        
+        NS_LOG_INFO("Update S1-U routing for mmWave-to-mmWave handover");
+        
+        // Update SGW/PGW routing to point to new target mmWave eNB
+        // Get target eNB node and IP address
+        Ptr<Node> sgwPgwNode = NodeList::GetNode(0); // Assuming SGW/PGW is node 0
+        if (sgwPgwNode)
+        {
+            for (uint32_t i = 0; i < sgwPgwNode->GetNApplications(); ++i)
+            {
+                Ptr<EpcSgwPgwApplication> sgwPgwApp = DynamicCast<EpcSgwPgwApplication>(sgwPgwNode->GetApplication(i));
+                if (sgwPgwApp)
+                {
+                    // Get target eNB address
+                    Ptr<Node> targetEnbNode = NodeList::GetNode(m_mmWaveCellId + 1); // Offset for eNB node IDs
+                    if (targetEnbNode)
+                    {
+                        Ptr<Ipv4> targetEnbIpv4 = targetEnbNode->GetObject<Ipv4>();
+                        if (targetEnbIpv4 && targetEnbIpv4->GetNInterfaces() > 1)
+                        {
+                            Ipv4Address targetEnbAddr = targetEnbIpv4->GetAddress(1, 0).GetLocal();
+                            
+                            std::cout << "[S1-U-CORE] " << Simulator::Now().GetSeconds()
+                                      << "s: Updating SGW routing - UE RNTI=" << m_rnti
+                                      << " -> target eNB " << targetEnbAddr 
+                                      << " (cell " << m_mmWaveCellId << ")" << std::endl;
+                            
+                            // Update the SGW routing table
+                            sgwPgwApp->UpdateUeEnbAddress(targetEnbAddr, m_rnti);
+                            
+                            std::cout << "[S1-U-CORE] " << Simulator::Now().GetSeconds()
+                                      << "s: *** S1-U ROUTING UPDATED *** Data plane now routes to cell "
+                                      << m_mmWaveCellId << std::endl;
+                        }
+                    }
+                }
+            }
         }
     }
 

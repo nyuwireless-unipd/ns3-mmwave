@@ -154,5 +154,6 @@ build_lib(
     ${libinternet}
     ${liblte}
     ${libpropagation}
+    ${libnetanim}
   TEST_SOURCES ${test_sources}
 )
